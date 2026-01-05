@@ -1,0 +1,89 @@
+name: Jira PR Integration
+
+on:
+  pull_request:
+    types:
+      - opened
+env:
+  JIRA_DOMAIN: "way-point"
+  JIRA_SPACE_KEY: "WAPO"
+  BADGE_COLOR: "2684FF"
+permissions:
+  pull-requests: write
+
+jobs:
+  jira:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract Jira Issue Key
+        id: extract
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const branchName = context.payload.pull_request.head.ref;
+            const spaceKey = process.env.JIRA_SPACE_KEY;
+            const regex = new RegExp(`(${spaceKey}-\\d+)`, 'i');
+            const match = branchName.match(regex);
+
+            if (match) {
+              const key = match[1].toUpperCase();
+              console.log(`Found issue key: ${key}`);
+              core.setOutput('issue_key', key);
+            } else {
+              console.log('No issue key found.');
+              core.setOutput('issue_key', '');
+            }
+
+      - name: Update PR Title
+        if: steps.extract.outputs.issue_key != ''
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const issueKey = '${{ steps.extract.outputs.issue_key }}';
+            const pr = context.payload.pull_request;
+            let newTitle = pr.title;
+
+            if (!newTitle.startsWith(issueKey)) {
+              newTitle = `${issueKey}: ${newTitle}`;
+
+              await github.rest.pulls.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                title: newTitle
+              });
+              console.log('PR Title updated.');
+            } else {
+              console.log('Title already contains issue key.');
+            }
+
+      - name: Add Jira Badge to Body
+        if: steps.extract.outputs.issue_key != ''
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const issueKey = '${{ steps.extract.outputs.issue_key }}';
+            const pr = context.payload.pull_request;
+
+            const jiraDomain = process.env.JIRA_DOMAIN;
+            const badgeColor = process.env.BADGE_COLOR;
+            const jiraBaseUrl = `https://${jiraDomain}.atlassian.net`;
+
+            const badgeUrl = `https://img.shields.io/badge/${issueKey}-${badgeColor}?logo=jira`;
+            const badgeMarkdown = `[![JIRA Issue](${badgeUrl})](${jiraBaseUrl}/browse/${issueKey})`;
+
+            let newBody = pr.body || "";
+
+            if (!newBody.includes(`img.shields.io/badge/${issueKey}`)) {
+              newBody = `${newBody}\n\n${badgeMarkdown}`;
+
+              await github.rest.pulls.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                body: newBody
+              });
+              console.log('Jira Badge added to body.');
+            } else {
+              console.log('Badge already exists.');
+            }

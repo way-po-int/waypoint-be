@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: mvp
+  profiles:
+    active: local
+  config:
+    import:
+      - optional:file:.env[.properties]
+  messages:
+    basename: i18n/errors
+    fallback-to-system-locale: false
+  jpa:
+    open-in-view: false
