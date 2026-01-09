@@ -6,7 +6,10 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.web.cors.CorsConfigurationSource;
 
 import lombok.RequiredArgsConstructor;
@@ -18,6 +21,10 @@ public class SecurityConfig {
 
 	private final CorsConfigurationSource corsConfigurationSource;
 
+	private final OidcUserService oidcUserService;
+	private final SimpleUrlAuthenticationSuccessHandler successHandler;
+	private final SimpleUrlAuthenticationFailureHandler failureHandler;
+
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		return http
@@ -25,6 +32,11 @@ public class SecurityConfig {
 			.csrf(AbstractHttpConfigurer::disable)
 			.httpBasic(AbstractHttpConfigurer::disable)
 			.formLogin(AbstractHttpConfigurer::disable)
+			.oauth2Login(oauth2 -> oauth2
+				.userInfoEndpoint(userInfoEndpointConfig -> userInfoEndpointConfig
+					.oidcUserService(oidcUserService))
+				.successHandler(successHandler)
+				.failureHandler(failureHandler))
 			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			.authorizeHttpRequests(auth -> auth
 				.anyRequest().authenticated())
