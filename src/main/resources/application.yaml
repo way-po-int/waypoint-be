@@ -52,5 +52,10 @@ cors:
   allowed-methods: ${CORS_ALLOWED_METHODS}
   allowed-headers: ${CORS_ALLOWED_HEADERS}
 
+jwt:
+  secret: ${JWT_SECRET}
+  access-expires-in: ${JWT_ACCESS_EXPIRES_IN:3600} # 1시간
+  refresh-expires-in: ${JWT_REFRESH_EXPIRES_IN:604800} # 7일
+
 server:
   forward-headers-strategy: framework
