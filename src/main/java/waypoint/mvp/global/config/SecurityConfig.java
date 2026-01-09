@@ -52,6 +52,7 @@ public class SecurityConfig {
 				.accessDeniedHandler(accessDeniedHandler))
 			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			.authorizeHttpRequests(auth -> auth
+				.requestMatchers("/dev/**").permitAll()
 				.requestMatchers("/auth/reissue").permitAll()
 				.anyRequest().authenticated())
 			.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
