@@ -3,6 +3,7 @@ package waypoint.mvp.auth.security.jwt;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Date;
+import java.util.UUID;
 
 import javax.crypto.SecretKey;
 
@@ -53,6 +54,7 @@ public class JwtTokenProvider {
 	public TokenInfo generateRefreshToken(UserInfo userInfo) {
 		Instant expiresAt = Instant.now().plusSeconds(refreshExpiresIn);
 		String refreshToken = Jwts.builder()
+			.id(UUID.randomUUID().toString())
 			.subject(userInfo.id().toString())
 			.claim(TOKEN, JwtType.REFRESH.getValue())
 			.expiration(Date.from(expiresAt))
