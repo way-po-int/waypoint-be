@@ -1,5 +1,7 @@
 package waypoint.mvp.auth.application;
 
+import java.time.Instant;
+
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -69,5 +71,10 @@ public class AuthService {
 		String hashedRefreshToken = HashUtils.generateHash(refreshToken);
 		refreshTokenRepository.findByToken(hashedRefreshToken)
 			.ifPresent(refreshTokenRepository::delete);
+	}
+
+	public long deleteExpiredTokens() {
+		Instant now = Instant.now();
+		return refreshTokenRepository.deleteExpiredTokens(now);
 	}
 }
