@@ -3,6 +3,7 @@ package waypoint.mvp.auth.application;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.ObjectUtils;
 
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.application.dto.AuthTokens;
@@ -59,5 +60,14 @@ public class AuthService {
 
 		refreshTokenRepository.save(refreshToken);
 		return tokenInfo;
+	}
+
+	public void logout(String refreshToken) {
+		if (ObjectUtils.isEmpty(refreshToken)) {
+			return;
+		}
+		String hashedRefreshToken = HashUtils.generateHash(refreshToken);
+		refreshTokenRepository.findByToken(hashedRefreshToken)
+			.ifPresent(refreshTokenRepository::delete);
 	}
 }
