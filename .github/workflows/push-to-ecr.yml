@@ -14,7 +14,7 @@ jobs:
     environment: dev
     env:
       AWS_REGION: ${{ vars.AWS_REGION }}
-      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+      AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}
       IMAGE_TAG: ${{ vars.IMAGE_TAG }}
       ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
     steps:

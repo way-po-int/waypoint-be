@@ -1,0 +1,192 @@
+name: Manage Dev Server
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: '개발 서버'
+        required: true
+        type: choice
+        options:
+          - status
+          - update
+          - start
+          - stop
+concurrency:
+  group: manage-dev-server
+  cancel-in-progress: false
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  manage-dev-server:
+    runs-on: ubuntu-latest
+    environment: dev
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}
+      EC2_INSTANCE_ID: ${{ vars.EC2_INSTANCE_ID }}
+      RDS_INSTANCE_ID: ${{ vars.RDS_INSTANCE_ID }}
+      IMAGE_TAG: ${{ vars.IMAGE_TAG }}
+      ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
+      ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+      CONTAINER_NAME: ${{ vars.CONTAINER_NAME }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+
+      - name: Fetch Current Status
+        id: fetch-status
+        run: |
+          # 1. EC2 상태 조회 -> EC2_STATUS 변수에 저장
+          EC2_STATE=$(aws ec2 describe-instances --instance-ids ${{ env.EC2_INSTANCE_ID }} --query "Reservations[*].Instances[*].State.Name" --output text)
+          echo "EC2_STATUS=$EC2_STATE" >> $GITHUB_ENV
+          
+          # 2. RDS 상태 조회 -> RDS_STATUS 변수에 저장
+          RDS_STATE=$(aws rds describe-db-instances --db-instance-identifier ${{ env.RDS_INSTANCE_ID }} --query "DBInstances[*].DBInstanceStatus" --output text)
+          echo "RDS_STATUS=$RDS_STATE" >> $GITHUB_ENV
+
+      - name: Report Status Summary
+        if: inputs.action == 'status'
+        run: |
+          echo "### 🔍 서버 상태 보고서" >> "$GITHUB_STEP_SUMMARY"
+          echo "| 리소스 | 상태 |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| :--- | :--- |" >> "$GITHUB_STEP_SUMMARY"
+          
+          report_status() {
+            local name=$1
+            local status=$2
+            local ok_value=$3
+            local ok_label=$4
+          
+            if [ "$status" = "$ok_value" ]; then
+              echo "| $name | ✅ $ok_label ($status) |" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "| $name | 🛑 상태: $status |" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          }
+          
+          report_status "EC2" "$EC2_STATUS" "running" "실행 중"
+          report_status "RDS" "$RDS_STATUS" "available" "사용 가능"
+
+      - name: Start RDS & EC2
+        if: inputs.action == 'start'
+        run: |
+          case "${{ env.RDS_STATUS }}" in
+            stopped)
+              aws rds start-db-instance --db-instance-identifier ${{ env.RDS_INSTANCE_ID }}
+              aws rds wait db-instance-available --db-instance-identifier ${{ env.RDS_INSTANCE_ID }}
+              echo "✅ RDS 실행 완료!"
+              ;;
+            available)
+              echo "✅ RDS가 이미 실행 중입니다."
+              ;;
+            *)
+              echo "⚠️ RDS를 시작할 수 없습니다. 현재 상태: [${{ env.RDS_STATUS }}]"
+              exit 1
+              ;;
+          esac
+          
+          case "${{ env.EC2_STATUS }}" in
+            stopped)
+              aws ec2 start-instances --instance-ids ${{ env.EC2_INSTANCE_ID }}
+              aws ec2 wait instance-running --instance-ids ${{ env.EC2_INSTANCE_ID }}
+              echo "✅ EC2 실행 완료!"
+              ;;
+            running)
+              echo "✅ EC2가 이미 실행 중입니다."
+              ;;
+            *)
+              echo "⚠️ EC2를 시작할 수 없습니다. 현재 상태: [${{ env.EC2_STATUS }}]"
+              exit 1
+              ;;
+            esac
+
+      - name: Stop EC2 & RDS
+        if: inputs.action == 'stop'
+        run: |
+          case "${{ env.EC2_STATUS }}" in
+            running)
+              aws ec2 stop-instances --instance-ids ${{ env.EC2_INSTANCE_ID }}
+              aws ec2 wait instance-stopped --instance-ids ${{ env.EC2_INSTANCE_ID }}
+              echo "✅ EC2 정지 완료!"
+              ;;
+            stopped)
+              echo "✅ EC2가 이미 꺼져 있습니다."
+              ;;
+            *)
+              echo "⚠️ EC2를 정지할 수 없습니다. 현재 상태: [${{ env.EC2_STATUS }}]"
+              ;;
+          esac
+          
+          case "${{ env.RDS_STATUS }}" in
+            available)
+              aws rds stop-db-instance --db-instance-identifier ${{ env.RDS_INSTANCE_ID }}
+              echo "✅ RDS 정지 완료!"
+              ;;
+            stopped)
+              echo "✅ RDS가 이미 꺼져 있습니다."
+              ;;
+            *)
+              echo "⚠️ RDS를 정지할 수 없습니다. 현재 상태: [${{ env.RDS_STATUS }}]"
+              ;;
+          esac
+
+      - name: Deploy with SSM
+        if: inputs.action == 'start' || inputs.action == 'update'
+        run: |
+          if [ "${{ inputs.action }}" == "update" ] && [ "${{ env.EC2_STATUS }}" != "running" ]; then
+            echo "❌ 서버가 정지된 상태(${{ env.EC2_STATUS }})에서는 Update를 할 수 없습니다."
+            exit 1
+          fi
+          
+          echo "EC2 배포 스크립트 생성 중..."
+          cat <<EOF > deploy_script.sh
+          #!/bin/bash
+          
+          IMAGE="${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}"
+          CONTAINER_NAME="${{ env.CONTAINER_NAME }}"
+          
+          aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
+          docker pull $IMAGE
+          
+          docker stop \$CONTAINER_NAME || true
+          docker rm \$CONTAINER_NAME || true
+          
+          docker run -d --name \$CONTAINER_NAME \
+            --restart unless-stopped \
+            -p 80:8080 \
+            --env-file /home/ec2-user/.env \
+            --log-driver=awslogs \
+            --log-opt awslogs-region=${{ env.AWS_REGION }} \
+            --log-opt awslogs-group=/aws/ec2/\$CONTAINER_NAME \
+            --log-opt awslogs-stream=deploy-${{ env.IMAGE_TAG }} \
+            --log-opt awslogs-create-group=true \
+            \$IMAGE
+          EOF
+          
+          B64_SCRIPT=$(base64 -w 0 deploy_script.sh)
+          
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids ${{ env.EC2_INSTANCE_ID }} \
+            --document-name "AWS-RunShellScript" \
+            --parameters "commands=[echo $B64_SCRIPT | base64 -d | bash]" \
+            --query "Command.CommandId" \
+            --output text)
+          
+          echo "배포 명령 전송 완료 (ID: $COMMAND_ID)"
+          
+          while true; do
+            STATUS=$(aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id ${{ env.EC2_INSTANCE_ID }} --query "Status" --output text)
+            if [ "$STATUS" == "Success" ]; then echo "✅ 배포 성공!"; exit 0; 
+            elif [ "$STATUS" == "Failed" ] || [ "$STATUS" == "Cancelled" ] || [ "$STATUS" == "TimedOut" ]; then
+              echo "❌ 배포 실패! ($STATUS)"
+              aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id ${{ env.EC2_INSTANCE_ID }} --query "StandardErrorContent" --output text
+              exit 1
+            fi
+            echo "Thinking... ($STATUS)"; sleep 3
+          done
