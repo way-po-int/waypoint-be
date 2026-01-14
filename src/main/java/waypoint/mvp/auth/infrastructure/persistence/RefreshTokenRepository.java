@@ -10,7 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 import waypoint.mvp.auth.domain.RefreshToken;
 
-public interface RefreshTokenRepository extends CrudRepository<RefreshToken, String> {
+public interface RefreshTokenRepository extends CrudRepository<RefreshToken, Long> {
 	Optional<RefreshToken> findByToken(String token);
 
 	@Modifying
