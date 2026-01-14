@@ -1,0 +1,62 @@
+package waypoint.mvp.collection.presentation;
+
+import java.net.URI;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import waypoint.mvp.collection.application.CollectionService;
+import waypoint.mvp.collection.application.dto.CollectionDto;
+import waypoint.mvp.collection.presentation.dto.CollectionCreateRequest;
+import waypoint.mvp.collection.presentation.dto.CollectionUpdateRequest;
+import waypoint.mvp.collection.presentation.dto.response.CollectionResponse;
+
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/collections")
+public class CollectionController {
+
+	private final CollectionService collectionService;
+
+	@PostMapping
+	public ResponseEntity<Void> createCollection(@RequestBody @Valid CollectionCreateRequest request) {
+		Long collectionId = collectionService.createCollection(request);
+		return ResponseEntity.created(URI.create("/collections/" + collectionId)).build();
+	}
+
+	@GetMapping
+	public ResponseEntity<Page<CollectionResponse>> findCollections(Pageable pageable) {
+		Page<CollectionDto> collections = collectionService.findCollections(pageable);
+		return ResponseEntity.ok(collections.map(CollectionResponse::from));
+	}
+
+	@GetMapping("/{collectionId}")
+	public ResponseEntity<CollectionResponse> findCollectionById(@PathVariable Long collectionId) {
+		CollectionDto collection = collectionService.findCollectionById(collectionId);
+		return ResponseEntity.ok(CollectionResponse.from(collection));
+	}
+
+	@PutMapping("/{collectionId}")
+	public ResponseEntity<Void> updateCollection(@PathVariable Long collectionId,
+		@RequestBody @Valid CollectionUpdateRequest request) {
+		collectionService.updateCollection(collectionId, request);
+		return ResponseEntity.noContent().build();
+	}
+
+	@DeleteMapping("/{collectionId}")
+	public ResponseEntity<Void> deleteCollection(@PathVariable Long collectionId) {
+		collectionService.deleteCollection(collectionId);
+		return ResponseEntity.noContent().build();
+	}
+}
