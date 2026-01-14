@@ -3,6 +3,9 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: create-drop
+  security:
+    oauth2:
+      redirect-uri: "redirect-uri"
 
 cors:
   allowed-origins: "http://localhost:3000"
