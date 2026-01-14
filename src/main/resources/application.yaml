@@ -9,6 +9,8 @@ spring:
   messages:
     basename: i18n/errors
     fallback-to-system-locale: false
+  jackson:
+    property-naming-strategy: SNAKE_CASE
   jpa:
     open-in-view: false
   security:
