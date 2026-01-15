@@ -23,10 +23,11 @@ import waypoint.mvp.auth.security.jwt.JwtTokenProvider;
 import waypoint.mvp.auth.security.jwt.TokenInfo;
 import waypoint.mvp.auth.security.principal.UserInfo;
 import waypoint.mvp.auth.util.CookieUtils;
+import waypoint.mvp.user.application.UserService;
+import waypoint.mvp.user.application.dto.SocialUserProfile;
 import waypoint.mvp.user.domain.Provider;
 import waypoint.mvp.user.domain.SocialAccount;
 import waypoint.mvp.user.domain.User;
-import waypoint.mvp.user.infrastructure.persistence.UserRepository;
 
 @Profile({"local", "dev"})
 @RestController
@@ -35,9 +36,9 @@ import waypoint.mvp.user.infrastructure.persistence.UserRepository;
 class DevAuthController {
 
 	private final AuthService authService;
+	private final UserService userService;
 	private final JwtTokenProvider jwtTokenProvider;
 	private final CookieUtils cookieUtils;
-	private final UserRepository userRepository;
 
 	record LoginRequest(
 		@NotNull Provider provider,
@@ -49,14 +50,14 @@ class DevAuthController {
 
 	@PostMapping("/login")
 	public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request) {
-		SocialAccount account = SocialAccount.create(request.provider, request.providerId);
-		User user = userRepository.findByProviderAndProviderId(account.getProvider(), account.getProviderId())
-			.orElseGet(() -> userRepository.save(User.create(
-				account,
-				request.nickname,
-				Objects.requireNonNullElse(request.picture, ""),
-				Objects.requireNonNullElse(request.email, "test@test.com")
-			)));
+		SocialAccount socialAccount = SocialAccount.create(request.provider, request.providerId);
+		SocialUserProfile profile = SocialUserProfile.of(
+			socialAccount,
+			request.nickname,
+			Objects.requireNonNullElse(request.picture, ""),
+			Objects.requireNonNullElse(request.email, "test@test.com")
+		);
+		User user = userService.loadSocialUser(profile);
 
 		UserInfo userInfo = new UserInfo(user.getId());
 		Authentication authentication = new UsernamePasswordAuthenticationToken(userInfo, null,

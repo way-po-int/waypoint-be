@@ -9,19 +9,20 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
 
 import waypoint.mvp.auth.security.principal.CustomOidcUser;
+import waypoint.mvp.user.application.UserService;
+import waypoint.mvp.user.application.dto.SocialUserProfile;
 import waypoint.mvp.user.domain.Provider;
 import waypoint.mvp.user.domain.SocialAccount;
 import waypoint.mvp.user.domain.User;
-import waypoint.mvp.user.infrastructure.persistence.UserRepository;
 
 @Service
 public class CustomOidcUserService extends OidcUserService {
 
-	private final UserRepository userRepository;
+	private final UserService userService;
 
-	public CustomOidcUserService(CustomOAuth2UserService oAuth2UserService, UserRepository userRepository) {
+	public CustomOidcUserService(CustomOAuth2UserService oAuth2UserService, UserService userService) {
 		setOauth2UserService(oAuth2UserService);
-		this.userRepository = userRepository;
+		this.userService = userService;
 	}
 
 	@Override
@@ -29,16 +30,17 @@ public class CustomOidcUserService extends OidcUserService {
 		OidcUser oidcUser = super.loadUser(userRequest);
 		Provider provider = Provider.from(userRequest.getClientRegistration().getRegistrationId());
 		String providerId = oidcUser.getSubject();
+
 		SocialAccount socialAccount = SocialAccount.create(provider, providerId);
 		String nickname = Objects.requireNonNullElse(oidcUser.getNickName(), oidcUser.getFullName());
 
-		User user = userRepository.findByProviderAndProviderId(provider, providerId)
-			.orElseGet(() -> userRepository.save(User.create(
-				socialAccount,
-				nickname,
-				oidcUser.getPicture(),
-				oidcUser.getEmail()
-			)));
+		SocialUserProfile profile = SocialUserProfile.of(
+			socialAccount,
+			nickname,
+			oidcUser.getPicture(),
+			oidcUser.getEmail()
+		);
+		User user = userService.loadSocialUser(profile);
 		return new CustomOidcUser(oidcUser, user);
 	}
 }
