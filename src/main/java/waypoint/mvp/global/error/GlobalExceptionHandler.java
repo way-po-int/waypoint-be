@@ -31,10 +31,12 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import waypoint.mvp.auth.security.jwt.JwtCode;
 
 @RestControllerAdvice
 @RequiredArgsConstructor
@@ -43,6 +45,13 @@ public class GlobalExceptionHandler { // ResponseEntityExceptionHandler
 
 	private static final String ERRORS = "errors";
 	private final MessageSource messageSource;
+
+	@ExceptionHandler(JwtException.class)
+	public ProblemDetail handleJwtException(JwtException e) {
+		ProblemDetail problemDetail = getProblemDetail(HttpStatus.UNAUTHORIZED, e.getMessage());
+		problemDetail.setProperty("code", JwtCode.INVALID_TOKEN.name());
+		return problemDetail;
+	}
 
 	// 지원하지 않는 HTTP 메서드로 요청했을 때 발생하는 예외
 	@ExceptionHandler(HttpRequestMethodNotSupportedException.class)
