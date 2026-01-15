@@ -27,6 +27,7 @@ public class AuthService {
 	private final JwtTokenProvider jwtTokenProvider;
 	private final RefreshTokenRepository refreshTokenRepository;
 
+	@Transactional(noRollbackFor = ExpiredRefreshTokenException.class)
 	public AuthTokens reissue(String refreshToken) {
 		JwtCode jwtCode = jwtTokenProvider.validateRefreshToken(refreshToken);
 		if (JwtCode.INVALID_TOKEN == jwtCode) {

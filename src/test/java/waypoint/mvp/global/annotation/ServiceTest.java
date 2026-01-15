@@ -6,19 +6,20 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
 
 import waypoint.mvp.global.config.TestContainersConfig;
+import waypoint.mvp.global.extension.DatabaseCleanupExtension;
 
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @SpringBootTest
-@Transactional
 @ActiveProfiles("test")
 @Import(TestContainersConfig.class)
+@ExtendWith(DatabaseCleanupExtension.class)
 public @interface ServiceTest {
 }
