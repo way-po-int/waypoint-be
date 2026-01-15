@@ -155,10 +155,32 @@ class AuthServiceTest {
 		refreshTokenRepository.save(refreshToken);
 
 		// when
-		authService.logout(tokenInfo.token());
+		authService.logout(userInfo, tokenInfo.token());
 
 		// then
 		Optional<RefreshToken> deletedToken = refreshTokenRepository.findByToken(hashedToken);
 		assertThat(deletedToken).isEmpty();
+	}
+
+	@Test
+	@DisplayName("로그아웃 시 토큰 소유자와 로그인 유저가 다르면 토큰을 삭제하지 않는다.")
+	void logout_differentUser_doesNotDeleteToken() {
+		// given
+		Long loginUserId = 1L;
+		Long tokenOwnerId = 2L;
+		String refreshToken = "refresh_token";
+		UserInfo userInfo = new UserInfo(loginUserId);
+
+		String hashedToken = HashUtils.generateHash(refreshToken);
+		Instant expiresAt = Instant.now().plusSeconds(3600);
+		RefreshToken savedToken = RefreshToken.create(tokenOwnerId, hashedToken, expiresAt);
+		refreshTokenRepository.save(savedToken);
+
+		// when
+		authService.logout(userInfo, refreshToken);
+
+		// then
+		Optional<RefreshToken> foundToken = refreshTokenRepository.findByToken(hashedToken);
+		assertThat(foundToken).isPresent();
 	}
 }

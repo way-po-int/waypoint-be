@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import waypoint.mvp.auth.application.dto.AuthTokens;
 import waypoint.mvp.auth.domain.RefreshToken;
 import waypoint.mvp.auth.error.exception.ExpiredRefreshTokenException;
@@ -22,6 +23,7 @@ import waypoint.mvp.auth.util.HashUtils;
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
 
 	private final JwtTokenProvider jwtTokenProvider;
@@ -65,13 +67,19 @@ public class AuthService {
 		return tokenInfo;
 	}
 
-	public void logout(String refreshToken) {
+	public void logout(UserInfo userInfo, String refreshToken) {
 		if (ObjectUtils.isEmpty(refreshToken)) {
 			return;
 		}
 		String hashedRefreshToken = HashUtils.generateHash(refreshToken);
-		refreshTokenRepository.findByToken(hashedRefreshToken)
-			.ifPresent(refreshTokenRepository::delete);
+		refreshTokenRepository.findByToken(hashedRefreshToken).ifPresentOrElse(token -> {
+			if (!token.getUserId().equals(userInfo.id())) {
+				log.warn("로그아웃 실패: requesterId={}, ownerId={}", userInfo.id(), token.getUserId());
+				return;
+			}
+			refreshTokenRepository.delete(token);
+			log.info("로그아웃 성공: userId={}", token.getUserId());
+		}, () -> log.info("로그아웃 완료(만료된 리프레시 토큰): userId={}", userInfo.id()));
 	}
 
 	public long deleteExpiredTokens() {
