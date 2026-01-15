@@ -47,6 +47,8 @@ public class AuthService {
 
 		Authentication authentication = jwtTokenProvider.getAuthentication(refreshToken);
 		UserInfo userInfo = UserInfo.from(authentication.getPrincipal());
+
+		log.info("토큰 재발급 성공: userId={}", userInfo.id());
 		return AuthTokens.of(
 			jwtTokenProvider.generateAccessToken(userInfo),
 			generateRefreshToken(authentication)

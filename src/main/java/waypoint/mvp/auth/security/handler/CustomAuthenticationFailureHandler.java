@@ -13,9 +13,11 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class CustomAuthenticationFailureHandler extends SimpleUrlAuthenticationFailureHandler {
 
 	@Value("${spring.security.oauth2.redirect-uri}")
@@ -30,6 +32,8 @@ public class CustomAuthenticationFailureHandler extends SimpleUrlAuthenticationF
 			// https://datatracker.ietf.org/doc/html/rfc6749
 			errorCode = e.getError().getErrorCode();
 		}
+
+		log.warn("소셜 로그인 실패: errorCode={}, message={}", errorCode, exception.getMessage());
 
 		String targetUrl = UriComponentsBuilder.fromUriString(redirectUri)
 			.queryParam("error_code", errorCode)

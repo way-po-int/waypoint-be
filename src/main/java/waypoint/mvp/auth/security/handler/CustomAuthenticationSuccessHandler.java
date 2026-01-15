@@ -14,12 +14,15 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import waypoint.mvp.auth.application.AuthService;
 import waypoint.mvp.auth.security.jwt.TokenInfo;
+import waypoint.mvp.auth.security.principal.CustomOidcUser;
 import waypoint.mvp.auth.util.CookieUtils;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class CustomAuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
 	private final AuthService authService;
@@ -35,6 +38,9 @@ public class CustomAuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 		TokenInfo refreshTokenInfo = authService.generateRefreshToken(authentication);
 		ResponseCookie cookie = cookieUtils.createRefreshToken(refreshTokenInfo.token());
 		response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+
+		CustomOidcUser oidcUser = (CustomOidcUser)authentication.getPrincipal();
+		log.info("소셜 로그인 성공: userId={}, provider={}", oidcUser.getId(), oidcUser.getProvider());
 
 		String targetUrl = UriComponentsBuilder.fromUriString(redirectUri)
 			.build().toUriString();
