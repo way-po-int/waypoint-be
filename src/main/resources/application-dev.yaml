@@ -7,6 +7,10 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
 
+cookie:
+  secure: true
+  same-site: None
+
 logging:
   level:
     waypoint.mvp: DEBUG

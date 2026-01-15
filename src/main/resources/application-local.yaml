@@ -7,6 +7,10 @@ spring:
         format_sql: true
         highlight_sql: true
 
+cookie:
+  secure: false
+  same-site: Lax
+
 logging:
   level:
     waypoint.mvp: DEBUG
