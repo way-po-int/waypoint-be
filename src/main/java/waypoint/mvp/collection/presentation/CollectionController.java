@@ -5,6 +5,7 @@ import java.net.URI;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import waypoint.mvp.auth.security.principal.UserInfo;
 import waypoint.mvp.collection.application.CollectionService;
 import waypoint.mvp.collection.application.dto.CollectionDto;
 import waypoint.mvp.collection.presentation.dto.CollectionCreateRequest;
@@ -30,8 +32,10 @@ public class CollectionController {
 	private final CollectionService collectionService;
 
 	@PostMapping
-	public ResponseEntity<Void> createCollection(@RequestBody @Valid CollectionCreateRequest request) {
-		Long collectionId = collectionService.createCollection(request);
+	public ResponseEntity<Void> createCollection(
+		@AuthenticationPrincipal UserInfo userInfo,
+		@RequestBody @Valid CollectionCreateRequest request) {
+		Long collectionId = collectionService.createCollection(request, userInfo);
 		return ResponseEntity.created(URI.create("/collections/" + collectionId)).build();
 	}
 
