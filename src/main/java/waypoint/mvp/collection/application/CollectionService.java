@@ -102,10 +102,10 @@ public class CollectionService {
 	@Transactional
 	public void acceptInvitation(String code, Long userId) {
 		ShareLink shareLink = shareLinkRepository.findByCode(code)
-			.orElseThrow(() -> new BusinessException(CollectionError.INVALID_INVITATION_TOKEN));
+			.orElseThrow(() -> new BusinessException(CollectionError.INVALID_INVITATION_LINK));
 
 		if (shareLink.isExpired() || shareLink.getTargetType() != ShareLinkType.COLLECTION) {
-			throw new BusinessException(CollectionError.INVALID_INVITATION_TOKEN);
+			throw new BusinessException(CollectionError.INVALID_INVITATION_LINK);
 		}
 
 		User user = userFinder.findById(userId);
