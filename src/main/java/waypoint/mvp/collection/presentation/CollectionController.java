@@ -19,10 +19,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.UserInfo;
 import waypoint.mvp.collection.application.CollectionService;
-import waypoint.mvp.collection.application.dto.CollectionDto;
-import waypoint.mvp.collection.presentation.dto.request.CollectionCreateRequest;
-import waypoint.mvp.collection.presentation.dto.request.CollectionUpdateRequest;
-import waypoint.mvp.collection.presentation.dto.response.CollectionResponse;
+import waypoint.mvp.collection.application.dto.request.CollectionCreateRequest;
+import waypoint.mvp.collection.application.dto.request.CollectionUpdateRequest;
+import waypoint.mvp.collection.application.dto.response.CollectionResponse;
 
 @RestController
 @RequiredArgsConstructor
@@ -41,14 +40,14 @@ public class CollectionController {
 
 	@GetMapping
 	public ResponseEntity<Page<CollectionResponse>> findCollections(Pageable pageable) {
-		Page<CollectionDto> collections = collectionService.findCollections(pageable);
-		return ResponseEntity.ok(collections.map(CollectionResponse::from));
+		Page<CollectionResponse> collections = collectionService.findCollections(pageable);
+		return ResponseEntity.ok(collections);
 	}
 
 	@GetMapping("/{collectionId}")
 	public ResponseEntity<CollectionResponse> findCollectionById(@PathVariable Long collectionId) {
-		CollectionDto collection = collectionService.findCollectionById(collectionId);
-		return ResponseEntity.ok(CollectionResponse.from(collection));
+		CollectionResponse collection = collectionService.findCollectionById(collectionId);
+		return ResponseEntity.ok(collection);
 	}
 
 	@PutMapping("/{collectionId}")

@@ -1,4 +1,4 @@
-package waypoint.mvp.collection.presentation.dto.request;
+package waypoint.mvp.collection.application.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 

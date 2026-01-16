@@ -8,13 +8,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.UserInfo;
-import waypoint.mvp.collection.application.dto.CollectionDto;
 import waypoint.mvp.collection.domain.Collection;
 import waypoint.mvp.collection.domain.event.CollectionCreatedEvent;
 import waypoint.mvp.collection.error.CollectionError;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionRepository;
-import waypoint.mvp.collection.presentation.dto.request.CollectionCreateRequest;
-import waypoint.mvp.collection.presentation.dto.request.CollectionUpdateRequest;
+import waypoint.mvp.collection.application.dto.request.CollectionCreateRequest;
+import waypoint.mvp.collection.application.dto.request.CollectionUpdateRequest;
+import waypoint.mvp.collection.application.dto.response.CollectionResponse;
 import waypoint.mvp.global.error.exception.BusinessException;
 
 @Service
@@ -35,14 +35,14 @@ public class CollectionService {
 		return collection.getId();
 	}
 
-	public Page<CollectionDto> findCollections(Pageable pageable) {
+	public Page<CollectionResponse> findCollections(Pageable pageable) {
 		return collectionRepository.findAll(pageable)
-			.map(CollectionDto::from);
+			.map(CollectionResponse::from);
 	}
 
-	public CollectionDto findCollectionById(Long collectionId) {
+	public CollectionResponse findCollectionById(Long collectionId) {
 		Collection collection = getCollection(collectionId);
-		return CollectionDto.from(collection);
+		return CollectionResponse.from(collection);
 	}
 
 	@Transactional
