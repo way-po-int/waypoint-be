@@ -73,7 +73,6 @@ public class CollectionService {
 	public CollectionResponse updateCollection(Long collectionId, CollectionUpdateRequest request) {
 		Collection collection = getCollection(collectionId);
 		collection.update(request.title());
-		collectionRepository.save(collection);
 
 		return CollectionResponse.from(collection);
 	}
