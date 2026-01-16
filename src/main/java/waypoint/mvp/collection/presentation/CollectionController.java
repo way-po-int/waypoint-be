@@ -17,11 +17,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import waypoint.mvp.auth.security.principal.CustomOidcUser;
 import waypoint.mvp.auth.security.principal.UserInfo;
 import waypoint.mvp.collection.application.CollectionService;
 import waypoint.mvp.collection.application.dto.request.CollectionCreateRequest;
 import waypoint.mvp.collection.application.dto.request.CollectionUpdateRequest;
 import waypoint.mvp.collection.application.dto.response.CollectionResponse;
+import waypoint.mvp.sharelink.application.dto.response.ShareLinkResponse;
 
 @RestController
 @RequiredArgsConstructor
@@ -31,9 +33,8 @@ public class CollectionController {
 	private final CollectionService collectionService;
 
 	@PostMapping
-	public ResponseEntity<CollectionResponse> createCollection(
-		@AuthenticationPrincipal UserInfo userInfo,
-		@RequestBody @Valid CollectionCreateRequest request) {
+	public ResponseEntity<CollectionResponse> createCollection(@RequestBody @Valid CollectionCreateRequest request,
+		@AuthenticationPrincipal UserInfo userInfo) {
 		CollectionResponse response = collectionService.createCollection(request, userInfo);
 		return ResponseEntity.created(URI.create("/collections/" + response.id()))
 			.body(response);
@@ -63,4 +64,14 @@ public class CollectionController {
 		collectionService.deleteCollection(collectionId);
 		return ResponseEntity.noContent().build();
 	}
+
+	@PostMapping("/{collectionId}/invitations")
+	public ResponseEntity<ShareLinkResponse> createInvitation(
+		@PathVariable Long collectionId,
+		@AuthenticationPrincipal CustomOidcUser user
+	) {
+		ShareLinkResponse response = collectionService.createInvitation(collectionId, user.getId());
+		return ResponseEntity.ok(response);
+	}
+
 }

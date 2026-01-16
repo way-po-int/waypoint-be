@@ -1,5 +1,9 @@
 package waypoint.mvp.collection.application;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.UUID;
+
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,13 +19,17 @@ import waypoint.mvp.collection.domain.Collection;
 import waypoint.mvp.collection.domain.CollectionMember;
 import waypoint.mvp.collection.domain.CollectionRole;
 import waypoint.mvp.collection.domain.event.CollectionCreatedEvent;
+import waypoint.mvp.collection.domain.service.CollectionAuthorizer;
 import waypoint.mvp.collection.error.CollectionError;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionMemberRepository;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionRepository;
 import waypoint.mvp.global.error.exception.BusinessException;
+import waypoint.mvp.sharelink.application.dto.response.ShareLinkResponse;
+import waypoint.mvp.sharelink.domain.ShareLink;
+import waypoint.mvp.sharelink.domain.ShareLink.ShareLinkType;
+import waypoint.mvp.sharelink.infrastructure.ShareLinkRepository;
+import waypoint.mvp.user.application.UserFinder;
 import waypoint.mvp.user.domain.User;
-import waypoint.mvp.user.error.UserError;
-import waypoint.mvp.user.infrastructure.persistence.UserRepository;
 
 @Service
 @Transactional(readOnly = true)
@@ -29,9 +37,11 @@ import waypoint.mvp.user.infrastructure.persistence.UserRepository;
 public class CollectionService {
 
 	private final CollectionRepository collectionRepository;
-	private final ApplicationEventPublisher eventPublisher;
-	private final UserRepository userRepository;
 	private final CollectionMemberRepository collectionMemberRepository;
+	private final ApplicationEventPublisher eventPublisher;
+	private final ShareLinkRepository shareLinkRepository;
+	private final UserFinder userFinder;
+	private final CollectionAuthorizer collectionAuthorizer;
 
 	@Transactional
 	public CollectionResponse createCollection(CollectionCreateRequest request, UserInfo user) {
@@ -56,9 +66,7 @@ public class CollectionService {
 	@Transactional
 	public void addCollectionMember(Long collectionId, Long userId) {
 		Collection collection = getCollection(collectionId);
-		User user = userRepository.findById(userId)
-			.orElseThrow(() -> new BusinessException(UserError.USER_NOT_FOUND));
-
+		User user = userFinder.findById(userId);
 		// TODO: 1. 이미 컬렉션에 속한 멤버인지 확인 & count 로직 추가
 
 		// TODO: 2. 컬렉션 최대 멤버 수 제한 로직 추가 (필요 시)
@@ -86,6 +94,23 @@ public class CollectionService {
 	private Collection getCollection(Long collectionId) {
 		return collectionRepository.findById(collectionId)
 			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
+	}
+
+	@Transactional
+	public ShareLinkResponse createInvitation(Long collectionId, Long hostUserId) {
+		Collection collection = getCollection(collectionId);
+		User hostUser = userFinder.findById(hostUserId);
+
+		collectionAuthorizer.verifyOwner(collection, hostUser);
+
+		String code = UUID.randomUUID().toString();
+		LocalDateTime expiresAt = LocalDateTime.now().plusHours(8);
+		ShareLink shareLink = ShareLink.create(code, ShareLinkType.COLLECTION, collectionId, hostUserId,
+			expiresAt.toInstant(ZoneOffset.of("+09:00")));
+
+		shareLinkRepository.save(shareLink);
+
+		return ShareLinkResponse.from(shareLink);
 	}
 
 }
