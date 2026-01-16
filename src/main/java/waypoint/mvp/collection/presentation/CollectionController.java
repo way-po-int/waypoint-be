@@ -31,11 +31,12 @@ public class CollectionController {
 	private final CollectionService collectionService;
 
 	@PostMapping
-	public ResponseEntity<Void> createCollection(
+	public ResponseEntity<CollectionResponse> createCollection(
 		@AuthenticationPrincipal UserInfo userInfo,
 		@RequestBody @Valid CollectionCreateRequest request) {
-		Long collectionId = collectionService.createCollection(request, userInfo);
-		return ResponseEntity.created(URI.create("/collections/" + collectionId)).build();
+		CollectionResponse response = collectionService.createCollection(request, userInfo);
+		return ResponseEntity.created(URI.create("/collections/" + response.id()))
+			.body(response);
 	}
 
 	@GetMapping
@@ -51,10 +52,10 @@ public class CollectionController {
 	}
 
 	@PutMapping("/{collectionId}")
-	public ResponseEntity<Void> updateCollection(@PathVariable Long collectionId,
+	public ResponseEntity<CollectionResponse> updateCollection(@PathVariable Long collectionId,
 		@RequestBody @Valid CollectionUpdateRequest request) {
-		collectionService.updateCollection(collectionId, request);
-		return ResponseEntity.noContent().build();
+		CollectionResponse response = collectionService.updateCollection(collectionId, request);
+		return ResponseEntity.ok(response);
 	}
 
 	@DeleteMapping("/{collectionId}")

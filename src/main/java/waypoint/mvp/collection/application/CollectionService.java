@@ -8,20 +8,20 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.UserInfo;
-import waypoint.mvp.collection.domain.Collection;
-import waypoint.mvp.collection.domain.event.CollectionCreatedEvent;
-import waypoint.mvp.collection.error.CollectionError;
-import waypoint.mvp.collection.domain.CollectionMember;
-import waypoint.mvp.collection.domain.CollectionRole;
-import waypoint.mvp.collection.infrastructure.persistence.CollectionMemberRepository;
-import waypoint.mvp.collection.infrastructure.persistence.CollectionRepository;
-import waypoint.mvp.user.domain.User;
-import waypoint.mvp.user.error.UserError;
-import waypoint.mvp.user.infrastructure.persistence.UserRepository;
 import waypoint.mvp.collection.application.dto.request.CollectionCreateRequest;
 import waypoint.mvp.collection.application.dto.request.CollectionUpdateRequest;
 import waypoint.mvp.collection.application.dto.response.CollectionResponse;
+import waypoint.mvp.collection.domain.Collection;
+import waypoint.mvp.collection.domain.CollectionMember;
+import waypoint.mvp.collection.domain.CollectionRole;
+import waypoint.mvp.collection.domain.event.CollectionCreatedEvent;
+import waypoint.mvp.collection.error.CollectionError;
+import waypoint.mvp.collection.infrastructure.persistence.CollectionMemberRepository;
+import waypoint.mvp.collection.infrastructure.persistence.CollectionRepository;
 import waypoint.mvp.global.error.exception.BusinessException;
+import waypoint.mvp.user.domain.User;
+import waypoint.mvp.user.error.UserError;
+import waypoint.mvp.user.infrastructure.persistence.UserRepository;
 
 @Service
 @Transactional(readOnly = true)
@@ -34,13 +34,13 @@ public class CollectionService {
 	private final CollectionMemberRepository collectionMemberRepository;
 
 	@Transactional
-	public Long createCollection(CollectionCreateRequest request, UserInfo user) {
+	public CollectionResponse createCollection(CollectionCreateRequest request, UserInfo user) {
 		Collection collection = Collection.create(request.title());
 		collectionRepository.save(collection);
 
 		eventPublisher.publishEvent(CollectionCreatedEvent.of(collection.getId(), user));
 
-		return collection.getId();
+		return CollectionResponse.from(collection);
 	}
 
 	public Page<CollectionResponse> findCollections(Pageable pageable) {
@@ -51,23 +51,6 @@ public class CollectionService {
 	public CollectionResponse findCollectionById(Long collectionId) {
 		Collection collection = getCollection(collectionId);
 		return CollectionResponse.from(collection);
-	}
-
-	@Transactional
-	public void updateCollection(Long collectionId, CollectionUpdateRequest request) {
-		Collection collection = getCollection(collectionId);
-		collection.update(request.title());
-	}
-
-	@Transactional
-	public void deleteCollection(Long collectionId) {
-		Collection collection = getCollection(collectionId);
-		collectionRepository.delete(collection);
-	}
-
-	private Collection getCollection(Long collectionId) {
-		return collectionRepository.findById(collectionId)
-			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
 	}
 
 	@Transactional
@@ -85,4 +68,25 @@ public class CollectionService {
 
 		collection.increaseMemberCount();
 	}
+
+	@Transactional
+	public CollectionResponse updateCollection(Long collectionId, CollectionUpdateRequest request) {
+		Collection collection = getCollection(collectionId);
+		collection.update(request.title());
+		collectionRepository.save(collection);
+
+		return CollectionResponse.from(collection);
+	}
+
+	@Transactional
+	public void deleteCollection(Long collectionId) {
+		Collection collection = getCollection(collectionId);
+		collectionRepository.delete(collection);
+	}
+
+	private Collection getCollection(Long collectionId) {
+		return collectionRepository.findById(collectionId)
+			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
+	}
+
 }
