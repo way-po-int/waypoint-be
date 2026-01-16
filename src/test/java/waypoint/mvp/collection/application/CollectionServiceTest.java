@@ -15,7 +15,7 @@ import waypoint.mvp.collection.domain.CollectionMember;
 import waypoint.mvp.collection.domain.CollectionRole;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionMemberRepository;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionRepository;
-import waypoint.mvp.collection.presentation.dto.CollectionCreateRequest;
+import waypoint.mvp.collection.presentation.dto.request.CollectionCreateRequest;
 import waypoint.mvp.global.annotation.ServiceTest;
 import waypoint.mvp.user.domain.Provider;
 import waypoint.mvp.user.domain.SocialAccount;

@@ -12,8 +12,8 @@ import waypoint.mvp.collection.application.dto.CollectionDto;
 import waypoint.mvp.collection.domain.Collection;
 import waypoint.mvp.collection.domain.event.CollectionCreatedEvent;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionRepository;
-import waypoint.mvp.collection.presentation.dto.CollectionCreateRequest;
-import waypoint.mvp.collection.presentation.dto.CollectionUpdateRequest;
+import waypoint.mvp.collection.presentation.dto.request.CollectionCreateRequest;
+import waypoint.mvp.collection.presentation.dto.request.CollectionUpdateRequest;
 
 @Service
 @Transactional(readOnly = true)

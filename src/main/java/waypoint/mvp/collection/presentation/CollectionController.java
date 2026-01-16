@@ -20,8 +20,8 @@ import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.UserInfo;
 import waypoint.mvp.collection.application.CollectionService;
 import waypoint.mvp.collection.application.dto.CollectionDto;
-import waypoint.mvp.collection.presentation.dto.CollectionCreateRequest;
-import waypoint.mvp.collection.presentation.dto.CollectionUpdateRequest;
+import waypoint.mvp.collection.presentation.dto.request.CollectionCreateRequest;
+import waypoint.mvp.collection.presentation.dto.request.CollectionUpdateRequest;
 import waypoint.mvp.collection.presentation.dto.response.CollectionResponse;
 
 @RestController
