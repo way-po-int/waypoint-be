@@ -25,14 +25,31 @@ public class Collection extends BaseTimeEntity {
 	@Column(nullable = false)
 	private String title;
 
+	@Column(nullable = false)
+	private int memberCount = 0;
+
 	@Builder(access = AccessLevel.PRIVATE)
-	private Collection(String title) {
+	private Collection(String title, int memberCount) {
 		this.title = title;
+		this.memberCount = memberCount;
 	}
 
 	public static Collection create(String title) {
 		return builder()
 			.title(title)
+			.memberCount(1)
 			.build();
+	}
+
+	public void update(String title) {
+		this.title = title;
+	}
+
+	public void increaseMemberCount() {
+		this.memberCount++;
+	}
+
+	public void decreaseMemberCount() {
+		this.memberCount--;
 	}
 }
