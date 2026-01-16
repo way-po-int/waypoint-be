@@ -87,7 +87,7 @@ public class CollectionService {
 		Collection collection = getCollection(collectionId);
 		User hostUser = userFinder.findById(hostUserId);
 
-		collectionAuthorizer.verifyOwner(collection, hostUser);
+		collectionAuthorizer.verifyMember(collection, hostUser);
 
 		String code = UUID.randomUUID().toString();
 		LocalDateTime expiresAt = LocalDateTime.now().plusHours(8);
