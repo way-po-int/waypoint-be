@@ -31,13 +31,13 @@ public class ShareLink extends BaseTimeEntity {
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
-	private TargetType targetType;
+	private ShareLinkType targetType;
 
 	@Column(nullable = false)
 	private Long targetId;
 
 	@Column(nullable = false)
-	private Long creatorId;
+	private Long hostUserId;
 
 	@Column(nullable = false)
 	private int useCount;
@@ -46,27 +46,27 @@ public class ShareLink extends BaseTimeEntity {
 	private Instant expiresAt;
 
 	@Builder(access = AccessLevel.PRIVATE)
-	private ShareLink(String code, TargetType targetType, Long targetId, Long creatorId, Instant expiresAt) {
+	private ShareLink(String code, ShareLinkType targetType, Long targetId, Long hostUserId, Instant expiresAt) {
 		this.code = code;
 		this.targetType = targetType;
 		this.targetId = targetId;
-		this.creatorId = creatorId;
+		this.hostUserId = hostUserId;
 		this.useCount = 0;
 		this.expiresAt = expiresAt;
 	}
 
-	public static ShareLink create(String code, TargetType targetType, Long targetId, Long creatorId,
+	public static ShareLink create(String code, ShareLinkType targetType, Long targetId, Long hostUserId,
 		Instant expiresAt) {
 		return builder()
 			.code(code)
 			.targetType(targetType)
 			.targetId(targetId)
-			.creatorId(creatorId)
+			.hostUserId(hostUserId)
 			.expiresAt(expiresAt)
 			.build();
 	}
 
-	public enum TargetType {
+	public enum ShareLinkType {
 		COLLECTION,
 		PROJECT
 	}
