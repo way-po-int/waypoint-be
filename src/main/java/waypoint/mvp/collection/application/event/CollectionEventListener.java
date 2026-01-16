@@ -14,6 +14,7 @@ import waypoint.mvp.collection.infrastructure.persistence.CollectionMemberReposi
 import waypoint.mvp.collection.infrastructure.persistence.CollectionRepository;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.user.domain.User;
+import waypoint.mvp.user.error.UserError;
 import waypoint.mvp.user.infrastructure.persistence.UserRepository;
 
 @Component
@@ -30,7 +31,7 @@ public class CollectionEventListener {
 			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
 
 		User user = userRepository.findById(event.user().id())
-			.orElseThrow(() -> new IllegalArgumentException("User not found"));
+			.orElseThrow(() -> new BusinessException(UserError.USER_NOT_FOUND));
 
 		CollectionMember collectionMember = CollectionMember.create(collection, user, CollectionRole.OWNER);
 		collectionMemberRepository.save(collectionMember);
