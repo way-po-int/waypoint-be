@@ -70,4 +70,12 @@ public class ShareLink extends BaseTimeEntity {
 		COLLECTION,
 		PROJECT
 	}
+
+	public void increaseUseCount() {
+		this.useCount++;
+	}
+
+	public boolean isExpired() {
+		return Instant.now().isAfter(expiresAt);
+	}
 }

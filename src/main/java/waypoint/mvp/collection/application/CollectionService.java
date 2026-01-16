@@ -64,20 +64,6 @@ public class CollectionService {
 	}
 
 	@Transactional
-	public void addCollectionMember(Long collectionId, Long userId) {
-		Collection collection = getCollection(collectionId);
-		User user = userFinder.findById(userId);
-		// TODO: 1. 이미 컬렉션에 속한 멤버인지 확인 & count 로직 추가
-
-		// TODO: 2. 컬렉션 최대 멤버 수 제한 로직 추가 (필요 시)
-
-		CollectionMember newMember = CollectionMember.create(collection, user, CollectionRole.MEMBER);
-		collectionMemberRepository.save(newMember);
-
-		collection.increaseMemberCount();
-	}
-
-	@Transactional
 	public CollectionResponse updateCollection(Long collectionId, CollectionUpdateRequest request) {
 		Collection collection = getCollection(collectionId);
 		collection.update(request.title());
@@ -113,4 +99,28 @@ public class CollectionService {
 		return ShareLinkResponse.from(shareLink);
 	}
 
+	@Transactional
+	public void acceptInvitation(String code, Long userId) {
+		ShareLink shareLink = shareLinkRepository.findByCode(code)
+			.orElseThrow(() -> new BusinessException(CollectionError.INVALID_INVITATION_TOKEN));
+
+		if (shareLink.isExpired() || shareLink.getTargetType() != ShareLinkType.COLLECTION) {
+			throw new BusinessException(CollectionError.INVALID_INVITATION_TOKEN);
+		}
+
+		User user = userFinder.findById(userId);
+		Collection collection = getCollection(shareLink.getTargetId());
+		addCollectionMember(collection, user);
+
+		shareLink.increaseUseCount();
+	}
+
+	private void addCollectionMember(Collection collection, User user) {
+		collectionAuthorizer.checkIfMemberExists(collection, user);
+
+		CollectionMember newMember = CollectionMember.create(collection, user, CollectionRole.MEMBER);
+		collectionMemberRepository.save(newMember);
+
+		collection.increaseMemberCount();
+	}
 }

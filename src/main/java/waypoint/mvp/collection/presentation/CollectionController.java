@@ -74,4 +74,12 @@ public class CollectionController {
 		return ResponseEntity.ok(response);
 	}
 
+	@PostMapping("/invitations/{token}")
+	public ResponseEntity<Void> acceptInvitation(
+		@PathVariable String token,
+		@AuthenticationPrincipal CustomOidcUser user
+	) {
+		collectionService.acceptInvitation(token, user.getId());
+		return ResponseEntity.ok().build();
+	}
 }
