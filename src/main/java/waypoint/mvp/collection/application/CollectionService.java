@@ -41,23 +41,24 @@ public class CollectionService {
 	}
 
 	public CollectionDto findCollectionById(Long collectionId) {
-		return collectionRepository.findById(collectionId)
-			.map(CollectionDto::from)
-			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
+		Collection collection = getCollection(collectionId);
+		return CollectionDto.from(collection);
 	}
 
 	@Transactional
 	public void updateCollection(Long collectionId, CollectionUpdateRequest request) {
-		Collection collection = collectionRepository.findById(collectionId)
-			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
+		Collection collection = getCollection(collectionId);
 		collection.update(request.title());
 	}
 
 	@Transactional
 	public void deleteCollection(Long collectionId) {
-		if (!collectionRepository.existsById(collectionId)) {
-			throw new BusinessException(CollectionError.COLLECTION_NOT_FOUND);
-		}
-		collectionRepository.deleteById(collectionId);
+		Collection collection = getCollection(collectionId);
+		collectionRepository.delete(collection);
+	}
+
+	private Collection getCollection(Long collectionId) {
+		return collectionRepository.findById(collectionId)
+			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
 	}
 }
