@@ -11,9 +11,11 @@ import waypoint.mvp.auth.security.principal.UserInfo;
 import waypoint.mvp.collection.application.dto.CollectionDto;
 import waypoint.mvp.collection.domain.Collection;
 import waypoint.mvp.collection.domain.event.CollectionCreatedEvent;
+import waypoint.mvp.collection.error.CollectionError;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionRepository;
 import waypoint.mvp.collection.presentation.dto.request.CollectionCreateRequest;
 import waypoint.mvp.collection.presentation.dto.request.CollectionUpdateRequest;
+import waypoint.mvp.global.error.exception.BusinessException;
 
 @Service
 @Transactional(readOnly = true)
@@ -41,18 +43,21 @@ public class CollectionService {
 	public CollectionDto findCollectionById(Long collectionId) {
 		return collectionRepository.findById(collectionId)
 			.map(CollectionDto::from)
-			.orElseThrow(() -> new IllegalArgumentException("Collection not found"));
+			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
 	}
 
 	@Transactional
 	public void updateCollection(Long collectionId, CollectionUpdateRequest request) {
 		Collection collection = collectionRepository.findById(collectionId)
-			.orElseThrow(() -> new IllegalArgumentException("Collection not found"));
+			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
 		collection.update(request.title());
 	}
 
 	@Transactional
 	public void deleteCollection(Long collectionId) {
+		if (!collectionRepository.existsById(collectionId)) {
+			throw new BusinessException(CollectionError.COLLECTION_NOT_FOUND);
+		}
 		collectionRepository.deleteById(collectionId);
 	}
 }
