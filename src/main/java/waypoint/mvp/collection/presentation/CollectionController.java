@@ -23,6 +23,7 @@ import waypoint.mvp.collection.application.CollectionService;
 import waypoint.mvp.collection.application.dto.request.CollectionCreateRequest;
 import waypoint.mvp.collection.application.dto.request.CollectionUpdateRequest;
 import waypoint.mvp.collection.application.dto.response.CollectionResponse;
+import waypoint.mvp.collection.application.dto.response.InvitationAcceptanceResponse;
 import waypoint.mvp.sharelink.application.dto.response.ShareLinkResponse;
 
 @RestController
@@ -75,11 +76,11 @@ public class CollectionController {
 	}
 
 	@PostMapping("/invitations/{token}")
-	public ResponseEntity<Void> acceptInvitation(
+	public ResponseEntity<InvitationAcceptanceResponse> acceptInvitation(
 		@PathVariable String token,
 		@AuthenticationPrincipal CustomOidcUser user
 	) {
-		collectionService.acceptInvitation(token, user.getId());
-		return ResponseEntity.ok().build();
+		Long collectionId = collectionService.acceptInvitation(token, user.getId());
+		return ResponseEntity.ok(InvitationAcceptanceResponse.from(collectionId));
 	}
 }

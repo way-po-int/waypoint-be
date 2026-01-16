@@ -100,7 +100,7 @@ public class CollectionService {
 	}
 
 	@Transactional
-	public void acceptInvitation(String code, Long userId) {
+	public Long acceptInvitation(String code, Long inviteeUserId) {
 		ShareLink shareLink = shareLinkRepository.findByCode(code)
 			.orElseThrow(() -> new BusinessException(CollectionError.INVALID_INVITATION_LINK));
 
@@ -108,11 +108,13 @@ public class CollectionService {
 			throw new BusinessException(CollectionError.INVALID_INVITATION_LINK);
 		}
 
-		User user = userFinder.findById(userId);
+		User inviteeUser = userFinder.findById(inviteeUserId);
 		Collection collection = getCollection(shareLink.getTargetId());
-		addCollectionMember(collection, user);
+		addCollectionMember(collection, inviteeUser);
 
 		shareLink.increaseUseCount();
+
+		return collection.getId();
 	}
 
 	private void addCollectionMember(Collection collection, User user) {
