@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -47,8 +48,12 @@ public class CollectionController {
 	}
 
 	@GetMapping("/{collectionId}")
-	public ResponseEntity<CollectionResponse> findCollectionById(@PathVariable Long collectionId) {
-		CollectionResponse collection = collectionService.findCollectionById(collectionId);
+	public ResponseEntity<CollectionResponse> findCollectionById(
+		@PathVariable Long collectionId,
+		@AuthenticationPrincipal UserInfo userInfo,
+		@CookieValue(name = "waypoint-guest", required = false) String guestToken
+	) {
+		CollectionResponse collection = collectionService.findCollectionById(collectionId, userInfo, guestToken);
 		return ResponseEntity.ok(collection);
 	}
 

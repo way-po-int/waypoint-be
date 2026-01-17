@@ -24,6 +24,7 @@ import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.sharelink.application.dto.response.ShareLinkResponse;
 import waypoint.mvp.sharelink.domain.ShareLink;
 import waypoint.mvp.sharelink.domain.ShareLink.ShareLinkType;
+import waypoint.mvp.sharelink.domain.service.ShareLinkAuthorizer;
 import waypoint.mvp.sharelink.infrastructure.ShareLinkRepository;
 import waypoint.mvp.user.application.UserFinder;
 import waypoint.mvp.user.domain.User;
@@ -36,6 +37,7 @@ public class CollectionService {
 	private final CollectionRepository collectionRepository;
 	private final CollectionMemberRepository collectionMemberRepository;
 	private final ApplicationEventPublisher eventPublisher;
+	private final ShareLinkAuthorizer shareLinkAuthorizer;
 	private final ShareLinkRepository shareLinkRepository;
 	private final UserFinder userFinder;
 	private final CollectionAuthorizer collectionAuthorizer;
@@ -58,8 +60,18 @@ public class CollectionService {
 			.map(CollectionResponse::from);
 	}
 
-	public CollectionResponse findCollectionById(Long collectionId) {
+	public CollectionResponse findCollectionById(Long collectionId, UserInfo userInfo, String guestToken) {
 		Collection collection = getCollection(collectionId);
+
+		if (userInfo != null) {
+			User user = userFinder.findById(userInfo.id());
+			collectionAuthorizer.verifyMember(collection, user);
+		} else if (guestToken != null) {
+			shareLinkAuthorizer.verifyGuestAccess(collectionId, guestToken);
+		} else {
+			throw new BusinessException(CollectionError.FORBIDDEN_NOT_GUEST);
+		}
+
 		return CollectionResponse.from(collection);
 	}
 
