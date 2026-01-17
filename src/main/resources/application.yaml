@@ -61,3 +61,7 @@ jwt:
 
 server:
   forward-headers-strategy: framework
+
+waypoint:
+  invitation:
+    expiration-hours: ${WAYPOINT_INVITATION_EXPIRATION_HOURS:8}

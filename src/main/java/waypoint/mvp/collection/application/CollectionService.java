@@ -1,5 +1,6 @@
 package waypoint.mvp.collection.application;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,13 +16,17 @@ import waypoint.mvp.collection.domain.Collection;
 import waypoint.mvp.collection.domain.CollectionMember;
 import waypoint.mvp.collection.domain.CollectionRole;
 import waypoint.mvp.collection.domain.event.CollectionCreatedEvent;
+import waypoint.mvp.collection.domain.service.CollectionAuthorizer;
 import waypoint.mvp.collection.error.CollectionError;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionMemberRepository;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionRepository;
 import waypoint.mvp.global.error.exception.BusinessException;
+import waypoint.mvp.sharelink.application.dto.response.ShareLinkResponse;
+import waypoint.mvp.sharelink.domain.ShareLink;
+import waypoint.mvp.sharelink.domain.ShareLink.ShareLinkType;
+import waypoint.mvp.sharelink.infrastructure.ShareLinkRepository;
+import waypoint.mvp.user.application.UserFinder;
 import waypoint.mvp.user.domain.User;
-import waypoint.mvp.user.error.UserError;
-import waypoint.mvp.user.infrastructure.persistence.UserRepository;
 
 @Service
 @Transactional(readOnly = true)
@@ -29,9 +34,14 @@ import waypoint.mvp.user.infrastructure.persistence.UserRepository;
 public class CollectionService {
 
 	private final CollectionRepository collectionRepository;
-	private final ApplicationEventPublisher eventPublisher;
-	private final UserRepository userRepository;
 	private final CollectionMemberRepository collectionMemberRepository;
+	private final ApplicationEventPublisher eventPublisher;
+	private final ShareLinkRepository shareLinkRepository;
+	private final UserFinder userFinder;
+	private final CollectionAuthorizer collectionAuthorizer;
+
+	@Value("${waypoint.invitation.expiration-hours}")
+	private long invitationExpirationHours;
 
 	@Transactional
 	public CollectionResponse createCollection(CollectionCreateRequest request, UserInfo user) {
@@ -54,22 +64,6 @@ public class CollectionService {
 	}
 
 	@Transactional
-	public void addCollectionMember(Long collectionId, Long userId) {
-		Collection collection = getCollection(collectionId);
-		User user = userRepository.findById(userId)
-			.orElseThrow(() -> new BusinessException(UserError.USER_NOT_FOUND));
-
-		// TODO: 1. 이미 컬렉션에 속한 멤버인지 확인 & count 로직 추가
-
-		// TODO: 2. 컬렉션 최대 멤버 수 제한 로직 추가 (필요 시)
-
-		CollectionMember newMember = CollectionMember.create(collection, user, CollectionRole.MEMBER);
-		collectionMemberRepository.save(newMember);
-
-		collection.increaseMemberCount();
-	}
-
-	@Transactional
 	public CollectionResponse updateCollection(Long collectionId, CollectionUpdateRequest request) {
 		Collection collection = getCollection(collectionId);
 		collection.update(request.title());
@@ -88,4 +82,49 @@ public class CollectionService {
 			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
 	}
 
+	@Transactional
+	public ShareLinkResponse createInvitation(Long collectionId, Long hostUserId) {
+		Collection collection = getCollection(collectionId);
+		User hostUser = userFinder.findById(hostUserId);
+
+		collectionAuthorizer.verifyMember(collection, hostUser);
+
+		ShareLink shareLink = ShareLink.create(ShareLinkType.COLLECTION, collectionId, hostUserId,
+			invitationExpirationHours);
+
+		shareLinkRepository.save(shareLink);
+
+		return ShareLinkResponse.from(shareLink);
+	}
+
+	@Transactional
+	public Long acceptInvitation(String code, Long inviteeUserId) {
+		ShareLink shareLink = shareLinkRepository.findByCode(code)
+			.orElseThrow(() -> new BusinessException(CollectionError.INVALID_INVITATION_LINK));
+
+		if (shareLink.isExpired()) {
+			throw new BusinessException(CollectionError.EXPIRED_INVITATION_LINK);
+		}
+
+		if (shareLink.getTargetType() != ShareLinkType.COLLECTION) {
+			throw new BusinessException(CollectionError.INVALID_INVITATION_LINK);
+		}
+
+		User inviteeUser = userFinder.findById(inviteeUserId);
+		Collection collection = getCollection(shareLink.getTargetId());
+		addCollectionMember(collection, inviteeUser);
+
+		shareLink.increaseUseCount();
+
+		return collection.getId();
+	}
+
+	private void addCollectionMember(Collection collection, User user) {
+		collectionAuthorizer.checkIfMemberExists(collection, user);
+
+		CollectionMember newMember = CollectionMember.create(collection, user, CollectionRole.MEMBER);
+		collectionMemberRepository.save(newMember);
+
+		collection.increaseMemberCount();
+	}
 }
