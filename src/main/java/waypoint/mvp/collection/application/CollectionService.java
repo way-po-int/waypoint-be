@@ -102,7 +102,11 @@ public class CollectionService {
 		ShareLink shareLink = shareLinkRepository.findByCode(code)
 			.orElseThrow(() -> new BusinessException(CollectionError.INVALID_INVITATION_LINK));
 
-		if (shareLink.isExpired() || shareLink.getTargetType() != ShareLinkType.COLLECTION) {
+		if (shareLink.isExpired()) {
+			throw new BusinessException(CollectionError.EXPIRED_INVITATION_LINK);
+		}
+
+		if (shareLink.getTargetType() != ShareLinkType.COLLECTION) {
 			throw new BusinessException(CollectionError.INVALID_INVITATION_LINK);
 		}
 
