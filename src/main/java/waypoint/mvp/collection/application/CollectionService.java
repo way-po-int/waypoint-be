@@ -67,7 +67,7 @@ public class CollectionService {
 			User user = userFinder.findById(userInfo.id());
 			collectionAuthorizer.verifyMember(collection, user);
 		} else if (guestToken != null) {
-			shareLinkAuthorizer.verifyGuestAccess(collectionId, guestToken);
+			shareLinkAuthorizer.verifyAccess(collectionId, guestToken, ShareLinkType.COLLECTION);
 		} else {
 			throw new BusinessException(CollectionError.FORBIDDEN_NOT_GUEST);
 		}
