@@ -4,7 +4,7 @@ import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.collection.domain.Collection;
-import waypoint.mvp.collection.domain.CollectionRole;
+import waypoint.mvp.collection.domain.CollectionMember;
 import waypoint.mvp.collection.error.CollectionError;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionMemberRepository;
 import waypoint.mvp.global.error.exception.BusinessException;
@@ -18,18 +18,19 @@ public class CollectionAuthorizer {
 
 	public void verifyOwner(Collection collection, User user) {
 		memberRepository.findByCollectionAndUser(collection, user)
-			.filter(member -> member.getRole() == CollectionRole.OWNER)
+			.filter(CollectionMember::isOwner)
 			.orElseThrow(() -> new BusinessException(CollectionError.FORBIDDEN_NOT_OWNER));
 	}
 
 	public void verifyMember(Collection collection, User user) {
-		memberRepository.findByCollectionAndUser(collection, user)
-			.orElseThrow(() -> new BusinessException(CollectionError.FORBIDDEN_NOT_MEMBER));
+		if (!memberRepository.existsByCollectionAndUser(collection, user)) {
+			throw new BusinessException(CollectionError.FORBIDDEN_NOT_MEMBER);
+		}
 	}
 
 	public void checkIfMemberExists(Collection collection, User user) {
-		memberRepository.findByCollectionAndUser(collection, user).ifPresent(member -> {
+		if (memberRepository.existsByCollectionAndUser(collection, user)) {
 			throw new BusinessException(CollectionError.MEMBER_ALREADY_EXISTS);
-		});
+		}
 	}
 }

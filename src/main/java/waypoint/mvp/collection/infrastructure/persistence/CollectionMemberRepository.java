@@ -13,4 +13,6 @@ public interface CollectionMemberRepository extends JpaRepository<CollectionMemb
 	Optional<CollectionMember> findByCollectionAndUser(Collection collection, User user);
 
 	Optional<CollectionMember> findByCollectionIdAndUserId(Long collectionId, Long userId);
+
+	boolean existsByCollectionAndUser(Collection collection, User user);
 }

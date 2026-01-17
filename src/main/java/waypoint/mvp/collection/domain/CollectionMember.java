@@ -71,4 +71,8 @@ public class CollectionMember extends BaseTimeEntity {
 			.role(role)
 			.build();
 	}
+
+	public boolean isOwner() {
+		return this.role == CollectionRole.OWNER;
+	}
 }
