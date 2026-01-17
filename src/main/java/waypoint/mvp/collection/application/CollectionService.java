@@ -1,9 +1,6 @@
 package waypoint.mvp.collection.application;
 
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.util.UUID;
-
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -42,6 +39,9 @@ public class CollectionService {
 	private final ShareLinkRepository shareLinkRepository;
 	private final UserFinder userFinder;
 	private final CollectionAuthorizer collectionAuthorizer;
+
+	@Value("${waypoint.invitation.expiration-hours}")
+	private long invitationExpirationHours;
 
 	@Transactional
 	public CollectionResponse createCollection(CollectionCreateRequest request, UserInfo user) {
@@ -89,10 +89,8 @@ public class CollectionService {
 
 		collectionAuthorizer.verifyMember(collection, hostUser);
 
-		String code = UUID.randomUUID().toString();
-		LocalDateTime expiresAt = LocalDateTime.now().plusHours(8);
-		ShareLink shareLink = ShareLink.create(code, ShareLinkType.COLLECTION, collectionId, hostUserId,
-			expiresAt.toInstant(ZoneOffset.of("+09:00")));
+		ShareLink shareLink = ShareLink.create(ShareLinkType.COLLECTION, collectionId, hostUserId,
+			invitationExpirationHours);
 
 		shareLinkRepository.save(shareLink);
 
