@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import waypoint.mvp.auth.security.principal.CustomOidcUser;
 import waypoint.mvp.auth.security.principal.UserInfo;
 import waypoint.mvp.collection.application.CollectionService;
 import waypoint.mvp.collection.application.dto.request.CollectionCreateRequest;
@@ -69,18 +68,18 @@ public class CollectionController {
 	@PostMapping("/{collectionId}/invitations")
 	public ResponseEntity<ShareLinkResponse> createInvitation(
 		@PathVariable Long collectionId,
-		@AuthenticationPrincipal CustomOidcUser user
+		@AuthenticationPrincipal UserInfo userInfo
 	) {
-		ShareLinkResponse response = collectionService.createInvitation(collectionId, user.getId());
+		ShareLinkResponse response = collectionService.createInvitation(collectionId, userInfo.id());
 		return ResponseEntity.ok(response);
 	}
 
 	@PostMapping("/invitations/{token}")
 	public ResponseEntity<InvitationAcceptanceResponse> acceptInvitation(
 		@PathVariable String token,
-		@AuthenticationPrincipal CustomOidcUser user
+		@AuthenticationPrincipal UserInfo userInfo
 	) {
-		Long collectionId = collectionService.acceptInvitation(token, user.getId());
+		Long collectionId = collectionService.acceptInvitation(token, userInfo.id());
 		return ResponseEntity.ok(InvitationAcceptanceResponse.from(collectionId));
 	}
 }
