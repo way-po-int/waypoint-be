@@ -110,14 +110,7 @@ public class CollectionService {
 	}
 
 	@Transactional
-	public Long acceptInvitation(String code, Long inviteeUserId) {
-		ShareLink shareLink = shareLinkRepository.findByCode(code)
-			.orElseThrow(() -> new BusinessException(CollectionError.INVALID_INVITATION_LINK));
-
-		if (shareLink.isExpired()) {
-			throw new BusinessException(CollectionError.EXPIRED_INVITATION_LINK);
-		}
-
+	public Long addMemberFromShareLink(ShareLink shareLink, Long inviteeUserId) {
 		if (shareLink.getTargetType() != ShareLinkType.COLLECTION) {
 			throw new BusinessException(CollectionError.INVALID_INVITATION_LINK);
 		}

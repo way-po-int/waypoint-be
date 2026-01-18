@@ -53,6 +53,12 @@ public class ShareLinkService {
 			.orElseThrow(() -> new BusinessException(CollectionError.INVALID_INVITATION_LINK));
 	}
 
+	@Transactional
+	public void acceptInvitation(String code, Long userId) {
+		ShareLink shareLink = findValidLink(code);
+		acceptInvitationForTarget(shareLink, userId);
+	}
+
 	public ShareLink findValidLink(String code) {
 		ShareLink shareLink = findShareLinkByCode(code);
 
@@ -65,7 +71,7 @@ public class ShareLinkService {
 	private void acceptInvitationForTarget(ShareLink shareLink, Long userId) {
 		switch (shareLink.getTargetType()) {
 			case COLLECTION:
-				collectionService.acceptInvitation(shareLink.getCode(), userId);
+				collectionService.addMemberFromShareLink(shareLink, userId);
 				break;
 			default:
 				throw new BusinessException(CollectionError.INVALID_INVITATION_LINK);

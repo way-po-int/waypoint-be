@@ -21,7 +21,7 @@ import waypoint.mvp.auth.application.AuthService;
 import waypoint.mvp.auth.security.jwt.TokenInfo;
 import waypoint.mvp.auth.security.principal.CustomOidcUser;
 import waypoint.mvp.auth.util.CookieUtils;
-import waypoint.mvp.collection.application.CollectionService;
+import waypoint.mvp.sharelink.application.ShareLinkService;
 import waypoint.mvp.global.error.exception.BusinessException;
 
 @Component
@@ -31,7 +31,7 @@ public class CustomAuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
 	private final AuthService authService;
 	private final CookieUtils cookieUtils;
-	private final CollectionService collectionService;
+	private final ShareLinkService shareLinkService;
 
 	@Value("${waypoint.cookie.guest-access-token-name}")
 	private String guestCookieName;
@@ -55,7 +55,7 @@ public class CustomAuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 		if (guestCookie.isPresent()) {
 			String shareLinkCode = guestCookie.get().getValue();
 			try {
-				collectionService.acceptInvitation(shareLinkCode, oidcUser.getId());
+				shareLinkService.acceptInvitation(shareLinkCode, oidcUser.getId());
 				log.info("게스트 초대 자동 수락 성공: userId={}, shareLinkCode={}", oidcUser.getId(), shareLinkCode);
 			} catch (BusinessException e) {
 				log.warn("게스트 초대 자동 수락 중 비즈니스 예외 발생 (로그인 흐름 유지): {}", e.getMessage());
