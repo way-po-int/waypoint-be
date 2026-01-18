@@ -71,3 +71,10 @@ waypoint:
     guest-access-token-name: "waypoint_guest"
     guest-access-token-max-age-seconds: 604800 # 7일
     refresh-token-name: "refresh_token"
+
+google:
+  places:
+    api-key: ${GOOGLE_PLACES_API_KEY:}
+    base-url: https://places.googleapis.com
+    text-search-path: /v1/places:searchText
+    details-path: /v1/places/{placeId}
