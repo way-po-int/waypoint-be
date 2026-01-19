@@ -7,21 +7,17 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.UserInfo;
 import waypoint.mvp.collection.application.CollectionService;
-import waypoint.mvp.collection.error.CollectionError;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.sharelink.domain.ShareLink;
+import waypoint.mvp.sharelink.domain.ShareLink.ShareLinkType;
+import waypoint.mvp.sharelink.error.ShareLinkError;
 import waypoint.mvp.sharelink.infrastructure.ShareLinkRepository;
 
 @Service
 @Transactional
 @RequiredArgsConstructor
 public class ShareLinkService {
-	/**
-	 * TODO: 리팩토링 필요
-	 * 1. switch + default 예외가 여러 군데 반복됨
-	 * 2. HttpServletResponse가 서비스 계층에 있음
-	 * 3. Service가 “어떻게 쿠키를 만든다”까지 알고 있음
-	 */
+
 	private final ShareLinkRepository shareLinkRepository;
 	private final CollectionService collectionService;
 
@@ -52,7 +48,7 @@ public class ShareLinkService {
 
 	public ShareLink findShareLinkByCode(String code) {
 		return shareLinkRepository.findByCode(code)
-			.orElseThrow(() -> new BusinessException(CollectionError.INVALID_INVITATION_LINK));
+			.orElseThrow(() -> new BusinessException(ShareLinkError.INVALID_INVITATION_LINK));
 	}
 
 	@Transactional
@@ -65,7 +61,7 @@ public class ShareLinkService {
 		ShareLink shareLink = findShareLinkByCode(code);
 
 		if (shareLink.isExpired()) {
-			throw new BusinessException(CollectionError.EXPIRED_INVITATION_LINK);
+			throw new BusinessException(ShareLinkError.EXPIRED_INVITATION_LINK);
 		}
 		return shareLink;
 	}
@@ -76,14 +72,16 @@ public class ShareLinkService {
 				collectionService.addMemberFromShareLink(shareLink, userId);
 				break;
 			default:
-				throw new BusinessException(CollectionError.INVALID_INVITATION_LINK);
+				throw new BusinessException(ShareLinkError.INVALID_INVITATION_LINK);
 		}
 	}
 
 	private String buildRedirectUrl(ShareLink shareLink) {
-		String path = switch (shareLink.getTargetType()) {
-			case COLLECTION -> "/collections/";
-			default -> throw new BusinessException(CollectionError.INVALID_INVITATION_LINK);
+		ShareLinkType shareLinkType = shareLink.getTargetType();
+
+		String path = switch (shareLinkType) {
+			case COLLECTION -> shareLinkType.getPath();
+			default -> throw new BusinessException(ShareLinkError.INVALID_INVITATION_LINK);
 		};
 		return frontendBaseUrl + path + shareLink.getTargetId();
 	}
