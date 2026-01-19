@@ -1,11 +1,9 @@
 package waypoint.mvp.sharelink.application;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.UserInfo;
 import waypoint.mvp.collection.application.CollectionService;
@@ -27,25 +25,29 @@ public class ShareLinkService {
 	private final ShareLinkRepository shareLinkRepository;
 	private final CollectionService collectionService;
 
-	@Value("${waypoint.cookie.guest-access-token-name}")
-	private String guestCookieName;
-
-	@Value("${waypoint.cookie.guest-access-token-max-age-seconds}")
-	private long guestCookieMaxAgeSeconds;
-
 	@Value("${waypoint.frontend.base-url}")
 	private String frontendBaseUrl;
 
-	public String processInvitationLink(String code, UserInfo userInfo, HttpServletResponse response) {
+	public sealed interface InvitationResult {
+		String redirectUrl();
+
+		record UserInvitation(String redirectUrl) implements InvitationResult {
+		}
+
+		record GuestInvitation(String redirectUrl, String shareLinkCode) implements InvitationResult {
+		}
+	}
+
+	public InvitationResult processInvitationLink(String code, UserInfo userInfo) {
 		ShareLink shareLink = findValidLink(code);
+		String redirectUrl = buildRedirectUrl(shareLink);
 
 		if (userInfo != null) {
 			acceptInvitationForTarget(shareLink, userInfo.id());
+			return new InvitationResult.UserInvitation(redirectUrl);
 		} else {
-			issueGuestCookie(response, code);
+			return new InvitationResult.GuestInvitation(redirectUrl, code);
 		}
-
-		return buildRedirectUrl(shareLink);
 	}
 
 	public ShareLink findShareLinkByCode(String code) {
@@ -76,16 +78,6 @@ public class ShareLinkService {
 			default:
 				throw new BusinessException(CollectionError.INVALID_INVITATION_LINK);
 		}
-	}
-
-	private void issueGuestCookie(HttpServletResponse response, String code) {
-		ResponseCookie cookie = ResponseCookie.from(guestCookieName, code)
-			.httpOnly(true)
-			.secure(true)
-			.path("/")
-			.maxAge(guestCookieMaxAgeSeconds)
-			.build();
-		response.addHeader("Set-Cookie", cookie.toString());
 	}
 
 	private String buildRedirectUrl(ShareLink shareLink) {
