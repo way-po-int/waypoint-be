@@ -1,5 +1,6 @@
 package waypoint.mvp.sharelink.presentation;
 
+
 import java.net.URI;
 
 import org.springframework.beans.factory.annotation.Value;

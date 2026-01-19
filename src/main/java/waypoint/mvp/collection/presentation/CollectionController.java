@@ -50,7 +50,7 @@ public class CollectionController {
 	public ResponseEntity<CollectionResponse> findCollectionById(
 		@PathVariable Long collectionId,
 		@AuthenticationPrincipal UserInfo userInfo,
-		@CookieValue(name = "waypoint-guest", required = false) String guestToken
+		@CookieValue(name = "${waypoint.cookie.guest-access-token-name}", required = false) String guestToken
 	) {
 		CollectionResponse collection = collectionService.findCollectionById(collectionId, userInfo, guestToken);
 		return ResponseEntity.ok(collection);

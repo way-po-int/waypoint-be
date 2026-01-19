@@ -1,5 +1,6 @@
 package waypoint.mvp.auth.security.handler;
 
+
 import java.io.IOException;
 import java.util.Optional;
 
@@ -33,11 +34,11 @@ public class CustomAuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 	private final CookieUtils cookieUtils;
 	private final ShareLinkService shareLinkService;
 
-	@Value("${waypoint.cookie.guest-access-token-name}")
-	private String guestCookieName;
-
 	@Value("${spring.security.oauth2.redirect-uri}")
 	private String redirectUri;
+
+	@Value("${waypoint.cookie.guest-access-token-name}")
+	private String guestCookieName;
 
 	@Override
 	public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,

@@ -13,29 +13,31 @@ import jakarta.servlet.http.HttpServletRequest;
 @Component
 public class CookieUtils {
 
-	public static final String REFRESH_TOKEN = "refresh_token";
 	private static final String PATH = "/";
 
 	private final boolean secure;
 	private final String sameSite;
 	private final long refreshTokenMaxAge;
+	private final String refreshTokenName;
 
 	public CookieUtils(
 		@Value("${cookie.secure}") boolean secure,
 		@Value("${cookie.same-site}") String sameSite,
-		@Value("${jwt.refresh-expires-in}") long refreshExpiresIn
+		@Value("${jwt.refresh-expires-in}") long refreshExpiresIn,
+		@Value("${waypoint.cookie.refresh-token-name}") String refreshTokenName
 	) {
 		this.secure = secure;
 		this.sameSite = sameSite;
 		this.refreshTokenMaxAge = refreshExpiresIn;
+		this.refreshTokenName = refreshTokenName;
 	}
 
 	public ResponseCookie createRefreshToken(String refreshToken) {
-		return createCookie(REFRESH_TOKEN, refreshToken, refreshTokenMaxAge);
+		return createCookie(refreshTokenName, refreshToken, refreshTokenMaxAge);
 	}
 
 	public ResponseCookie deleteRefreshToken() {
-		return deleteCookie(REFRESH_TOKEN);
+		return deleteCookie(refreshTokenName);
 	}
 
 	public ResponseCookie createCookie(String cookieName, String value, long maxAge) {

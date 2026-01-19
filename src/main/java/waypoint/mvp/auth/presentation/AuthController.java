@@ -26,7 +26,7 @@ public class AuthController {
 
 	@PostMapping("/reissue")
 	public ResponseEntity<TokenResponse> reissue(
-		@CookieValue(name = CookieUtils.REFRESH_TOKEN, required = false) String refreshToken
+		@CookieValue(name = "${waypoint.cookie.refresh-token-name}", required = false) String refreshToken
 	) {
 		AuthTokens authTokens = authService.reissue(refreshToken);
 		ResponseCookie cookie = cookieUtils.createRefreshToken(authTokens.refreshToken().token());
@@ -38,7 +38,7 @@ public class AuthController {
 	@PostMapping("/logout")
 	public ResponseEntity<Void> logout(
 		@AuthenticationPrincipal UserInfo userInfo,
-		@CookieValue(name = CookieUtils.REFRESH_TOKEN, required = false) String refreshToken
+		@CookieValue(name = "${waypoint.cookie.refresh-token-name}", required = false) String refreshToken
 	) {
 		authService.logout(userInfo, refreshToken);
 		ResponseCookie cookie = cookieUtils.deleteRefreshToken();
