@@ -1,10 +1,10 @@
-package waypoint.mvp.auth.util;
+package waypoint.mvp.global.util;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseCookie;
 import java.util.Arrays;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 
 import jakarta.servlet.http.Cookie;

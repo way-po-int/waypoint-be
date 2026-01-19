@@ -20,9 +20,9 @@ import lombok.extern.slf4j.Slf4j;
 import waypoint.mvp.auth.application.AuthService;
 import waypoint.mvp.auth.security.jwt.TokenInfo;
 import waypoint.mvp.auth.security.principal.CustomOidcUser;
-import waypoint.mvp.auth.util.CookieUtils;
-import waypoint.mvp.sharelink.application.ShareLinkService;
 import waypoint.mvp.global.error.exception.BusinessException;
+import waypoint.mvp.global.util.CookieUtils;
+import waypoint.mvp.sharelink.application.ShareLinkService;
 
 @Component
 @RequiredArgsConstructor

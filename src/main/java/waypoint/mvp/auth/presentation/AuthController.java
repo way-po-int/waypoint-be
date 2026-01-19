@@ -14,7 +14,7 @@ import waypoint.mvp.auth.application.AuthService;
 import waypoint.mvp.auth.application.dto.AuthTokens;
 import waypoint.mvp.auth.presentation.dto.response.TokenResponse;
 import waypoint.mvp.auth.security.principal.UserInfo;
-import waypoint.mvp.auth.util.CookieUtils;
+import waypoint.mvp.global.util.CookieUtils;
 
 @RestController
 @RequestMapping("/auth")
