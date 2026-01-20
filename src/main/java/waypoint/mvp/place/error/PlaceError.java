@@ -10,7 +10,6 @@ import waypoint.mvp.global.error.ErrorCode;
 @RequiredArgsConstructor
 public enum PlaceError implements ErrorCode {
 	PLACE_NOT_FOUND(HttpStatus.NOT_FOUND, "Place를 찾을 수 없습니다."),
-	PLACE_EXTERNAL_API_ERROR(HttpStatus.BAD_GATEWAY, "외부 지도 API 호출에 실패했습니다."),
 	PLACE_LOOKUP_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "장소 조회 처리에 실패했습니다."),
 	PLACE_ID_NOT_FOUND(HttpStatus.NOT_FOUND, "PlaceId를 찾지 못했습니다.");
 
