@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,7 +23,6 @@ import waypoint.mvp.collection.application.CollectionService;
 import waypoint.mvp.collection.application.dto.request.CollectionCreateRequest;
 import waypoint.mvp.collection.application.dto.request.CollectionUpdateRequest;
 import waypoint.mvp.collection.application.dto.response.CollectionResponse;
-import waypoint.mvp.collection.application.dto.response.InvitationAcceptanceResponse;
 import waypoint.mvp.sharelink.application.dto.response.ShareLinkResponse;
 
 @RestController
@@ -47,8 +47,12 @@ public class CollectionController {
 	}
 
 	@GetMapping("/{collectionId}")
-	public ResponseEntity<CollectionResponse> findCollectionById(@PathVariable Long collectionId) {
-		CollectionResponse collection = collectionService.findCollectionById(collectionId);
+	public ResponseEntity<CollectionResponse> findCollectionById(
+		@PathVariable Long collectionId,
+		@AuthenticationPrincipal UserInfo userInfo,
+		@CookieValue(name = "${waypoint.cookie.guest-access-token-name}", required = false) String guestToken
+	) {
+		CollectionResponse collection = collectionService.findCollectionById(collectionId, userInfo, guestToken);
 		return ResponseEntity.ok(collection);
 	}
 
@@ -74,12 +78,4 @@ public class CollectionController {
 		return ResponseEntity.ok(response);
 	}
 
-	@PostMapping("/invitations/{token}")
-	public ResponseEntity<InvitationAcceptanceResponse> acceptInvitation(
-		@PathVariable String token,
-		@AuthenticationPrincipal UserInfo userInfo
-	) {
-		Long collectionId = collectionService.acceptInvitation(token, userInfo.id());
-		return ResponseEntity.ok(InvitationAcceptanceResponse.from(collectionId));
-	}
 }

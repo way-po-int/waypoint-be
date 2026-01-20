@@ -22,7 +22,7 @@ import waypoint.mvp.auth.presentation.dto.response.TokenResponse;
 import waypoint.mvp.auth.security.jwt.JwtTokenProvider;
 import waypoint.mvp.auth.security.jwt.TokenInfo;
 import waypoint.mvp.auth.security.principal.UserInfo;
-import waypoint.mvp.auth.util.CookieUtils;
+import waypoint.mvp.global.util.CookieUtils;
 import waypoint.mvp.user.application.UserService;
 import waypoint.mvp.user.application.dto.SocialUserProfile;
 import waypoint.mvp.user.domain.Provider;

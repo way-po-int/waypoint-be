@@ -16,6 +16,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import waypoint.mvp.global.common.BaseTimeEntity;
 
 @Entity
@@ -71,9 +72,13 @@ public class ShareLink extends BaseTimeEntity {
 			.build();
 	}
 
+	@Getter
+	@RequiredArgsConstructor
 	public enum ShareLinkType {
-		COLLECTION,
-		PROJECT
+		COLLECTION("/collections/"),
+		PLAN("/plans/");
+
+		private final String path;
 	}
 
 	public void increaseUseCount() {

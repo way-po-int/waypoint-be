@@ -64,4 +64,10 @@ server:
 
 waypoint:
   invitation:
-    expiration-hours: ${WAYPOINT_INVITATION_EXPIRATION_HOURS:8}
+    expiration-hours: ${WAYPOINT_INVITATION_EXPIRATION_HOURS:168}
+  frontend:
+    base-url: ${WAYPOINT_FRONTEND_BASE_URL:http://localhost:3000}
+  cookie:
+    guest-access-token-name: "waypoint_guest"
+    guest-access-token-max-age-seconds: 604800 # 7일
+    refresh-token-name: "refresh_token"

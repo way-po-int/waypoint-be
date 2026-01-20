@@ -14,7 +14,7 @@ import waypoint.mvp.auth.application.AuthService;
 import waypoint.mvp.auth.application.dto.AuthTokens;
 import waypoint.mvp.auth.presentation.dto.response.TokenResponse;
 import waypoint.mvp.auth.security.principal.UserInfo;
-import waypoint.mvp.auth.util.CookieUtils;
+import waypoint.mvp.global.util.CookieUtils;
 
 @RestController
 @RequestMapping("/auth")
@@ -26,7 +26,7 @@ public class AuthController {
 
 	@PostMapping("/reissue")
 	public ResponseEntity<TokenResponse> reissue(
-		@CookieValue(name = CookieUtils.REFRESH_TOKEN, required = false) String refreshToken
+		@CookieValue(name = "${waypoint.cookie.refresh-token-name}", required = false) String refreshToken
 	) {
 		AuthTokens authTokens = authService.reissue(refreshToken);
 		ResponseCookie cookie = cookieUtils.createRefreshToken(authTokens.refreshToken().token());
@@ -38,7 +38,7 @@ public class AuthController {
 	@PostMapping("/logout")
 	public ResponseEntity<Void> logout(
 		@AuthenticationPrincipal UserInfo userInfo,
-		@CookieValue(name = CookieUtils.REFRESH_TOKEN, required = false) String refreshToken
+		@CookieValue(name = "${waypoint.cookie.refresh-token-name}", required = false) String refreshToken
 	) {
 		authService.logout(userInfo, refreshToken);
 		ResponseCookie cookie = cookieUtils.deleteRefreshToken();
