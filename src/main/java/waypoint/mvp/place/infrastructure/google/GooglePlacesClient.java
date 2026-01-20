@@ -9,17 +9,16 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
-import waypoint.mvp.place.error.PlaceError;
-import waypoint.mvp.place.error.exception.PlaceException;
+import waypoint.mvp.global.error.exception.BusinessException;
+import waypoint.mvp.place.error.PlaceExternalError;
 
 @Component
 public class GooglePlacesClient {
 
 	private static final String TEXT_SEARCH_FIELD_MASK = "places.id";
-	private static final String DETAILS_FIELD_MASK = "id,displayName,formattedAddress,location";
+	private static final String DETAILS_FIELD_MASK = "id,displayName,formattedAddress,location,primaryType,primaryTypeDisplayName,googleMapsUri,photos.name";
 
 	private final RestClient restClient;
-	private final String apiKey;
 	private final String textSearchPath;
 	private final String detailsPath;
 
@@ -30,8 +29,10 @@ public class GooglePlacesClient {
 		@Value("${google.places.text-search-path}") String textSearchPath,
 		@Value("${google.places.details-path}") String detailsPath
 	) {
-		this.restClient = builder.baseUrl(baseUrl).build();
-		this.apiKey = apiKey;
+		this.restClient = builder
+			.baseUrl(baseUrl)
+			.defaultHeader("X-Goog-Api-Key", apiKey)
+			.build();
 		this.textSearchPath = textSearchPath;
 		this.detailsPath = detailsPath;
 	}
@@ -40,12 +41,11 @@ public class GooglePlacesClient {
 	public String searchTop1PlaceId(String textQuery) {
 		Map<String, Object> raw = restClient.post()
 			.uri(textSearchPath)
-			.header("X-Goog-Api-Key", apiKey)
 			.header("X-Goog-FieldMask", TEXT_SEARCH_FIELD_MASK)
 			.body(Map.of("textQuery", textQuery, "pageSize", 1))
 			.retrieve()
 			.onStatus(HttpStatusCode::isError, (req, res) -> {
-				throw new PlaceException(PlaceError.PLACE_EXTERNAL_API_ERROR);
+				throw new BusinessException(PlaceExternalError.PLACE_EXTERNAL_HTTP_ERROR);
 			})
 			.body(new ParameterizedTypeReference<Map<String, Object>>() {
 			});
@@ -57,11 +57,10 @@ public class GooglePlacesClient {
 	public Map<String, Object> getPlaceDetails(String placeId) {
 		return restClient.get()
 			.uri(detailsPath, placeId)
-			.header("X-Goog-Api-Key", apiKey)
 			.header("X-Goog-FieldMask", DETAILS_FIELD_MASK)
 			.retrieve()
 			.onStatus(HttpStatusCode::isError, (req, res) -> {
-				throw new PlaceException(PlaceError.PLACE_EXTERNAL_API_ERROR);
+				throw new BusinessException(PlaceExternalError.PLACE_EXTERNAL_HTTP_ERROR);
 			})
 			.body(new ParameterizedTypeReference<Map<String, Object>>() {
 			});
