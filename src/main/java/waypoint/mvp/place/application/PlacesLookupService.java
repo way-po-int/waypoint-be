@@ -17,24 +17,24 @@ import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.place.application.dto.PlaceIdLookupCommand;
 import waypoint.mvp.place.application.dto.PlaceIdLookupResponse;
 import waypoint.mvp.place.application.dto.PlaceIdLookupResult;
 import waypoint.mvp.place.domain.Place;
 import waypoint.mvp.place.domain.PlaceDetail;
 import waypoint.mvp.place.error.PlaceError;
-import waypoint.mvp.place.error.exception.PlaceException;
 import waypoint.mvp.place.infrastructure.google.GooglePlacesClient;
 import waypoint.mvp.place.infrastructure.persistence.PlaceRepository;
 
 @Slf4j
 @Service
-@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class PlacesLookupService {
 
@@ -50,7 +50,6 @@ public class PlacesLookupService {
 	 * 입력 queries는 "중복 제거" 후 처리한다.
 	 * 응답 results도 중복 제거된 query 기준으로만 반환한다.
 	 */
-	@Transactional
 	public PlaceIdLookupResponse lookupAndSavePlaces(PlaceIdLookupCommand command) {
 		Set<String> uniqueQueries = command.queries().stream()
 			.filter(Objects::nonNull)
@@ -65,7 +64,8 @@ public class PlacesLookupService {
 		Map<String, PlaceIdLookupResult> resultsByQuery = lookupTop1PlaceIdsByQuery(uniqueQueries);
 
 		List<PlaceIdLookupResult> idResults = uniqueQueries.stream()
-			.map(q -> resultsByQuery.getOrDefault(q, PlaceIdLookupResult.failure(q, "placeId를 찾지 못했습니다.")))
+			.map(q -> resultsByQuery.getOrDefault(q,
+				PlaceIdLookupResult.failure(q, PlaceError.PLACE_ID_NOT_FOUND.getMessage())))
 			.toList();
 
 		Set<String> placeIds = idResults.stream()
@@ -100,10 +100,11 @@ public class PlacesLookupService {
 				try {
 					String placeId = googlePlacesClient.searchTop1PlaceId(query);
 					if (placeId == null || placeId.isBlank()) {
-						return PlaceIdLookupResult.failure(query, "placeId를 찾지 못했습니다.");
+						return PlaceIdLookupResult.failure(query, PlaceError.PLACE_ID_NOT_FOUND.getMessage());
 					}
 					return PlaceIdLookupResult.success(query, placeId);
 				} catch (Exception e) {
+					log.warn("placeId 조회 중 오류가 발생했습니다. query='{}'", query, e);
 					String msg = (e.getMessage() == null || e.getMessage().isBlank())
 						? "placeId 조회 중 오류가 발생했습니다."
 						: e.getMessage();
@@ -123,7 +124,7 @@ public class PlacesLookupService {
 	}
 
 	private Set<String> findExistingPlaceIdsSafely(Set<String> placeIds) {
-		if (placeIds == null || placeIds.isEmpty()) {
+		if (CollectionUtils.isEmpty(placeIds)) {
 			return Set.of();
 		}
 		return placeRepository.findExistingPlaceIds(placeIds);
@@ -156,22 +157,33 @@ public class PlacesLookupService {
 			String address = extractAddress(raw);
 			Point location = extractLocation(raw);
 
-			if (name == null || name.isBlank() || address == null || address.isBlank() || location == null) {
-				throw new PlaceException(PlaceError.PLACE_LOOKUP_FAILED);
+			if (!StringUtils.hasText(name) || !StringUtils.hasText(address) || location == null) {
+				throw new BusinessException(PlaceError.PLACE_LOOKUP_FAILED);
 			}
 
-			PlaceDetail detail = PlaceDetail.create(placeId);
+			String primaryType = extractPrimaryType(raw);
+			String primaryTypeDisplayName = extractPrimaryTypeDisplayName(raw);
+			String googleMapsUri = extractGoogleMapsUri(raw);
+			String photoName = extractFirstPhotoName(raw);
+
+			PlaceDetail detail = PlaceDetail.create(
+				placeId,
+				primaryType,
+				primaryTypeDisplayName,
+				googleMapsUri,
+				photoName
+			);
 			return Place.create(name, address, location, detail);
 
-		} catch (PlaceException e) {
+		} catch (BusinessException e) {
 			throw e;
 		} catch (Exception e) {
-			throw new PlaceException(PlaceError.PLACE_LOOKUP_FAILED);
+			throw new BusinessException(PlaceError.PLACE_LOOKUP_FAILED, e);
 		}
 	}
 
 	protected void saveAllIgnoreDuplicate(List<Place> places) {
-		if (places == null || places.isEmpty()) {
+		if (CollectionUtils.isEmpty(places)) {
 			return;
 		}
 		try {
@@ -197,6 +209,54 @@ public class PlacesLookupService {
 		return (addr instanceof String s) ? s : null;
 	}
 
+	private String extractPrimaryType(Map<String, Object> raw) {
+		if (raw == null) {
+			return null;
+		}
+		Object v = raw.get("primaryType");
+		return (v instanceof String s && StringUtils.hasText(s)) ? s : null;
+	}
+
+	private String extractPrimaryTypeDisplayName(Map<String, Object> raw) {
+		if (raw == null) {
+			return null;
+		}
+		Object v = raw.get("primaryTypeDisplayName");
+		if (v instanceof Map<?, ?> m) {
+			Object text = m.get("text");
+			if (text instanceof String s && StringUtils.hasText(s)) {
+				return s;
+			}
+		}
+		return null;
+	}
+
+	private String extractGoogleMapsUri(Map<String, Object> raw) {
+		if (raw == null) {
+			return null;
+		}
+		Object v = raw.get("googleMapsUri");
+		return (v instanceof String s && StringUtils.hasText(s)) ? s : null;
+	}
+
+	private String extractFirstPhotoName(Map<String, Object> raw) {
+		if (raw == null) {
+			return null;
+		}
+		Object v = raw.get("photos");
+		if (!(v instanceof List<?> photos) || photos.isEmpty()) {
+			return null;
+		}
+
+		Object first = photos.get(0);
+		if (!(first instanceof Map<?, ?> m)) {
+			return null;
+		}
+
+		Object name = m.get("name");
+		return (name instanceof String s && StringUtils.hasText(s)) ? s : null;
+	}
+
 	private Point extractLocation(Map<String, Object> raw) {
 		Object loc = raw.get("location");
 		if (!(loc instanceof Map<?, ?> m)) {
@@ -209,9 +269,7 @@ public class PlacesLookupService {
 			return null;
 		}
 
-		Point p = GEOMETRY_FACTORY.createPoint(new Coordinate(lng, lat));
-		p.setSRID(4326);
-		return p;
+		return GEOMETRY_FACTORY.createPoint(new Coordinate(lng, lat));
 	}
 
 	private Double toDouble(Object o) {
