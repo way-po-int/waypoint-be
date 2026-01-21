@@ -17,6 +17,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfigurationSource;
 
 import lombok.RequiredArgsConstructor;
+import waypoint.mvp.auth.security.filter.GuestAuthenticationFilter;
 import waypoint.mvp.auth.security.jwt.JwtAuthenticationFilter;
 import waypoint.mvp.auth.security.jwt.JwtTokenProvider;
 
@@ -34,6 +35,7 @@ public class SecurityConfig {
 	private final AuthenticationEntryPoint authenticationEntryPoint;
 	private final AccessDeniedHandler accessDeniedHandler;
 	private final JwtTokenProvider jwtTokenProvider;
+	private final GuestAuthenticationFilter guestAuthenticationFilter;
 
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -54,11 +56,11 @@ public class SecurityConfig {
 			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			.authorizeHttpRequests(auth -> auth
 				.requestMatchers(HttpMethod.GET, "/invite/**").permitAll()
-				.requestMatchers(HttpMethod.GET, "/collections/**").permitAll()
 				.requestMatchers("/dev/**").permitAll()
 				.requestMatchers("/auth/reissue").permitAll()
 				.anyRequest().authenticated())
 			.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
+			.addFilterBefore(guestAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 			.build();
 	}
 }
