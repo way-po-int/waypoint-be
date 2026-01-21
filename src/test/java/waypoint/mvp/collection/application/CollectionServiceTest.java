@@ -17,11 +17,11 @@ import waypoint.mvp.collection.domain.CollectionMember;
 import waypoint.mvp.collection.domain.CollectionRole;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionMemberRepository;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionRepository;
+import waypoint.mvp.global.annotation.ServiceTest;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.sharelink.application.dto.response.ShareLinkResponse;
 import waypoint.mvp.sharelink.domain.ShareLink;
 import waypoint.mvp.sharelink.infrastructure.ShareLinkRepository;
-import waypoint.mvp.global.annotation.ServiceTest;
 import waypoint.mvp.user.domain.Provider;
 import waypoint.mvp.user.domain.SocialAccount;
 import waypoint.mvp.user.domain.User;
@@ -94,13 +94,15 @@ class CollectionServiceTest {
 
 		// when & then
 		// Case 1: 소유자가 생성
-		ShareLinkResponse ownerResponse = collectionService.createInvitation(collection.getId(), savedUser.getId());
+		ShareLinkResponse ownerResponse = collectionService.createInvitation(collection.getId(),
+			new UserInfo(savedUser.getId()));
 		Optional<ShareLink> ownerLink = shareLinkRepository.findByCode(ownerResponse.code());
 		assertThat(ownerLink).isPresent();
 		assertThat(ownerLink.get().getHostUserId()).isEqualTo(savedUser.getId());
 
 		// Case 2: 일반 멤버가 생성
-		ShareLinkResponse memberResponse = collectionService.createInvitation(collection.getId(), memberUser.getId());
+		ShareLinkResponse memberResponse = collectionService.createInvitation(collection.getId(),
+			new UserInfo(memberUser.getId()));
 		Optional<ShareLink> memberLink = shareLinkRepository.findByCode(memberResponse.code());
 		assertThat(memberLink).isPresent();
 		assertThat(memberLink.get().getHostUserId()).isEqualTo(memberUser.getId());
@@ -118,9 +120,10 @@ class CollectionServiceTest {
 		Collection collection = collectionRepository.save(Collection.create("Test Collection"));
 
 		// when & then
-		assertThatThrownBy(() -> collectionService.createInvitation(collection.getId(), anotherUser.getId()))
+		assertThatThrownBy(
+			() -> collectionService.createInvitation(collection.getId(), new UserInfo(anotherUser.getId())))
 			.isInstanceOf(BusinessException.class)
-			.extracting(ex -> ((BusinessException) ex).getBody().getProperties().get("code"))
+			.extracting(ex -> ((BusinessException)ex).getBody().getProperties().get("code"))
 			.isEqualTo("FORBIDDEN_NOT_MEMBER");
 	}
 }

@@ -52,7 +52,7 @@ public class GuestAuthenticationFilter extends OncePerRequestFilter {
 			findGuestCookie(request)
 				.map(Cookie::getValue)
 				.map(shareLinkService::findValidLink)
-				.map(GuestPrincipal::new)
+				.map(GuestPrincipal::from)
 				.ifPresent(this::setAuthentication);
 		} catch (BusinessException e) {
 			/** 예상된 인증 실패(BusinessException)는 AuthenticationException으로 변환하여 401 에러를 유도하고,

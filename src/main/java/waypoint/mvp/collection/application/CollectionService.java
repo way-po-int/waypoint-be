@@ -45,12 +45,12 @@ public class CollectionService {
 	private long invitationExpirationHours;
 
 	@Transactional
-	public CollectionResponse createCollection(CollectionCreateRequest request, WayPointUser user) {
+	public CollectionResponse createCollection(CollectionCreateRequest request, UserInfo user) {
 		Collection collection = Collection.create(request.title());
 		collectionRepository.save(collection);
 
 		eventPublisher.publishEvent(
-			CollectionCreatedEvent.of(collection.getId(), (UserInfo)user)); // 이벤트는 실제 유저만 발생시키므로 캐스팅
+			CollectionCreatedEvent.of(collection.getId(), user)); // 이벤트는 실제 유저만 발생시키므로 캐스팅
 
 		return CollectionResponse.from(collection);
 	}
