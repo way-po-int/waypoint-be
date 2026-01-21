@@ -18,7 +18,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.filter.GuestAuthenticationFilter;
-import waypoint.mvp.auth.security.jwt.JwtAuthenticationFilter;
+import waypoint.mvp.auth.security.filter.JwtAuthenticationFilter;
 import waypoint.mvp.auth.security.jwt.JwtTokenProvider;
 
 @Configuration
