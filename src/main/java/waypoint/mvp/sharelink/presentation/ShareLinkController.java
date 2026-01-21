@@ -1,6 +1,5 @@
 package waypoint.mvp.sharelink.presentation;
 
-
 import java.net.URI;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -15,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import lombok.RequiredArgsConstructor;
-import waypoint.mvp.auth.security.principal.UserInfo;
+import waypoint.mvp.auth.security.principal.WayPointUser;
 import waypoint.mvp.global.util.CookieUtils;
 import waypoint.mvp.sharelink.application.ShareLinkService;
 import waypoint.mvp.sharelink.application.ShareLinkService.InvitationResult;
@@ -36,9 +35,10 @@ public class ShareLinkController {
 
 	@GetMapping("/{code}")
 	public ResponseEntity<Void> handleInvitation(
-		@PathVariable String code, @AuthenticationPrincipal UserInfo userInfo
+		@PathVariable String code, 
+		@AuthenticationPrincipal WayPointUser user
 	) {
-		InvitationResult result = shareLinkService.processInvitationLink(code, userInfo);
+		InvitationResult result = shareLinkService.processInvitationLink(code, user);
 
 		return switch (result) {
 			case InvitationResult.GuestInvitation guest -> {
@@ -49,8 +49,8 @@ public class ShareLinkController {
 					.location(URI.create(guest.redirectUrl()))
 					.build();
 			}
-			case InvitationResult.UserInvitation user -> ResponseEntity.status(HttpStatus.FOUND)
-				.location(URI.create(user.redirectUrl()))
+			case InvitationResult.UserInvitation userInvitation -> ResponseEntity.status(HttpStatus.FOUND)
+				.location(URI.create(userInvitation.redirectUrl()))
 				.build();
 		};
 	}
