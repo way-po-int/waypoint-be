@@ -19,7 +19,7 @@ import waypoint.mvp.global.auth.annotations.Authorize;
 @Aspect
 @Component
 @RequiredArgsConstructor
-public class CollectionAuthorizationAspect {
+public class ResourceAuthorizationAspect {
 
 	private final CollectionAuthorizer collectionAuthorizer;
 
