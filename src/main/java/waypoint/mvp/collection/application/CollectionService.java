@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.UserInfo;
-import waypoint.mvp.auth.security.principal.WayPointUser;
 import waypoint.mvp.collection.application.dto.request.CollectionCreateRequest;
 import waypoint.mvp.collection.application.dto.request.CollectionUpdateRequest;
 import waypoint.mvp.collection.application.dto.response.CollectionResponse;
@@ -60,18 +59,8 @@ public class CollectionService {
 			.map(CollectionResponse::from);
 	}
 
-	/** TODO findCollectionById()는 '인증 주체 타입 판별'도 하는 중 책임 분리 필요, 컬렉션 조회만할 수 있도록 해야함 **/
-	public CollectionResponse findCollectionById(Long collectionId, WayPointUser wayPointUser) {
+	public CollectionResponse findCollectionById(Long collectionId) {
 		Collection collection = getCollection(collectionId);
-
-		if (wayPointUser.isGuest()) {
-			wayPointUser.getTargetIdFor(ShareLink.ShareLinkType.COLLECTION)
-				.filter(id -> id.equals(collectionId))
-				.orElseThrow(() -> new BusinessException(CollectionError.FORBIDDEN_NOT_GUEST));
-		} else {
-			User user = userFinder.findById(wayPointUser.getId());
-			collectionAuthorizer.verifyMember(collection, user);
-		}
 
 		return CollectionResponse.from(collection);
 	}
@@ -79,13 +68,6 @@ public class CollectionService {
 	@Transactional
 	public CollectionResponse updateCollection(Long collectionId, CollectionUpdateRequest request, UserInfo user) {
 		Collection collection = getCollection(collectionId);
-
-		if (user.isGuest()) {
-			throw new BusinessException(CollectionError.FORBIDDEN_NOT_MEMBER);
-		}
-
-		User editor = userFinder.findById(user.getId());
-		collectionAuthorizer.verifyMember(collection, editor); // TODO: 추후 EDITOR 이상 권한으로 변경
 
 		collection.update(request.title());
 
@@ -95,13 +77,7 @@ public class CollectionService {
 	@Transactional
 	public void deleteCollection(Long collectionId, UserInfo user) {
 		Collection collection = getCollection(collectionId);
-
-		if (user.isGuest()) {
-			throw new BusinessException(CollectionError.FORBIDDEN_NOT_MEMBER);
-		}
-
-		User owner = userFinder.findById(user.getId());
-		collectionAuthorizer.verifyOwner(collection, owner); // 소유자만 삭제 가능
+		collectionAuthorizer.verifyOwner(user, collectionId);
 
 		collectionRepository.delete(collection);
 	}
@@ -113,13 +89,7 @@ public class CollectionService {
 
 	@Transactional
 	public ShareLinkResponse createInvitation(Long collectionId, UserInfo user) {
-		if (user.isGuest()) {
-			throw new BusinessException(CollectionError.FORBIDDEN_NOT_MEMBER);
-		}
-		Collection collection = getCollection(collectionId);
-		User hostUser = userFinder.findById(user.getId());
-
-		collectionAuthorizer.verifyMember(collection, hostUser);
+		getCollection(collectionId);
 
 		ShareLink shareLink = ShareLink.create(ShareLink.ShareLinkType.COLLECTION, collectionId, user.getId(),
 			invitationExpirationHours);
@@ -145,7 +115,7 @@ public class CollectionService {
 	}
 
 	private void addCollectionMember(Collection collection, User user) {
-		collectionAuthorizer.checkIfMemberExists(collection, user);
+		collectionAuthorizer.checkIfMemberExists(collection.getId(), user.getId());
 
 		CollectionMember newMember = CollectionMember.create(collection, user, CollectionRole.MEMBER);
 		collectionMemberRepository.save(newMember);
