@@ -28,12 +28,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
 		@NonNull FilterChain filterChain) throws ServletException, IOException {
 
-		// Guest 판단을 위해서 accessToken이 없어도 다음으로 이동
-		if (SecurityContextHolder.getContext().getAuthentication() != null) {
-			filterChain.doFilter(request, response);
-			return;
-		}
-
 		String token = resolveToken(request);
 
 		if (token != null) {
