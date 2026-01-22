@@ -2,12 +2,14 @@ package waypoint.mvp.auth.security.filter;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import jakarta.servlet.FilterChain;
@@ -17,7 +19,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import waypoint.mvp.auth.error.exception.GuestAuthenticationException;
 import waypoint.mvp.auth.security.principal.GuestPrincipal;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.sharelink.application.ShareLinkService;
@@ -25,6 +26,11 @@ import waypoint.mvp.sharelink.application.ShareLinkService;
 @Component
 @RequiredArgsConstructor
 public class GuestAuthenticationFilter extends OncePerRequestFilter {
+	private static final AntPathMatcher matcher = new AntPathMatcher();
+	private static final List<String> INCLUDE_PATHS = Arrays.asList(
+		"/collections/**",
+		"/plan/**"
+	);
 
 	private final ShareLinkService shareLinkService;
 
@@ -36,29 +42,37 @@ public class GuestAuthenticationFilter extends OncePerRequestFilter {
 		@NonNull FilterChain filterChain)
 		throws ServletException, IOException {
 
-		if (isNotAuthenticated()) {
+		try {
 			authenticateGuestFromCookie(request);
+		} catch (BusinessException e) {
+			// Guest 인증 실패는 정상 흐름이므로, SecurityContext를 비워둔 채로 다음 필터로 진행
 		}
 
 		filterChain.doFilter(request, response);
 	}
 
-	private boolean isNotAuthenticated() {
-		return SecurityContextHolder.getContext().getAuthentication() == null;
+	@Override
+	protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+		if (SecurityContextHolder.getContext().getAuthentication() != null) {
+			return true;
+		}
+
+		if (!"GET".equalsIgnoreCase(request.getMethod())) {
+			return true;
+		}
+
+		String uri = request.getRequestURI();
+		return INCLUDE_PATHS.stream()
+			.noneMatch(pattern -> matcher.match(pattern, uri));
 	}
 
-	private void authenticateGuestFromCookie(HttpServletRequest request) throws GuestAuthenticationException {
-		try {
-			findGuestCookie(request)
-				.map(Cookie::getValue)
-				.map(shareLinkService::findValidLink)
-				.map(GuestPrincipal::from)
-				.ifPresent(this::setAuthentication);
-		} catch (BusinessException e) {
-			/** 예상된 인증 실패(BusinessException)는 AuthenticationException으로 변환하여 401 에러를 유도하고,
-			 *  예상치 못한 코드 버그(RuntimeException)는 500 에러를 발생**/
-			throw new GuestAuthenticationException(e.getMessage(), e);
-		}
+
+	private void authenticateGuestFromCookie(HttpServletRequest request) {
+		findGuestCookie(request)
+			.map(Cookie::getValue)
+			.map(shareLinkService::findValidLink)
+			.map(GuestPrincipal::from)
+			.ifPresent(this::setAuthentication);
 	}
 
 	private void setAuthentication(GuestPrincipal principal) {
