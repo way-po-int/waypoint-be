@@ -41,16 +41,15 @@ public class ShareLinkController {
 		InvitationResult result = shareLinkService.processInvitationLink(code, user);
 
 		return switch (result) {
-			case InvitationResult.GuestInvitation guest -> {
-				ResponseCookie cookie = cookieUtils.createCookie(guestCookieName, guest.shareLinkCode(),
-					guestCookieMaxAgeSeconds);
+			case InvitationResult.GuestInvitation(var shareLinkCode, var redirectUrl) -> {
+				ResponseCookie cookie = cookieUtils.createCookie(guestCookieName, shareLinkCode, guestCookieMaxAgeSeconds);
 				yield ResponseEntity.status(HttpStatus.FOUND)
 					.header(HttpHeaders.SET_COOKIE, cookie.toString())
-					.location(URI.create(guest.redirectUrl()))
+					.location(URI.create(redirectUrl))
 					.build();
 			}
-			case InvitationResult.UserInvitation userInvitation -> ResponseEntity.status(HttpStatus.FOUND)
-				.location(URI.create(userInvitation.redirectUrl()))
+			case InvitationResult.UserInvitation(var redirectUrl) -> ResponseEntity.status(HttpStatus.FOUND)
+				.location(URI.create(redirectUrl))
 				.build();
 		};
 	}
