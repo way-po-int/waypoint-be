@@ -48,6 +48,22 @@ spring:
           naver:
             issuer-uri: https://nid.naver.com
       redirect-uri: ${OAUTH2_REDIRECT_URI}
+  ai:
+    google:
+      genai:
+        api-key: ${GOOGLE_GENAI_API_KEY}
+        chat:
+          options:
+            model: ${GOOGLE_GENAI_MODEL:gemini-2.5-flash-lite}
+            safety-settings:
+              - category: HARM_CATEGORY_HATE_SPEECH # 증오심 표현 및 콘텐츠
+                threshold: BLOCK_ONLY_HIGH
+              - category: HARM_CATEGORY_DANGEROUS_CONTENT # 위험한 콘텐츠
+                threshold: BLOCK_ONLY_HIGH
+              - category: HARM_CATEGORY_HARASSMENT # 괴롭힘 콘텐츠
+                threshold: BLOCK_ONLY_HIGH
+              - category: HARM_CATEGORY_SEXUALLY_EXPLICIT # 음란물
+                threshold: BLOCK_ONLY_HIGH
 
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS}
