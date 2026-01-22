@@ -3,7 +3,6 @@ package waypoint.mvp.auth.security.filter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -21,6 +20,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.GuestPrincipal;
 import waypoint.mvp.global.error.exception.BusinessException;
+import waypoint.mvp.global.util.CookieUtils;
 import waypoint.mvp.sharelink.application.ShareLinkService;
 
 @Component
@@ -33,6 +33,7 @@ public class GuestAuthenticationFilter extends OncePerRequestFilter {
 	);
 
 	private final ShareLinkService shareLinkService;
+	private final CookieUtils cookieUtils;
 
 	@Value("${waypoint.cookie.guest-access-token-name}")
 	private String guestCookieName;
@@ -66,9 +67,8 @@ public class GuestAuthenticationFilter extends OncePerRequestFilter {
 			.noneMatch(pattern -> matcher.match(pattern, uri));
 	}
 
-
 	private void authenticateGuestFromCookie(HttpServletRequest request) {
-		findGuestCookie(request)
+		cookieUtils.getCookie(request, guestCookieName)
 			.map(Cookie::getValue)
 			.map(shareLinkService::findValidLink)
 			.map(GuestPrincipal::from)
@@ -81,13 +81,4 @@ public class GuestAuthenticationFilter extends OncePerRequestFilter {
 		);
 	}
 
-	private Optional<Cookie> findGuestCookie(HttpServletRequest request) {
-		Cookie[] cookies = request.getCookies();
-		if (cookies == null) {
-			return Optional.empty();
-		}
-		return Arrays.stream(cookies)
-			.filter(cookie -> cookie.getName().equals(guestCookieName))
-			.findFirst();
-	}
 }
