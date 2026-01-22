@@ -25,6 +25,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
+    implementation(platform(libs.spring.ai.bom))
+    implementation("org.springframework.ai:spring-ai-starter-model-google-genai")
     implementation("org.hibernate.orm:hibernate-spatial")
     implementation(libs.jjwt.api)
 
