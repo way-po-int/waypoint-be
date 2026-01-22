@@ -36,7 +36,6 @@ public record GuestPrincipal(String shareLinkCode, ShareLinkType targetType, Lon
 		return true;
 	}
 
-	@Override
 	public Optional<Long> getTargetIdFor(ShareLink.ShareLinkType type) {
 		if (this.targetType == type) {
 			return Optional.of(targetId);

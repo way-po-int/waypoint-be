@@ -3,6 +3,7 @@ package waypoint.mvp.collection.domain.service;
 import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
+import waypoint.mvp.auth.security.principal.GuestPrincipal;
 import waypoint.mvp.auth.security.principal.WayPointUser;
 import waypoint.mvp.collection.domain.CollectionMember;
 import waypoint.mvp.collection.error.CollectionError;
@@ -43,9 +44,13 @@ public class CollectionAuthorizer {
 	}
 
 	private void verifyGuestAccess(WayPointUser user, Long collectionId) {
-		user.getTargetIdFor(ShareLink.ShareLinkType.COLLECTION)
-			.filter(id -> id.equals(collectionId))
-			.orElseThrow(() -> new BusinessException(CollectionError.FORBIDDEN_NOT_GUEST));
+		if (user instanceof GuestPrincipal guest) {
+			guest.getTargetIdFor(ShareLink.ShareLinkType.COLLECTION)
+				.filter(id -> id.equals(collectionId))
+				.orElseThrow(() -> new BusinessException(CollectionError.FORBIDDEN_NOT_GUEST));
+		} else {
+			throw new BusinessException(CollectionError.FORBIDDEN_NOT_GUEST);
+		}
 	}
 
 	private boolean isOwner(Long collectionId, Long userId) {
