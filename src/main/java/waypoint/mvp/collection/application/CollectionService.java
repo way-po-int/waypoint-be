@@ -90,6 +90,7 @@ public class CollectionService {
 	@Transactional
 	public ShareLinkResponse createInvitation(Long collectionId, UserInfo user) {
 		getCollection(collectionId);
+		collectionAuthorizer.verifyMember(user, collectionId);
 
 		ShareLink shareLink = ShareLink.create(ShareLink.ShareLinkType.COLLECTION, collectionId, user.getId(),
 			invitationExpirationHours);
