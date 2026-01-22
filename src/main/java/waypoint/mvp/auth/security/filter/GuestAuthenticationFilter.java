@@ -28,6 +28,7 @@ import waypoint.mvp.sharelink.application.ShareLinkService;
 public class GuestAuthenticationFilter extends OncePerRequestFilter {
 	private static final AntPathMatcher matcher = new AntPathMatcher();
 	private static final List<String> INCLUDE_PATHS = Arrays.asList(
+		"/invite/**",
 		"/collections/**",
 		"/plan/**"
 	);

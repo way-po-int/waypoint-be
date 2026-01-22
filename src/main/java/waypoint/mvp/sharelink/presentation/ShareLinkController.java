@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.WayPointUser;
+import waypoint.mvp.global.auth.annotations.AuthLevel;
+import waypoint.mvp.global.auth.annotations.Authorize;
 import waypoint.mvp.global.util.CookieUtils;
 import waypoint.mvp.sharelink.application.ShareLinkService;
 import waypoint.mvp.sharelink.application.ShareLinkService.InvitationResult;
@@ -34,15 +36,17 @@ public class ShareLinkController {
 	private long guestCookieMaxAgeSeconds;
 
 	@GetMapping("/{code}")
+	@Authorize(level = AuthLevel.GUEST_OR_MEMBER)
 	public ResponseEntity<Void> handleInvitation(
-		@PathVariable String code, 
+		@PathVariable String code,
 		@AuthenticationPrincipal WayPointUser user
 	) {
 		InvitationResult result = shareLinkService.processInvitationLink(code, user);
 
 		return switch (result) {
 			case InvitationResult.GuestInvitation(var shareLinkCode, var redirectUrl) -> {
-				ResponseCookie cookie = cookieUtils.createCookie(guestCookieName, shareLinkCode, guestCookieMaxAgeSeconds);
+				ResponseCookie cookie = cookieUtils.createCookie(guestCookieName, shareLinkCode,
+					guestCookieMaxAgeSeconds);
 				yield ResponseEntity.status(HttpStatus.FOUND)
 					.header(HttpHeaders.SET_COOKIE, cookie.toString())
 					.location(URI.create(redirectUrl))
