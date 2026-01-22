@@ -46,11 +46,6 @@ public class ShareLinkService {
 		return new InvitationResult.GuestInvitation(redirectUrl, code);
 	}
 
-	public ShareLink findShareLinkByCode(String code) {
-		return shareLinkRepository.findByCode(code)
-			.orElseThrow(() -> new BusinessException(ShareLinkError.INVALID_INVITATION_LINK));
-	}
-
 	@Transactional
 	public void acceptInvitation(String code, Long userId) {
 		ShareLink shareLink = findValidLink(code);
@@ -84,5 +79,10 @@ public class ShareLinkService {
 			default -> throw new BusinessException(ShareLinkError.INVALID_INVITATION_LINK);
 		};
 		return frontendBaseUrl + path + shareLink.getTargetId();
+	}
+
+	private ShareLink findShareLinkByCode(String code) {
+		return shareLinkRepository.findByCode(code)
+			.orElseThrow(() -> new BusinessException(ShareLinkError.INVALID_INVITATION_LINK));
 	}
 }
