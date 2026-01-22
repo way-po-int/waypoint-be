@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.UserInfo;
+import waypoint.mvp.auth.security.principal.WayPointUser;
 import waypoint.mvp.collection.application.dto.request.CollectionCreateRequest;
 import waypoint.mvp.collection.application.dto.request.CollectionUpdateRequest;
 import waypoint.mvp.collection.application.dto.response.CollectionResponse;
@@ -59,7 +60,9 @@ public class CollectionService {
 			.map(CollectionResponse::from);
 	}
 
-	public CollectionResponse findCollectionById(Long collectionId) {
+	/** Guest or Member 사용 가능한 메서드 */
+	public CollectionResponse findCollectionById(Long collectionId, WayPointUser user) {
+		collectionAuthorizer.verifyAccess(user, collectionId);
 		Collection collection = getCollection(collectionId);
 
 		return CollectionResponse.from(collection);
@@ -67,6 +70,7 @@ public class CollectionService {
 
 	@Transactional
 	public CollectionResponse updateCollection(Long collectionId, CollectionUpdateRequest request, UserInfo user) {
+		collectionAuthorizer.verifyMember(user, collectionId);
 		Collection collection = getCollection(collectionId);
 
 		collection.update(request.title());
@@ -76,20 +80,14 @@ public class CollectionService {
 
 	@Transactional
 	public void deleteCollection(Long collectionId, UserInfo user) {
-		Collection collection = getCollection(collectionId);
 		collectionAuthorizer.verifyOwner(user, collectionId);
+		Collection collection = getCollection(collectionId);
 
 		collectionRepository.delete(collection);
 	}
 
-	private Collection getCollection(Long collectionId) {
-		return collectionRepository.findById(collectionId)
-			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
-	}
-
 	@Transactional
 	public ShareLinkResponse createInvitation(Long collectionId, UserInfo user) {
-		getCollection(collectionId);
 		collectionAuthorizer.verifyMember(user, collectionId);
 
 		ShareLink shareLink = ShareLink.create(ShareLink.ShareLinkType.COLLECTION, collectionId, user.getId(),
@@ -113,6 +111,11 @@ public class CollectionService {
 		shareLink.increaseUseCount();
 
 		return collection.getId();
+	}
+
+	private Collection getCollection(Long collectionId) {
+		return collectionRepository.findById(collectionId)
+			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
 	}
 
 	private void addCollectionMember(Collection collection, User user) {

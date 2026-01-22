@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.UserInfo;
+import waypoint.mvp.auth.security.principal.WayPointUser;
 import waypoint.mvp.collection.application.CollectionService;
 import waypoint.mvp.collection.application.dto.request.CollectionCreateRequest;
 import waypoint.mvp.collection.application.dto.request.CollectionUpdateRequest;
@@ -53,13 +54,14 @@ public class CollectionController {
 	@Authorize(level = AuthLevel.GUEST_OR_MEMBER)
 	@GetMapping("/{collectionId}")
 	public ResponseEntity<CollectionResponse> findCollectionById(
-		@PathVariable Long collectionId
+		@PathVariable Long collectionId,
+		@AuthenticationPrincipal WayPointUser user
 	) {
-		CollectionResponse collection = collectionService.findCollectionById(collectionId);
+		CollectionResponse collection = collectionService.findCollectionById(collectionId, user);
 		return ResponseEntity.ok(collection);
 	}
 
-	@Authorize(level = AuthLevel.MEMBER)
+	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@PutMapping("/{collectionId}")
 	public ResponseEntity<CollectionResponse> updateCollection(@PathVariable Long collectionId,
 		@RequestBody @Valid CollectionUpdateRequest request,
@@ -68,7 +70,7 @@ public class CollectionController {
 		return ResponseEntity.ok(response);
 	}
 
-	@Authorize(level = AuthLevel.OWNER)
+	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@DeleteMapping("/{collectionId}")
 	public ResponseEntity<Void> deleteCollection(@PathVariable Long collectionId,
 		@AuthenticationPrincipal UserInfo user) {
@@ -76,7 +78,7 @@ public class CollectionController {
 		return ResponseEntity.noContent().build();
 	}
 
-	@Authorize(level = AuthLevel.MEMBER)
+	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@PostMapping("/{collectionId}/invitations")
 	public ResponseEntity<ShareLinkResponse> createInvitation(@PathVariable Long collectionId,
 		@AuthenticationPrincipal UserInfo user) {

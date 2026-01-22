@@ -40,8 +40,6 @@ public class ResourceAuthorizationAspect {
 
 		switch (authorize.level()) {
 			case GUEST_OR_MEMBER -> collectionAuthorizer.verifyAccess(user, collectionId);
-			case MEMBER -> collectionAuthorizer.verifyMember(user, collectionId);
-			case OWNER -> collectionAuthorizer.verifyOwner(user, collectionId);
 			default -> throw new IllegalStateException("처리할 수 없는 AuthLevel입니다: " + authorize.level());
 		}
 	}
