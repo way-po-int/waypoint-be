@@ -12,7 +12,6 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import waypoint.mvp.collection.domain.ExtractStatus;
 import waypoint.mvp.global.common.BaseTimeEntity;
 
 @Entity
@@ -29,7 +28,7 @@ public class SocialMedia extends BaseTimeEntity {
 	@Column(nullable = false)
 	private SocialMediaType type;
 
-	@Column(nullable = false)
+	@Column(nullable = false, unique = true)
 	private String url;
 
 	@Column
@@ -48,9 +47,9 @@ public class SocialMedia extends BaseTimeEntity {
 		this.status = ExtractStatus.PENDING;
 	}
 
-	public static SocialMedia create(SocialMediaType type, String url) {
+	public static SocialMedia create(String url) {
 		return builder()
-			.type(type)
+			.type(SocialMediaType.from(url))
 			.url(url)
 			.build();
 	}
