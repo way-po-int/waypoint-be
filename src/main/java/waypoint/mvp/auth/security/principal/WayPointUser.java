@@ -6,7 +6,6 @@ package waypoint.mvp.auth.security.principal;
  * <strong>주요 역할:</strong>
  * <ul>
  * <li>정규 사용자({@link UserPrincipal})와 Guest({@link GuestPrincipal})의 다형성 처리</li>
- * <li>서비스 레이어의 인증 주체 판별 로직(instanceof) 제거</li>
  * </ul>
  * @see UserPrincipal
  * @see GuestPrincipal
