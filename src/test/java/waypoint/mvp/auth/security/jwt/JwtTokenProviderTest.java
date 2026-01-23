@@ -13,7 +13,7 @@ import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.security.core.Authentication;
 
-import waypoint.mvp.auth.security.principal.UserInfo;
+import waypoint.mvp.auth.security.principal.UserPrincipal;
 
 class JwtTokenProviderTest {
 
@@ -32,7 +32,7 @@ class JwtTokenProviderTest {
 	@DisplayName("Access Token을 발급하고 검증에 성공한다.")
 	void generateAccessToken() {
 		// given
-		UserInfo userInfo = new UserInfo(1L);
+		UserPrincipal userInfo = new UserPrincipal(1L);
 		Instant now = Instant.now();
 
 		// when
@@ -53,7 +53,7 @@ class JwtTokenProviderTest {
 	@DisplayName("Refresh Token을 발급하고 검증에 성공한다.")
 	void generateRefreshToken() {
 		// given
-		UserInfo userInfo = new UserInfo(1L);
+		UserPrincipal userInfo = new UserPrincipal(1L);
 		Instant now = Instant.now();
 
 		// when
@@ -75,7 +75,7 @@ class JwtTokenProviderTest {
 	void getAuthentication() {
 		// given
 		Long userId = 1L;
-		UserInfo userInfo = new UserInfo(userId);
+		UserPrincipal userInfo = new UserPrincipal(userId);
 		TokenInfo accessToken = jwtTokenProvider.generateAccessToken(userInfo);
 
 		// when
@@ -83,9 +83,9 @@ class JwtTokenProviderTest {
 
 		// then
 		assertThat(authentication).isNotNull();
-		assertThat(authentication.getPrincipal()).isInstanceOf(UserInfo.class);
+		assertThat(authentication.getPrincipal()).isInstanceOf(UserPrincipal.class);
 
-		UserInfo extractedUserInfo = (UserInfo)authentication.getPrincipal();
+		UserPrincipal extractedUserInfo = (UserPrincipal)authentication.getPrincipal();
 		assertThat(extractedUserInfo.id()).isEqualTo(userId);
 	}
 
@@ -95,7 +95,7 @@ class JwtTokenProviderTest {
 		// given
 		long expiresIn = -1000L;
 		JwtTokenProvider shortProvider = new JwtTokenProvider(JWT_SECRET, expiresIn, expiresIn);
-		UserInfo userInfo = new UserInfo(1L);
+		UserPrincipal userInfo = new UserPrincipal(1L);
 		TokenInfo accessToken = shortProvider.generateAccessToken(userInfo);
 		TokenInfo refreshToken = shortProvider.generateRefreshToken(userInfo);
 
@@ -121,7 +121,7 @@ class JwtTokenProviderTest {
 	void validateForgedToken() {
 		// given
 		String fakeKey = "ThisIsAFakeSecretKeyForJwtWhichIsLongEnough";
-		UserInfo userInfo = new UserInfo(1L);
+		UserPrincipal userInfo = new UserPrincipal(1L);
 		JwtTokenProvider fakeProvider = new JwtTokenProvider(fakeKey, ACCESS_EXPIRES_IN, REFRESH_EXPIRES_IN);
 		TokenInfo accessToken = fakeProvider.generateAccessToken(userInfo);
 

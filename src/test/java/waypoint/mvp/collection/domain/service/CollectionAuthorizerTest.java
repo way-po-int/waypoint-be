@@ -15,7 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import waypoint.mvp.auth.security.principal.GuestPrincipal;
-import waypoint.mvp.auth.security.principal.UserInfo;
+import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.auth.security.principal.WayPointUser;
 import waypoint.mvp.collection.domain.Collection;
 import waypoint.mvp.collection.domain.CollectionMember;
@@ -47,7 +47,7 @@ class CollectionAuthorizerTest {
 
 	@BeforeEach
 	void setUp() {
-		loggedInUser = new UserInfo(userId);
+		loggedInUser = new UserPrincipal(userId);
 		// GuestPrincipal은 targetId를 가질 수 있음
 		guestUser = new GuestPrincipal("test-guest-code", ShareLinkType.COLLECTION, collectionId);
 	}

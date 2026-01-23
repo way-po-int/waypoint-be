@@ -9,7 +9,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import waypoint.mvp.auth.security.principal.UserInfo;
+import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.collection.application.dto.request.CollectionCreateRequest;
 import waypoint.mvp.collection.application.dto.response.CollectionResponse;
 import waypoint.mvp.collection.domain.Collection;
@@ -60,7 +60,7 @@ class CollectionServiceTest {
 		// given
 		String title = "My First Collection";
 		CollectionCreateRequest request = new CollectionCreateRequest(title);
-		UserInfo userInfo = new UserInfo(savedUser.getId());
+		UserPrincipal userInfo = new UserPrincipal(savedUser.getId());
 
 		// when
 		CollectionResponse collection = collectionService.createCollection(request, userInfo);
@@ -95,14 +95,14 @@ class CollectionServiceTest {
 		// when & then
 		// Case 1: 소유자가 생성
 		ShareLinkResponse ownerResponse = collectionService.createInvitation(collection.getId(),
-			new UserInfo(savedUser.getId()));
+			new UserPrincipal(savedUser.getId()));
 		Optional<ShareLink> ownerLink = shareLinkRepository.findByCode(ownerResponse.code());
 		assertThat(ownerLink).isPresent();
 		assertThat(ownerLink.get().getHostUserId()).isEqualTo(savedUser.getId());
 
 		// Case 2: 일반 멤버가 생성
 		ShareLinkResponse memberResponse = collectionService.createInvitation(collection.getId(),
-			new UserInfo(memberUser.getId()));
+			new UserPrincipal(memberUser.getId()));
 		Optional<ShareLink> memberLink = shareLinkRepository.findByCode(memberResponse.code());
 		assertThat(memberLink).isPresent();
 		assertThat(memberLink.get().getHostUserId()).isEqualTo(memberUser.getId());
@@ -121,7 +121,7 @@ class CollectionServiceTest {
 
 		// when & then
 		assertThatThrownBy(
-			() -> collectionService.createInvitation(collection.getId(), new UserInfo(anotherUser.getId())))
+			() -> collectionService.createInvitation(collection.getId(), new UserPrincipal(anotherUser.getId())))
 			.isInstanceOf(BusinessException.class)
 			.extracting(ex -> ((BusinessException)ex).getBody().getProperties().get("code"))
 			.isEqualTo("FORBIDDEN_NOT_MEMBER");

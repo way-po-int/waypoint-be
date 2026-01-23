@@ -12,10 +12,10 @@ import io.jsonwebtoken.Claims;
  * </ul>
  * * @param id 시스템 내부 사용자 식별 고유 ID
  */
-public record UserInfo(Long id) implements WayPointUser {
+public record UserPrincipal(Long id) implements WayPointUser {
 
-	public static UserInfo from(Claims claims) {
-		return new UserInfo(
+	public static UserPrincipal from(Claims claims) {
+		return new UserPrincipal(
 			Long.valueOf(claims.getSubject())
 		);
 	}
@@ -30,10 +30,10 @@ public record UserInfo(Long id) implements WayPointUser {
 		return false;
 	}
 
-	public static UserInfo from(Object principal) {
+	public static UserPrincipal from(Object principal) {
 		if (principal instanceof CustomOidcUser oidcUser) {
-			return new UserInfo(oidcUser.getId());
+			return new UserPrincipal(oidcUser.getId());
 		}
-		return (UserInfo)principal;
+		return (UserPrincipal)principal;
 	}
 }

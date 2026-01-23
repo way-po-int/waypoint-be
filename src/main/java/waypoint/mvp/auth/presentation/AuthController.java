@@ -13,7 +13,7 @@ import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.application.AuthService;
 import waypoint.mvp.auth.application.dto.AuthTokens;
 import waypoint.mvp.auth.presentation.dto.response.TokenResponse;
-import waypoint.mvp.auth.security.principal.UserInfo;
+import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.global.util.CookieUtils;
 
 @RestController
@@ -37,7 +37,7 @@ public class AuthController {
 
 	@PostMapping("/logout")
 	public ResponseEntity<Void> logout(
-		@AuthenticationPrincipal UserInfo userInfo,
+		@AuthenticationPrincipal UserPrincipal userInfo,
 		@CookieValue(name = "${waypoint.cookie.refresh-token-name}", required = false) String refreshToken
 	) {
 		authService.logout(userInfo, refreshToken);

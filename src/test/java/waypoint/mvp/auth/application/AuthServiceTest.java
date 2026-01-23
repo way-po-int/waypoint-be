@@ -19,7 +19,7 @@ import waypoint.mvp.auth.error.exception.InvalidRefreshTokenException;
 import waypoint.mvp.auth.infrastructure.persistence.RefreshTokenRepository;
 import waypoint.mvp.auth.security.jwt.JwtTokenProvider;
 import waypoint.mvp.auth.security.jwt.TokenInfo;
-import waypoint.mvp.auth.security.principal.UserInfo;
+import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.auth.util.HashUtils;
 import waypoint.mvp.global.annotation.ServiceTest;
 
@@ -40,7 +40,7 @@ class AuthServiceTest {
 	void reissue_success() {
 		// given
 		Long userId = 1L;
-		UserInfo userInfo = new UserInfo(userId);
+		UserPrincipal userInfo = new UserPrincipal(userId);
 		TokenInfo oldRefreshToken = jwtTokenProvider.generateRefreshToken(userInfo);
 
 		String hashedOldRefreshToken = HashUtils.generateHash(oldRefreshToken.token());
@@ -85,7 +85,7 @@ class AuthServiceTest {
 	@DisplayName("DB에 리프레시 토큰이 없다면 예외가 발생한다.")
 	void reissue_notFound_fail() {
 		// given
-		UserInfo userInfo = new UserInfo(1L);
+		UserPrincipal userInfo = new UserPrincipal(1L);
 		String refreshToken = jwtTokenProvider.generateRefreshToken(userInfo).token();
 
 		// when & then
@@ -97,7 +97,7 @@ class AuthServiceTest {
 	@DisplayName("DB에 있는 리프레시 토큰이 만료된 경우 예외가 발생하고, 해당 토큰은 삭제한다.")
 	void reissue_expired_fail() {
 		// given
-		UserInfo userInfo = new UserInfo(1L);
+		UserPrincipal userInfo = new UserPrincipal(1L);
 		TokenInfo tokenInfo = jwtTokenProvider.generateRefreshToken(userInfo);
 		String tokenValue = tokenInfo.token();
 
@@ -122,7 +122,7 @@ class AuthServiceTest {
 	void generateRefreshToken_success() {
 		// given
 		Long userId = 1L;
-		UserInfo userInfo = new UserInfo(userId);
+		UserPrincipal userInfo = new UserPrincipal(userId);
 		Authentication authentication = new UsernamePasswordAuthenticationToken(userInfo, null,
 			Collections.emptyList());
 
@@ -143,7 +143,7 @@ class AuthServiceTest {
 	void logout_success() {
 		// given
 		Long userId = 1L;
-		UserInfo userInfo = new UserInfo(userId);
+		UserPrincipal userInfo = new UserPrincipal(userId);
 		TokenInfo tokenInfo = jwtTokenProvider.generateRefreshToken(userInfo);
 
 		String hashedToken = HashUtils.generateHash(tokenInfo.token());
@@ -169,7 +169,7 @@ class AuthServiceTest {
 		Long loginUserId = 1L;
 		Long tokenOwnerId = 2L;
 		String refreshToken = "refresh_token";
-		UserInfo userInfo = new UserInfo(loginUserId);
+		UserPrincipal userInfo = new UserPrincipal(loginUserId);
 
 		String hashedToken = HashUtils.generateHash(refreshToken);
 		Instant expiresAt = Instant.now().plusSeconds(3600);

@@ -17,7 +17,7 @@ import waypoint.mvp.auth.infrastructure.persistence.RefreshTokenRepository;
 import waypoint.mvp.auth.security.jwt.JwtCode;
 import waypoint.mvp.auth.security.jwt.JwtTokenProvider;
 import waypoint.mvp.auth.security.jwt.TokenInfo;
-import waypoint.mvp.auth.security.principal.UserInfo;
+import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.auth.util.HashUtils;
 
 @Service
@@ -46,7 +46,7 @@ public class AuthService {
 		}
 
 		Authentication authentication = jwtTokenProvider.getAuthentication(refreshToken);
-		UserInfo userInfo = UserInfo.from(authentication.getPrincipal());
+		UserPrincipal userInfo = UserPrincipal.from(authentication.getPrincipal());
 
 		log.info("토큰 재발급 성공: userId={}", userInfo.id());
 		return AuthTokens.of(
@@ -56,7 +56,7 @@ public class AuthService {
 	}
 
 	public TokenInfo generateRefreshToken(Authentication authentication) {
-		UserInfo userInfo = UserInfo.from(authentication.getPrincipal());
+		UserPrincipal userInfo = UserPrincipal.from(authentication.getPrincipal());
 		TokenInfo tokenInfo = jwtTokenProvider.generateRefreshToken(userInfo);
 
 		RefreshToken refreshToken = RefreshToken.create(
@@ -69,7 +69,7 @@ public class AuthService {
 		return tokenInfo;
 	}
 
-	public void logout(UserInfo userInfo, String refreshToken) {
+	public void logout(UserPrincipal userInfo, String refreshToken) {
 		if (ObjectUtils.isEmpty(refreshToken)) {
 			return;
 		}

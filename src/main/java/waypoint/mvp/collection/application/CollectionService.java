@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
-import waypoint.mvp.auth.security.principal.UserInfo;
+import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.auth.security.principal.WayPointUser;
 import waypoint.mvp.collection.application.dto.request.CollectionCreateRequest;
 import waypoint.mvp.collection.application.dto.request.CollectionUpdateRequest;
@@ -45,7 +45,7 @@ public class CollectionService {
 	private long invitationExpirationHours;
 
 	@Transactional
-	public CollectionResponse createCollection(CollectionCreateRequest request, UserInfo user) {
+	public CollectionResponse createCollection(CollectionCreateRequest request, UserPrincipal user) {
 		Collection collection = Collection.create(request.title());
 		collectionRepository.save(collection);
 
@@ -55,7 +55,7 @@ public class CollectionService {
 		return CollectionResponse.from(collection);
 	}
 
-	public Page<CollectionResponse> findCollections(UserInfo user, Pageable pageable) {
+	public Page<CollectionResponse> findCollections(UserPrincipal user, Pageable pageable) {
 		return collectionRepository.findAllByUserId(user.id(), pageable)
 			.map(CollectionResponse::from);
 	}
@@ -69,7 +69,7 @@ public class CollectionService {
 	}
 
 	@Transactional
-	public CollectionResponse updateCollection(Long collectionId, CollectionUpdateRequest request, UserInfo user) {
+	public CollectionResponse updateCollection(Long collectionId, CollectionUpdateRequest request, UserPrincipal user) {
 		collectionAuthorizer.verifyMember(user, collectionId);
 		Collection collection = getCollection(collectionId);
 
@@ -79,7 +79,7 @@ public class CollectionService {
 	}
 
 	@Transactional
-	public void deleteCollection(Long collectionId, UserInfo user) {
+	public void deleteCollection(Long collectionId, UserPrincipal user) {
 		collectionAuthorizer.verifyOwner(user, collectionId);
 		Collection collection = getCollection(collectionId);
 
@@ -87,7 +87,7 @@ public class CollectionService {
 	}
 
 	@Transactional
-	public ShareLinkResponse createInvitation(Long collectionId, UserInfo user) {
+	public ShareLinkResponse createInvitation(Long collectionId, UserPrincipal user) {
 		collectionAuthorizer.verifyMember(user, collectionId);
 
 		ShareLink shareLink = ShareLink.create(ShareLink.ShareLinkType.COLLECTION, collectionId, user.getId(),
