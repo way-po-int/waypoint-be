@@ -15,6 +15,7 @@ import waypoint.mvp.collection.application.dto.response.CollectionResponse;
 import waypoint.mvp.collection.domain.Collection;
 import waypoint.mvp.collection.domain.CollectionMember;
 import waypoint.mvp.collection.domain.CollectionRole;
+import waypoint.mvp.collection.error.CollectionError;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionMemberRepository;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionRepository;
 import waypoint.mvp.global.annotation.ServiceTest;
@@ -45,13 +46,13 @@ class CollectionServiceTest {
 	@Autowired
 	private ShareLinkRepository shareLinkRepository;
 
-	private User savedUser;
+	private User baseUser;
 
 	@BeforeEach
 	void setUp() {
 		SocialAccount socialAccount = SocialAccount.create(Provider.GOOGLE, "12345");
 		User user = User.create(socialAccount, "tester", "picture_url", "test@example.com");
-		savedUser = userRepository.save(user);
+		baseUser = userRepository.save(user);
 	}
 
 	@Test
@@ -59,53 +60,49 @@ class CollectionServiceTest {
 	void createCollection_withMember_success() {
 		// given
 		String title = "My First Collection";
-		CollectionCreateRequest request = new CollectionCreateRequest(title);
-		UserPrincipal userInfo = new UserPrincipal(savedUser.getId());
+		UserPrincipal requestPrincipal = new UserPrincipal(baseUser.getId());
 
 		// when
-		CollectionResponse collection = collectionService.createCollection(request, userInfo);
+		Collection collection = createCollection(title, requestPrincipal);
 
 		// then
 		// 1. Collection이 정상적으로 저장되었는지 검증
-		Optional<Collection> foundCollection = collectionRepository.findById(collection.id());
+		Optional<Collection> foundCollection = collectionRepository.findById(collection.getId());
 		assertThat(foundCollection).isPresent();
 		assertThat(foundCollection.get().getTitle()).isEqualTo(title);
 
 		// 2. CollectionMember가 정상적으로 저장되었는지 검증 (이벤트 리스너 동작 확인)
-		Optional<CollectionMember> foundMember = collectionMemberRepository.findActiveByUserId(collection.id(),
-			savedUser.getId());
+		Optional<CollectionMember> foundMember = collectionMemberRepository.findActiveByUserId(collection.getId(),
+			baseUser.getId());
 		assertThat(foundMember).isPresent();
 		assertThat(foundMember.get().getRole()).isEqualTo(CollectionRole.OWNER);
-		assertThat(foundMember.get().getUser().getId()).isEqualTo(savedUser.getId());
+		assertThat(foundMember.get().getUser().getId()).isEqualTo(baseUser.getId());
 	}
 
 	@Test
 	@DisplayName("컬렉션 멤버는 성공적으로 초대 링크를 생성할 수 있다.")
 	void createInvitation_success() {
 		// given
-		// 1. 다른 유저(일반 멤버) 생성
-		SocialAccount memberAccount = SocialAccount.create(Provider.GOOGLE, "member123");
-		User memberUser = userRepository.save(User.create(memberAccount, "memberUser", "pic", "member@test.com"));
+		User anotherUser = createUser("anotherUser");
+		UserPrincipal anotherPrincipal = new UserPrincipal(anotherUser.getId());
+		UserPrincipal ownerPrincipal = new UserPrincipal(baseUser.getId());
 
 		// 2. 컬렉션 생성 및 소유자, 일반 멤버 등록
-		Collection collection = collectionRepository.save(Collection.create("Test Collection"));
-		collectionMemberRepository.save(CollectionMember.create(collection, savedUser, CollectionRole.OWNER));
-		collectionMemberRepository.save(CollectionMember.create(collection, memberUser, CollectionRole.MEMBER));
+		Collection collection = createCollection("Test Collection", ownerPrincipal);
+		collectionMemberRepository.save(CollectionMember.create(collection, anotherUser, CollectionRole.MEMBER));
 
 		// when & then
 		// Case 1: 소유자가 생성
-		ShareLinkResponse ownerResponse = collectionService.createInvitation(collection.getId(),
-			new UserPrincipal(savedUser.getId()));
+		ShareLinkResponse ownerResponse = collectionService.createInvitation(collection.getId(), ownerPrincipal);
 		Optional<ShareLink> ownerLink = shareLinkRepository.findByCode(ownerResponse.code());
 		assertThat(ownerLink).isPresent();
-		assertThat(ownerLink.get().getHostUserId()).isEqualTo(savedUser.getId());
+		assertThat(ownerLink.get().getHostUserId()).isEqualTo(ownerPrincipal.getId());
 
 		// Case 2: 일반 멤버가 생성
-		ShareLinkResponse memberResponse = collectionService.createInvitation(collection.getId(),
-			new UserPrincipal(memberUser.getId()));
+		ShareLinkResponse memberResponse = collectionService.createInvitation(collection.getId(), anotherPrincipal);
 		Optional<ShareLink> memberLink = shareLinkRepository.findByCode(memberResponse.code());
 		assertThat(memberLink).isPresent();
-		assertThat(memberLink.get().getHostUserId()).isEqualTo(memberUser.getId());
+		assertThat(memberLink.get().getHostUserId()).isEqualTo(anotherUser.getId());
 	}
 
 	@Test
@@ -113,17 +110,35 @@ class CollectionServiceTest {
 	void createInvitation_fail_notMember() {
 		// given
 		// 1. 다른 유저 생성
-		SocialAccount anotherAccount = SocialAccount.create(Provider.GOOGLE, "54321");
-		User anotherUser = userRepository.save(User.create(anotherAccount, "anotherUser", "pic", "another@test.com"));
+		UserPrincipal anotherPrinical = new UserPrincipal(createUser("anotherUser").getId());
+		UserPrincipal ownerPrincipal = new UserPrincipal(baseUser.getId());
 
 		// 2. 컬렉션 생성 (anotherUser는 멤버가 아님)
-		Collection collection = collectionRepository.save(Collection.create("Test Collection"));
+		Collection collection = createCollection("Test Collection", ownerPrincipal);
 
 		// when & then
 		assertThatThrownBy(
-			() -> collectionService.createInvitation(collection.getId(), new UserPrincipal(anotherUser.getId())))
+			() -> collectionService.createInvitation(collection.getId(), anotherPrinical))
 			.isInstanceOf(BusinessException.class)
 			.extracting(ex -> ((BusinessException)ex).getBody().getProperties().get("code"))
-			.isEqualTo("FORBIDDEN_NOT_MEMBER");
+			.isEqualTo(CollectionError.FORBIDDEN_NOT_MEMBER.name());
+	}
+
+	private User createUser(String userName) {
+		SocialAccount socialAccount = SocialAccount.create(Provider.GOOGLE, userName + "_12345");
+		User user = User.create(socialAccount, userName, "picture_url", userName + "@example.com");
+		return userRepository.save(user);
+	}
+
+	private Collection createCollection(String title, UserPrincipal ownerUser) {
+		CollectionCreateRequest createRequest = new CollectionCreateRequest(title);
+		CollectionResponse CollectionResponse = collectionService.createCollection(createRequest, ownerUser);
+
+		return findCollectionById(CollectionResponse.id());
+
+	}
+
+	private Collection findCollectionById(Long collectionId) {
+		return collectionRepository.findById(collectionId).get();
 	}
 }
