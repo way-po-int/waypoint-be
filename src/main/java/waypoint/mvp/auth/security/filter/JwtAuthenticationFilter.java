@@ -1,4 +1,4 @@
-package waypoint.mvp.auth.security.jwt;
+package waypoint.mvp.auth.security.filter;
 
 import java.io.IOException;
 
@@ -13,6 +13,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import waypoint.mvp.auth.security.jwt.JwtCode;
+import waypoint.mvp.auth.security.jwt.JwtTokenProvider;
 
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {

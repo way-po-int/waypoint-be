@@ -21,7 +21,7 @@ import waypoint.mvp.auth.application.AuthService;
 import waypoint.mvp.auth.presentation.dto.response.TokenResponse;
 import waypoint.mvp.auth.security.jwt.JwtTokenProvider;
 import waypoint.mvp.auth.security.jwt.TokenInfo;
-import waypoint.mvp.auth.security.principal.UserInfo;
+import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.global.util.CookieUtils;
 import waypoint.mvp.user.application.UserService;
 import waypoint.mvp.user.application.dto.SocialUserProfile;
@@ -59,7 +59,7 @@ class DevAuthController {
 		);
 		User user = userService.loadSocialUser(profile);
 
-		UserInfo userInfo = new UserInfo(user.getId());
+		UserPrincipal userInfo = new UserPrincipal(user.getId());
 		Authentication authentication = new UsernamePasswordAuthenticationToken(userInfo, null,
 			Collections.emptyList());
 

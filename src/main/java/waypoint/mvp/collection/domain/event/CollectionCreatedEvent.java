@@ -1,12 +1,12 @@
 package waypoint.mvp.collection.domain.event;
 
-import waypoint.mvp.auth.security.principal.UserInfo;
+import waypoint.mvp.auth.security.principal.UserPrincipal;
 
 public record CollectionCreatedEvent(
 	Long collectionId,
-	UserInfo user
+	UserPrincipal user
 ) {
-	public static CollectionCreatedEvent of(Long collectionId, UserInfo user) {
+	public static CollectionCreatedEvent of(Long collectionId, UserPrincipal user) {
 		return new CollectionCreatedEvent(collectionId, user);
 	}
 }

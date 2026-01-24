@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
-import waypoint.mvp.auth.security.principal.UserInfo;
+import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.collection.application.CollectionService;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.sharelink.domain.ShareLink;
@@ -34,21 +34,16 @@ public class ShareLinkService {
 		}
 	}
 
-	public InvitationResult processInvitationLink(String code, UserInfo userInfo) {
+	public InvitationResult processInvitationLink(String code, AuthPrincipal user) {
 		ShareLink shareLink = findValidLink(code);
 		String redirectUrl = buildRedirectUrl(shareLink);
 
-		if (userInfo != null) {
-			acceptInvitationForTarget(shareLink, userInfo.id());
+		if (user != null && !user.isGuest()) {
+			acceptInvitationForTarget(shareLink, user.getId());
 			return new InvitationResult.UserInvitation(redirectUrl);
-		} else {
-			return new InvitationResult.GuestInvitation(redirectUrl, code);
 		}
-	}
 
-	public ShareLink findShareLinkByCode(String code) {
-		return shareLinkRepository.findByCode(code)
-			.orElseThrow(() -> new BusinessException(ShareLinkError.INVALID_INVITATION_LINK));
+		return new InvitationResult.GuestInvitation(redirectUrl, code);
 	}
 
 	@Transactional
@@ -71,18 +66,21 @@ public class ShareLinkService {
 			case COLLECTION:
 				collectionService.addMemberFromShareLink(shareLink, userId);
 				break;
-			default:
-				throw new BusinessException(ShareLinkError.INVALID_INVITATION_LINK);
+			case PLAN:
+				break;
 		}
 	}
 
 	private String buildRedirectUrl(ShareLink shareLink) {
 		ShareLinkType shareLinkType = shareLink.getTargetType();
 
-		String path = switch (shareLinkType) {
-			case COLLECTION -> shareLinkType.getPath();
-			default -> throw new BusinessException(ShareLinkError.INVALID_INVITATION_LINK);
-		};
+		String path = shareLinkType.getPath();
+
 		return frontendBaseUrl + path + shareLink.getTargetId();
+	}
+
+	private ShareLink findShareLinkByCode(String code) {
+		return shareLinkRepository.findByCode(code)
+			.orElseThrow(() -> new BusinessException(ShareLinkError.INVALID_INVITATION_LINK));
 	}
 }

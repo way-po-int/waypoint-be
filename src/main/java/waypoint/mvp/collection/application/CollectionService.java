@@ -8,7 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
-import waypoint.mvp.auth.security.principal.UserInfo;
+import waypoint.mvp.auth.security.principal.AuthPrincipal;
+import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.collection.application.dto.request.CollectionCreateRequest;
 import waypoint.mvp.collection.application.dto.request.CollectionUpdateRequest;
 import waypoint.mvp.collection.application.dto.response.CollectionResponse;
@@ -23,8 +24,6 @@ import waypoint.mvp.collection.infrastructure.persistence.CollectionRepository;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.sharelink.application.dto.response.ShareLinkResponse;
 import waypoint.mvp.sharelink.domain.ShareLink;
-import waypoint.mvp.sharelink.domain.ShareLink.ShareLinkType;
-import waypoint.mvp.sharelink.domain.service.ShareLinkAuthorizer;
 import waypoint.mvp.sharelink.error.ShareLinkError;
 import waypoint.mvp.sharelink.infrastructure.ShareLinkRepository;
 import waypoint.mvp.user.application.UserFinder;
@@ -38,7 +37,6 @@ public class CollectionService {
 	private final CollectionRepository collectionRepository;
 	private final CollectionMemberRepository collectionMemberRepository;
 	private final ApplicationEventPublisher eventPublisher;
-	private final ShareLinkAuthorizer shareLinkAuthorizer;
 	private final ShareLinkRepository shareLinkRepository;
 	private final UserFinder userFinder;
 	private final CollectionAuthorizer collectionAuthorizer;
@@ -47,62 +45,52 @@ public class CollectionService {
 	private long invitationExpirationHours;
 
 	@Transactional
-	public CollectionResponse createCollection(CollectionCreateRequest request, UserInfo user) {
+	public CollectionResponse createCollection(CollectionCreateRequest request, UserPrincipal user) {
 		Collection collection = Collection.create(request.title());
 		collectionRepository.save(collection);
 
-		eventPublisher.publishEvent(CollectionCreatedEvent.of(collection.getId(), user));
+		eventPublisher.publishEvent(
+			CollectionCreatedEvent.of(collection.getId(), user)); // 이벤트는 실제 유저만 발생시키므로 캐스팅
 
 		return CollectionResponse.from(collection);
 	}
 
-	public Page<CollectionResponse> findCollections(Pageable pageable) {
-		return collectionRepository.findAll(pageable)
+	public Page<CollectionResponse> findCollections(UserPrincipal user, Pageable pageable) {
+		return collectionRepository.findAllByUserId(user.id(), pageable)
 			.map(CollectionResponse::from);
 	}
 
-	public CollectionResponse findCollectionById(Long collectionId, UserInfo userInfo, String guestToken) {
+	/** Guest or Member 사용 가능한 메서드 */
+	public CollectionResponse findCollectionById(Long collectionId, AuthPrincipal user) {
+		collectionAuthorizer.verifyAccess(user, collectionId);
 		Collection collection = getCollection(collectionId);
-
-		if (userInfo != null) {
-			User user = userFinder.findById(userInfo.id());
-			collectionAuthorizer.verifyMember(collection, user);
-		} else if (guestToken != null) {
-			shareLinkAuthorizer.verifyAccess(collectionId, guestToken, ShareLinkType.COLLECTION);
-		} else {
-			throw new BusinessException(CollectionError.FORBIDDEN_NOT_GUEST);
-		}
 
 		return CollectionResponse.from(collection);
 	}
 
 	@Transactional
-	public CollectionResponse updateCollection(Long collectionId, CollectionUpdateRequest request) {
+	public CollectionResponse updateCollection(Long collectionId, CollectionUpdateRequest request, UserPrincipal user) {
+		collectionAuthorizer.verifyMember(user, collectionId);
 		Collection collection = getCollection(collectionId);
+
 		collection.update(request.title());
 
 		return CollectionResponse.from(collection);
 	}
 
 	@Transactional
-	public void deleteCollection(Long collectionId) {
+	public void deleteCollection(Long collectionId, UserPrincipal user) {
+		collectionAuthorizer.verifyOwner(user, collectionId);
 		Collection collection = getCollection(collectionId);
+
 		collectionRepository.delete(collection);
 	}
 
-	private Collection getCollection(Long collectionId) {
-		return collectionRepository.findById(collectionId)
-			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
-	}
-
 	@Transactional
-	public ShareLinkResponse createInvitation(Long collectionId, Long hostUserId) {
-		Collection collection = getCollection(collectionId);
-		User hostUser = userFinder.findById(hostUserId);
+	public ShareLinkResponse createInvitation(Long collectionId, UserPrincipal user) {
+		collectionAuthorizer.verifyMember(user, collectionId);
 
-		collectionAuthorizer.verifyMember(collection, hostUser);
-
-		ShareLink shareLink = ShareLink.create(ShareLinkType.COLLECTION, collectionId, hostUserId,
+		ShareLink shareLink = ShareLink.create(ShareLink.ShareLinkType.COLLECTION, collectionId, user.getId(),
 			invitationExpirationHours);
 
 		shareLinkRepository.save(shareLink);
@@ -112,7 +100,7 @@ public class CollectionService {
 
 	@Transactional
 	public Long addMemberFromShareLink(ShareLink shareLink, Long inviteeUserId) {
-		if (shareLink.getTargetType() != ShareLinkType.COLLECTION) {
+		if (shareLink.getTargetType() != ShareLink.ShareLinkType.COLLECTION) {
 			throw new BusinessException(ShareLinkError.INVALID_INVITATION_LINK);
 		}
 
@@ -125,8 +113,13 @@ public class CollectionService {
 		return collection.getId();
 	}
 
+	private Collection getCollection(Long collectionId) {
+		return collectionRepository.findById(collectionId)
+			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
+	}
+
 	private void addCollectionMember(Collection collection, User user) {
-		collectionAuthorizer.checkIfMemberExists(collection, user);
+		collectionAuthorizer.checkIfMemberExists(collection.getId(), user.getId());
 
 		CollectionMember newMember = CollectionMember.create(collection, user, CollectionRole.MEMBER);
 		collectionMemberRepository.save(newMember);

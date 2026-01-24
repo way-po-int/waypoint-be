@@ -3,12 +3,13 @@ package waypoint.mvp.collection.domain.service;
 import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
-import waypoint.mvp.collection.domain.Collection;
+import waypoint.mvp.auth.security.principal.AuthPrincipal;
+import waypoint.mvp.auth.security.principal.GuestPrincipal;
 import waypoint.mvp.collection.domain.CollectionMember;
 import waypoint.mvp.collection.error.CollectionError;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionMemberRepository;
 import waypoint.mvp.global.error.exception.BusinessException;
-import waypoint.mvp.user.domain.User;
+import waypoint.mvp.sharelink.domain.ShareLink;
 
 @Component
 @RequiredArgsConstructor
@@ -16,21 +17,45 @@ public class CollectionAuthorizer {
 
 	private final CollectionMemberRepository memberRepository;
 
-	public void verifyOwner(Collection collection, User user) {
-		memberRepository.findByCollectionAndUser(collection, user)
-			.filter(CollectionMember::isOwner)
-			.orElseThrow(() -> new BusinessException(CollectionError.FORBIDDEN_NOT_OWNER));
+	public void verifyAccess(AuthPrincipal user, Long collectionId) {
+		if (user.isGuest()) {
+			verifyGuestAccess(user, collectionId);
+			return;
+		}
+		verifyMember(user, collectionId);
 	}
 
-	public void verifyMember(Collection collection, User user) {
-		if (!memberRepository.existsByCollectionAndUser(collection, user)) {
+	public void verifyOwner(AuthPrincipal user, Long collectionId) {
+		if (user.isGuest() || !isOwner(collectionId, user.getId())) {
+			throw new BusinessException(CollectionError.FORBIDDEN_NOT_OWNER);
+		}
+	}
+
+	public void verifyMember(AuthPrincipal user, Long collectionId) {
+		if (!memberRepository.existsByCollectionIdAndUserId(collectionId, user.getId())) {
 			throw new BusinessException(CollectionError.FORBIDDEN_NOT_MEMBER);
 		}
 	}
 
-	public void checkIfMemberExists(Collection collection, User user) {
-		if (memberRepository.existsByCollectionAndUser(collection, user)) {
+	public void checkIfMemberExists(Long collectionId, Long userId) {
+		if (memberRepository.existsByCollectionIdAndUserId(collectionId, userId)) {
 			throw new BusinessException(CollectionError.MEMBER_ALREADY_EXISTS);
 		}
+	}
+
+	private void verifyGuestAccess(AuthPrincipal user, Long collectionId) {
+		if (user instanceof GuestPrincipal guest) {
+			guest.getTargetIdFor(ShareLink.ShareLinkType.COLLECTION)
+				.filter(id -> id.equals(collectionId))
+				.orElseThrow(() -> new BusinessException(CollectionError.FORBIDDEN_NOT_GUEST));
+		} else {
+			throw new BusinessException(CollectionError.FORBIDDEN_NOT_GUEST);
+		}
+	}
+
+	private boolean isOwner(Long collectionId, Long userId) {
+		return memberRepository.findByCollectionIdAndUserId(collectionId, userId)
+			.map(CollectionMember::isOwner)
+			.orElse(false);
 	}
 }

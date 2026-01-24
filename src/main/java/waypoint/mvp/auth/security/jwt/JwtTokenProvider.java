@@ -18,7 +18,7 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import waypoint.mvp.auth.security.principal.UserInfo;
+import waypoint.mvp.auth.security.principal.UserPrincipal;
 
 @Component
 public class JwtTokenProvider {
@@ -40,7 +40,7 @@ public class JwtTokenProvider {
 		this.refreshExpiresIn = refreshExpiresIn;
 	}
 
-	public TokenInfo generateAccessToken(UserInfo userInfo) {
+	public TokenInfo generateAccessToken(UserPrincipal userInfo) {
 		Instant expiresAt = Instant.now().plusSeconds(accessExpiresIn);
 		String accessToken = Jwts.builder()
 			.subject(userInfo.id().toString())
@@ -51,7 +51,7 @@ public class JwtTokenProvider {
 		return TokenInfo.of(accessToken, expiresAt, accessExpiresIn);
 	}
 
-	public TokenInfo generateRefreshToken(UserInfo userInfo) {
+	public TokenInfo generateRefreshToken(UserPrincipal userInfo) {
 		Instant expiresAt = Instant.now().plusSeconds(refreshExpiresIn);
 		String refreshToken = Jwts.builder()
 			.id(UUID.randomUUID().toString())
@@ -65,7 +65,7 @@ public class JwtTokenProvider {
 
 	public Authentication getAuthentication(String token) {
 		Claims claims = parseClaims(token);
-		return new UsernamePasswordAuthenticationToken(UserInfo.from(claims), null, Collections.emptyList());
+		return new UsernamePasswordAuthenticationToken(UserPrincipal.from(claims), null, Collections.emptyList());
 	}
 
 	public JwtCode validateAccessToken(String accessToken) {
