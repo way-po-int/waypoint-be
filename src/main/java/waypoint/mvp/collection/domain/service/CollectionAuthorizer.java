@@ -32,13 +32,13 @@ public class CollectionAuthorizer {
 	}
 
 	public void verifyMember(AuthPrincipal user, Long collectionId) {
-		if (!memberRepository.existsByCollectionIdAndUserId(collectionId, user.getId())) {
+		if (!memberRepository.existsActive(collectionId, user.getId())) {
 			throw new BusinessException(CollectionError.FORBIDDEN_NOT_MEMBER);
 		}
 	}
 
 	public void checkIfMemberExists(Long collectionId, Long userId) {
-		if (memberRepository.existsByCollectionIdAndUserId(collectionId, userId)) {
+		if (memberRepository.existsActive(collectionId, userId)) {
 			throw new BusinessException(CollectionError.MEMBER_ALREADY_EXISTS);
 		}
 	}
@@ -54,7 +54,7 @@ public class CollectionAuthorizer {
 	}
 
 	private boolean isOwner(Long collectionId, Long userId) {
-		return memberRepository.findByCollectionIdAndUserId(collectionId, userId)
+		return memberRepository.findActiveByUserId(collectionId, userId)
 			.map(CollectionMember::isOwner)
 			.orElse(false);
 	}
