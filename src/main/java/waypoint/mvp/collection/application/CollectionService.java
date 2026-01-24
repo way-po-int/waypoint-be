@@ -79,6 +79,37 @@ public class CollectionService {
 	}
 
 	@Transactional
+	public void withdrawCollectionMember(Long collectionId, UserPrincipal user) {
+		CollectionMember member = collectionMemberRepository.findActiveByUserId(collectionId, user.id())
+			.orElseThrow(() -> new BusinessException(CollectionError.FORBIDDEN_NOT_MEMBER));
+		removeCollectionMember(collectionId, member);
+
+	}
+
+	@Transactional
+	public void expelCollectionMember(Long collectionId, Long memberId, UserPrincipal user) {
+		collectionAuthorizer.verifyOwner(user, collectionId);
+
+		CollectionMember member = collectionMemberRepository.findActive(memberId, collectionId)
+			.orElseThrow(() -> new BusinessException(CollectionError.FORBIDDEN_NOT_MEMBER));
+		removeCollectionMember(collectionId, member);
+
+	}
+
+	private void removeCollectionMember(Long collectionId, CollectionMember member) {
+		Collection collection = getCollection(collectionId);
+
+		if (member.isOwner()) {
+			throw new BusinessException(CollectionError.NEED_TO_DELEGATE_OWNERSHIP);
+
+		} else {
+			// 일반 멤버는 탈퇴 처리
+			member.withdraw();
+			collection.decreaseMemberCount();
+		}
+	}
+
+	@Transactional
 	public void deleteCollection(Long collectionId, UserPrincipal user) {
 		collectionAuthorizer.verifyOwner(user, collectionId);
 		Collection collection = getCollection(collectionId);
