@@ -141,4 +141,105 @@ class CollectionServiceTest {
 	private Collection findCollectionById(Long collectionId) {
 		return collectionRepository.findById(collectionId).get();
 	}
+
+	@Test
+	@DisplayName("멤버가 자발적으로 컬렉션을 탈퇴하면 soft delete되고 멤버 수가 감소한다.")
+	void withdrawCollectionMember_byMember_success() {
+		// given
+		UserPrincipal owner = new UserPrincipal(baseUser.getId());
+		UserPrincipal member = new UserPrincipal(createUser("member1").getId());
+		Collection collection = createCollectionAndInvitedMember("Test Collection", owner, member);
+
+		// when
+		collectionService.withdrawCollectionMember(collection.getId(), member);
+
+		// then
+		Optional<CollectionMember> withdrawnMember = collectionMemberRepository.findWithdrawnMember(collection.getId(),
+			member.getId());
+		assertThat(withdrawnMember).isPresent();
+		assertThat(withdrawnMember.get().getDeletedAt()).isNotNull();
+
+		Collection updatedCollection = collectionRepository.findById(collection.getId()).get();
+		assertThat(updatedCollection.getMemberCount()).isEqualTo(1);
+
+		// 활성 멤버 조회 시, 탈퇴한 멤버가 조회되지 않는지 추가 검증
+		assertThat(
+			collectionMemberRepository.findActiveByUserId(collection.getId(), member.getId())).isNotPresent();
+	}
+
+	@Test
+	@DisplayName("Owner가 컬렉션을 탈퇴하려고 하면 소유권 위임 필요 예외가 발생한다.")
+	void withdrawCollectionMember_byOwner_fail_needToDelegate() {
+		// given
+		UserPrincipal owner = new UserPrincipal(baseUser.getId());
+		UserPrincipal member = new UserPrincipal(createUser("member1").getId());
+		Collection collection = createCollectionAndInvitedMember("Test Collection", owner, member);
+
+		// when & then
+		assertThatThrownBy(() -> collectionService.withdrawCollectionMember(collection.getId(), owner))
+			.isInstanceOf(BusinessException.class)
+			.extracting(ex -> ((BusinessException)ex).getBody().getProperties().get("code"))
+			.isEqualTo(CollectionError.NEED_TO_DELEGATE_OWNERSHIP.name());
+	}
+
+	@Test
+	@DisplayName("Owner가 다른 멤버를 강제로 탈퇴시킬 수 있다.")
+	void expelCollectionMember_byOwner_success() {
+		// given
+		UserPrincipal owner = new UserPrincipal(baseUser.getId());
+		UserPrincipal member = new UserPrincipal(createUser("member1").getId());
+		Collection collection = createCollectionAndInvitedMember("Test Collection", owner, member);
+
+		// when
+		collectionService.expelCollectionMember(collection.getId(), member.getId(), owner);
+
+		// then
+		Optional<CollectionMember> expelledMember = collectionMemberRepository.findWithdrawnMember(collection.getId(),
+			member.getId());
+		assertThat(expelledMember).isPresent();
+		assertThat(expelledMember.get().getDeletedAt()).isNotNull();
+
+		Collection updatedCollection = collectionRepository.findById(collection.getId()).get();
+		assertThat(updatedCollection.getMemberCount()).isEqualTo(1);
+
+		// 활성 멤버 조회 시, 추방된 멤버가 조회되지 않는지 추가 검증
+		assertThat(
+			collectionMemberRepository.findActiveByUserId(collection.getId(), member.getId())).isNotPresent();
+	}
+
+	@Test
+	@DisplayName("탈퇴했던 멤버가 다시 초대되면, 기존 데이터가 복구되고 멤버 수가 증가한다.")
+	void addCollectionMember_forWithdrawnMember_restores() {
+		// given
+		UserPrincipal host = new UserPrincipal(baseUser.getId());
+		UserPrincipal member = new UserPrincipal(createUser("member1").getId());
+
+		Collection collection = createCollectionAndInvitedMember("Test Collection", host, member);
+		collectionService.withdrawCollectionMember(collection.getId(), member); // 멤버 탈퇴
+
+		// when 재초대
+		ShareLink shareLink = shareLinkRepository.findByCode(
+			collectionService.createInvitation(collection.getId(), host).code()).get();
+		collectionService.addMemberFromShareLink(shareLink, member.getId());
+
+		// then
+		Optional<CollectionMember> restoredMember = collectionMemberRepository.findActiveByUserId(collection.getId(),
+			member.getId());
+		assertThat(restoredMember).isPresent();
+		assertThat(restoredMember.get().getDeletedAt()).isNull();
+
+		Collection updatedCollection = collectionRepository.findById(collection.getId()).get();
+		assertThat(updatedCollection.getMemberCount()).isEqualTo(2);
+	}
+
+	private Collection createCollectionAndInvitedMember(String title, UserPrincipal owner, UserPrincipal member) {
+		Collection collection = createCollection(title, owner);
+
+		ShareLink shareLink = shareLinkRepository.findByCode(
+			collectionService.createInvitation(collection.getId(), owner).code()).get();
+		collectionService.addMemberFromShareLink(shareLink, member.getId());
+
+		return findCollectionById(collection.getId()); // 멤버 추가 후 최신 상태의 컬렉션을 반환
+	}
+
 }
