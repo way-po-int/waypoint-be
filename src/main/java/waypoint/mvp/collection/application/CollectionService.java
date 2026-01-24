@@ -150,11 +150,20 @@ public class CollectionService {
 	}
 
 	private void addCollectionMember(Collection collection, User user) {
-		collectionAuthorizer.checkIfMemberExists(collection.getId(), user.getId());
-
-		CollectionMember newMember = CollectionMember.create(collection, user, CollectionRole.MEMBER);
-		collectionMemberRepository.save(newMember);
-
-		collection.increaseMemberCount();
+		collectionMemberRepository.findWithdrawnMember(collection.getId(), user.getId())
+			.ifPresentOrElse(
+				withdrawnMember -> {
+					// 탈퇴한 멤버가 있으면 복구 (deleted_at = NULL)
+					withdrawnMember.restore();
+					collection.increaseMemberCount();
+				},
+				() -> {
+					// 탈퇴한 멤버가 없으면 기존 멤버 존재 여부 확인 후 새로 생성
+					collectionAuthorizer.checkIfMemberExists(collection.getId(), user.getId());
+					CollectionMember newMember = CollectionMember.create(collection, user, CollectionRole.MEMBER);
+					collectionMemberRepository.save(newMember);
+					collection.increaseMemberCount();
+				}
+			);
 	}
 }
