@@ -66,18 +66,16 @@ public class ShareLinkService {
 			case COLLECTION:
 				collectionService.addMemberFromShareLink(shareLink, userId);
 				break;
-			default:
-				throw new BusinessException(ShareLinkError.INVALID_INVITATION_LINK);
+			case PLAN:
+				break;
 		}
 	}
 
 	private String buildRedirectUrl(ShareLink shareLink) {
 		ShareLinkType shareLinkType = shareLink.getTargetType();
 
-		String path = switch (shareLinkType) {
-			case COLLECTION -> shareLinkType.getPath();
-			default -> throw new BusinessException(ShareLinkError.INVALID_INVITATION_LINK);
-		};
+		String path = shareLinkType.getPath();
+
 		return frontendBaseUrl + path + shareLink.getTargetId();
 	}
 
