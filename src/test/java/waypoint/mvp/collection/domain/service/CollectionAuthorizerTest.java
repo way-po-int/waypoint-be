@@ -80,7 +80,7 @@ class CollectionAuthorizerTest {
 		@DisplayName("성공: 컬렉션 멤버는 접근할 수 있다.")
 		void success_whenCollectionMember() {
 			// given
-			given(memberRepository.existsByCollectionIdAndUserId(collectionId, userId)).willReturn(true);
+			given(memberRepository.existsActive(collectionId, userId)).willReturn(true);
 
 			// when & then
 			assertThatCode(() -> collectionAuthorizer.verifyAccess(loggedInUser, collectionId))
@@ -91,7 +91,7 @@ class CollectionAuthorizerTest {
 		@DisplayName("실패: 멤버가 아닌 사용자는 접근할 수 없다.")
 		void fail_whenNotCollectionMember() {
 			// given
-			given(memberRepository.existsByCollectionIdAndUserId(collectionId, userId)).willReturn(false);
+			given(memberRepository.existsActive(collectionId, userId)).willReturn(false);
 
 			// when & then
 			assertThatThrownBy(() -> collectionAuthorizer.verifyAccess(loggedInUser, collectionId))
@@ -108,7 +108,7 @@ class CollectionAuthorizerTest {
 		void success_whenOwner() {
 			// given
 			CollectionMember ownerMember = CollectionMember.create(collection, user, CollectionRole.OWNER);
-			given(memberRepository.findByCollectionIdAndUserId(collectionId, userId)).willReturn(
+			given(memberRepository.findActiveByUserId(collectionId, userId)).willReturn(
 				Optional.of(ownerMember));
 
 			// when & then
@@ -121,7 +121,7 @@ class CollectionAuthorizerTest {
 		void fail_whenMember() {
 			// given
 			CollectionMember member = CollectionMember.create(collection, user, CollectionRole.MEMBER);
-			given(memberRepository.findByCollectionIdAndUserId(collectionId, userId)).willReturn(Optional.of(member));
+			given(memberRepository.findActiveByUserId(collectionId, userId)).willReturn(Optional.of(member));
 
 			// when & then
 			assertThatThrownBy(() -> collectionAuthorizer.verifyOwner(loggedInUser, collectionId))

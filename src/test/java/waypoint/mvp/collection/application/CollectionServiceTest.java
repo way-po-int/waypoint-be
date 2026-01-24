@@ -72,7 +72,7 @@ class CollectionServiceTest {
 		assertThat(foundCollection.get().getTitle()).isEqualTo(title);
 
 		// 2. CollectionMember가 정상적으로 저장되었는지 검증 (이벤트 리스너 동작 확인)
-		Optional<CollectionMember> foundMember = collectionMemberRepository.findByCollectionIdAndUserId(collection.id(),
+		Optional<CollectionMember> foundMember = collectionMemberRepository.findActiveByUserId(collection.id(),
 			savedUser.getId());
 		assertThat(foundMember).isPresent();
 		assertThat(foundMember.get().getRole()).isEqualTo(CollectionRole.OWNER);
