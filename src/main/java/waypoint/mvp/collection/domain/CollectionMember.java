@@ -15,14 +15,14 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import waypoint.mvp.global.common.BaseTimeEntity;
+import waypoint.mvp.global.common.LogicalDeleteEntity;
 import waypoint.mvp.user.domain.User;
 
 @Entity
 @Table(name = "collection_members")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class CollectionMember extends BaseTimeEntity {
+public class CollectionMember extends LogicalDeleteEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -69,4 +69,14 @@ public class CollectionMember extends BaseTimeEntity {
 	public boolean isOwner() {
 		return this.role == CollectionRole.OWNER;
 	}
+
+	public void withdraw() {
+		super.softDelete();
+	}
+
+	@Override
+	public void restore() {
+		super.restore();
+	}
 }
+
