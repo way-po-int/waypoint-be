@@ -14,9 +14,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.auth.security.principal.GuestPrincipal;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
-import waypoint.mvp.auth.security.principal.WayPointUser;
 import waypoint.mvp.collection.domain.Collection;
 import waypoint.mvp.collection.domain.CollectionMember;
 import waypoint.mvp.collection.domain.CollectionRole;
@@ -42,8 +42,8 @@ class CollectionAuthorizerTest {
 
 	@Mock
 	private Collection collection;
-	private WayPointUser loggedInUser;
-	private WayPointUser guestUser;
+	private AuthPrincipal loggedInUser;
+	private AuthPrincipal guestUser;
 
 	@BeforeEach
 	void setUp() {
@@ -69,7 +69,7 @@ class CollectionAuthorizerTest {
 		@DisplayName("실패: 다른 리소스를 가리키는 Guest는 접근할 수 없다.")
 		void fail_whenGuestWithDifferentTarget() {
 			// given
-			WayPointUser invalidGuest = new GuestPrincipal("invalid-code", ShareLinkType.COLLECTION, 999L);
+			AuthPrincipal invalidGuest = new GuestPrincipal("invalid-code", ShareLinkType.COLLECTION, 999L);
 
 			// when & then
 			assertThatThrownBy(() -> collectionAuthorizer.verifyAccess(invalidGuest, collectionId))

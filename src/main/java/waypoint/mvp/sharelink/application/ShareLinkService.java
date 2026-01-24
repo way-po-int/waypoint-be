@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
-import waypoint.mvp.auth.security.principal.WayPointUser;
+import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.collection.application.CollectionService;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.sharelink.domain.ShareLink;
@@ -34,7 +34,7 @@ public class ShareLinkService {
 		}
 	}
 
-	public InvitationResult processInvitationLink(String code, WayPointUser user) {
+	public InvitationResult processInvitationLink(String code, AuthPrincipal user) {
 		ShareLink shareLink = findValidLink(code);
 		String redirectUrl = buildRedirectUrl(shareLink);
 

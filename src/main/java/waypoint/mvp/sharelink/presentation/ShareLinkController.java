@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import lombok.RequiredArgsConstructor;
-import waypoint.mvp.auth.security.principal.WayPointUser;
+import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.global.auth.annotations.AuthLevel;
 import waypoint.mvp.global.auth.annotations.Authorize;
 import waypoint.mvp.global.util.CookieUtils;
@@ -39,7 +39,7 @@ public class ShareLinkController {
 	@Authorize(level = AuthLevel.GUEST_OR_MEMBER)
 	public ResponseEntity<Void> handleInvitation(
 		@PathVariable String code,
-		@AuthenticationPrincipal WayPointUser user
+		@AuthenticationPrincipal AuthPrincipal user
 	) {
 		InvitationResult result = shareLinkService.processInvitationLink(code, user);
 

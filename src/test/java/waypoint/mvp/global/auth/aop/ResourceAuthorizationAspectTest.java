@@ -17,9 +17,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.auth.security.principal.GuestPrincipal;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
-import waypoint.mvp.auth.security.principal.WayPointUser;
 import waypoint.mvp.collection.domain.service.CollectionAuthorizer;
 import waypoint.mvp.global.auth.annotations.AuthLevel;
 import waypoint.mvp.global.auth.annotations.Authorize;
@@ -88,7 +88,7 @@ class ResourceAuthorizationAspectTest {
 			// given
 			setAuthentication(new UserPrincipal(userId));
 			doThrow(new AccessDeniedException("접근 거부")).when(collectionAuthorizer)
-				.verifyAccess(any(WayPointUser.class), eq(resourceId));
+				.verifyAccess(any(AuthPrincipal.class), eq(resourceId));
 
 			// when & then
 			assertThatThrownBy(() -> testController.needsGuestOrMember(resourceId))
@@ -105,7 +105,7 @@ class ResourceAuthorizationAspectTest {
 		void guestOrMember_callsVerifyAccess() {
 			// given
 			setAuthentication(new UserPrincipal(userId));
-			ArgumentCaptor<WayPointUser> userCaptor = ArgumentCaptor.forClass(WayPointUser.class);
+			ArgumentCaptor<AuthPrincipal> userCaptor = ArgumentCaptor.forClass(AuthPrincipal.class);
 			ArgumentCaptor<Long> resourceIdCaptor = ArgumentCaptor.forClass(Long.class);
 
 			// when
@@ -118,7 +118,7 @@ class ResourceAuthorizationAspectTest {
 		}
 	}
 
-	private void setAuthentication(WayPointUser user) {
+	private void setAuthentication(AuthPrincipal user) {
 		SecurityContextHolder.getContext().setAuthentication(
 			new UsernamePasswordAuthenticationToken(user, "", null)
 		);

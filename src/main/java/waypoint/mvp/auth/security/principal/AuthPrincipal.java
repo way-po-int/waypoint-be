@@ -10,7 +10,7 @@ package waypoint.mvp.auth.security.principal;
  * @see UserPrincipal
  * @see GuestPrincipal
  */
-public interface WayPointUser {
+public interface AuthPrincipal {
 
 	Long getId();
 

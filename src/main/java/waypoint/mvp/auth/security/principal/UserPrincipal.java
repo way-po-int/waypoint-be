@@ -12,7 +12,7 @@ import io.jsonwebtoken.Claims;
  * </ul>
  * * @param id 시스템 내부 사용자 식별 고유 ID
  */
-public record UserPrincipal(Long id) implements WayPointUser {
+public record UserPrincipal(Long id) implements AuthPrincipal {
 
 	public static UserPrincipal from(Claims claims) {
 		return new UserPrincipal(

@@ -11,7 +11,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
-import waypoint.mvp.auth.security.principal.WayPointUser;
+import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.collection.domain.service.CollectionAuthorizer;
 import waypoint.mvp.global.auth.annotations.AuthLevel;
 import waypoint.mvp.global.auth.annotations.Authorize;
@@ -25,7 +25,7 @@ public class ResourceAuthorizationAspect {
 
 	@Before("@annotation(authorize)")
 	public void checkAuthorization(JoinPoint joinPoint, Authorize authorize) {
-		WayPointUser user = getUserPrincipal();
+		AuthPrincipal user = getUserPrincipal();
 
 		// 리소스 ID가 필요 없는 레벨 처리
 		if (authorize.level() == AuthLevel.AUTHENTICATED) {
@@ -38,15 +38,14 @@ public class ResourceAuthorizationAspect {
 		// 리소스 ID가 필요한 레벨 처리
 		Long collectionId = findCollectionId(joinPoint);
 
-		switch (authorize.level()) {
-			case GUEST_OR_MEMBER -> collectionAuthorizer.verifyAccess(user, collectionId);
-			default -> throw new IllegalStateException("처리할 수 없는 AuthLevel입니다: " + authorize.level());
+		if (authorize.level() == AuthLevel.GUEST_OR_MEMBER) {
+			collectionAuthorizer.verifyAccess(user, collectionId);
 		}
 	}
 
-	private WayPointUser getUserPrincipal() {
+	private AuthPrincipal getUserPrincipal() {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		return (WayPointUser)authentication.getPrincipal();
+		return (AuthPrincipal)authentication.getPrincipal();
 	}
 
 	private Long findCollectionId(JoinPoint joinPoint) {

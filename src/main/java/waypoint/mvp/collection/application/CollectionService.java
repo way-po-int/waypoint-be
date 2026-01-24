@@ -8,8 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
+import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
-import waypoint.mvp.auth.security.principal.WayPointUser;
 import waypoint.mvp.collection.application.dto.request.CollectionCreateRequest;
 import waypoint.mvp.collection.application.dto.request.CollectionUpdateRequest;
 import waypoint.mvp.collection.application.dto.response.CollectionResponse;
@@ -61,7 +61,7 @@ public class CollectionService {
 	}
 
 	/** Guest or Member 사용 가능한 메서드 */
-	public CollectionResponse findCollectionById(Long collectionId, WayPointUser user) {
+	public CollectionResponse findCollectionById(Long collectionId, AuthPrincipal user) {
 		collectionAuthorizer.verifyAccess(user, collectionId);
 		Collection collection = getCollection(collectionId);
 

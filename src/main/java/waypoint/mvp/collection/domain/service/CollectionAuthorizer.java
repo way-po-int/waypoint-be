@@ -3,8 +3,8 @@ package waypoint.mvp.collection.domain.service;
 import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
+import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.auth.security.principal.GuestPrincipal;
-import waypoint.mvp.auth.security.principal.WayPointUser;
 import waypoint.mvp.collection.domain.CollectionMember;
 import waypoint.mvp.collection.error.CollectionError;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionMemberRepository;
@@ -17,7 +17,7 @@ public class CollectionAuthorizer {
 
 	private final CollectionMemberRepository memberRepository;
 
-	public void verifyAccess(WayPointUser user, Long collectionId) {
+	public void verifyAccess(AuthPrincipal user, Long collectionId) {
 		if (user.isGuest()) {
 			verifyGuestAccess(user, collectionId);
 			return;
@@ -25,13 +25,13 @@ public class CollectionAuthorizer {
 		verifyMember(user, collectionId);
 	}
 
-	public void verifyOwner(WayPointUser user, Long collectionId) {
+	public void verifyOwner(AuthPrincipal user, Long collectionId) {
 		if (user.isGuest() || !isOwner(collectionId, user.getId())) {
 			throw new BusinessException(CollectionError.FORBIDDEN_NOT_OWNER);
 		}
 	}
 
-	public void verifyMember(WayPointUser user, Long collectionId) {
+	public void verifyMember(AuthPrincipal user, Long collectionId) {
 		if (!memberRepository.existsByCollectionIdAndUserId(collectionId, user.getId())) {
 			throw new BusinessException(CollectionError.FORBIDDEN_NOT_MEMBER);
 		}
@@ -43,7 +43,7 @@ public class CollectionAuthorizer {
 		}
 	}
 
-	private void verifyGuestAccess(WayPointUser user, Long collectionId) {
+	private void verifyGuestAccess(AuthPrincipal user, Long collectionId) {
 		if (user instanceof GuestPrincipal guest) {
 			guest.getTargetIdFor(ShareLink.ShareLinkType.COLLECTION)
 				.filter(id -> id.equals(collectionId))

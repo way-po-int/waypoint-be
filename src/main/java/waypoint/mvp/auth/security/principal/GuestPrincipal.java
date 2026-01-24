@@ -18,7 +18,7 @@ import waypoint.mvp.sharelink.domain.ShareLink.ShareLinkType;
  * @param targetType 허용된 리소스 타입
  * @param targetId 허용된 리소스 식별자
  */
-public record GuestPrincipal(String shareLinkCode, ShareLinkType targetType, Long targetId) implements WayPointUser {
+public record GuestPrincipal(String shareLinkCode, ShareLinkType targetType, Long targetId) implements AuthPrincipal {
 
 	public static GuestPrincipal from(ShareLink shareLink) {
 		return new GuestPrincipal(shareLink.getCode(),

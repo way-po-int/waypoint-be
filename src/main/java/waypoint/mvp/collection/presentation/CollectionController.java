@@ -17,8 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
-import waypoint.mvp.auth.security.principal.WayPointUser;
 import waypoint.mvp.collection.application.CollectionService;
 import waypoint.mvp.collection.application.dto.request.CollectionCreateRequest;
 import waypoint.mvp.collection.application.dto.request.CollectionUpdateRequest;
@@ -55,7 +55,7 @@ public class CollectionController {
 	@GetMapping("/{collectionId}")
 	public ResponseEntity<CollectionResponse> findCollectionById(
 		@PathVariable Long collectionId,
-		@AuthenticationPrincipal WayPointUser user
+		@AuthenticationPrincipal AuthPrincipal user
 	) {
 		CollectionResponse collection = collectionService.findCollectionById(collectionId, user);
 		return ResponseEntity.ok(collection);
