@@ -4,7 +4,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
-import waypoint.mvp.auth.security.principal.UserInfo;
+import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.collection.application.dto.request.CollectionPlaceFromUrlRequest;
 import waypoint.mvp.collection.application.dto.response.ExtractionJobResponse;
 import waypoint.mvp.collection.domain.CollectionMember;
@@ -30,8 +30,8 @@ public class CollectionPlaceService {
 
 	@Transactional
 	public ExtractionJobResponse addPlacesFromUrl(Long collectionId, CollectionPlaceFromUrlRequest request,
-		UserInfo userInfo) {
-		CollectionMember collectionMember = getCollectionMember(collectionId, userInfo.id());
+		AuthPrincipal user) {
+		CollectionMember collectionMember = getCollectionMember(collectionId, user.getId());
 
 		// 장소 추출 이벤트 요청
 		ExtractionJobInfo jobInfo = extractionJobService.addJob(request.url());
