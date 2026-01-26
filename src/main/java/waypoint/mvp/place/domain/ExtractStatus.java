@@ -5,6 +5,5 @@ public enum ExtractStatus {
 	ANALYZING,
 	VERIFYING,
 	COMPLETED,
-	NO_PLACE_FOUND,
 	FAILED
 }

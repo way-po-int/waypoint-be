@@ -50,7 +50,12 @@ public class SocialMedia extends BaseTimeEntity {
 	private List<String> searchQueries;
 
 	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
 	private ExtractStatus status;
+
+	@Enumerated(EnumType.STRING)
+	@Column
+	private ExtractFailureCode failureCode;
 
 	@Builder(access = AccessLevel.PRIVATE)
 	private SocialMedia(SocialMediaType type, String url) {
@@ -80,13 +85,14 @@ public class SocialMedia extends BaseTimeEntity {
 		this.status = ExtractStatus.VERIFYING;
 	}
 
-	public void failAnalysis() {
+	public void failAnalysis(ExtractFailureCode failureCode) {
 		validateStatus(
 			ExtractStatus.ANALYZING,
 			ExtractStatus.VERIFYING
 		);
 
 		this.status = ExtractStatus.FAILED;
+		this.failureCode = failureCode;
 	}
 
 	private void validateStatus(ExtractStatus... allowedStatuses) {
