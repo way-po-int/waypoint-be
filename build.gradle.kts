@@ -29,6 +29,7 @@ dependencies {
     implementation("org.springframework.ai:spring-ai-starter-model-google-genai")
     implementation("org.hibernate.orm:hibernate-spatial")
     implementation(libs.jjwt.api)
+    implementation(libs.youtube.api)
 
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")

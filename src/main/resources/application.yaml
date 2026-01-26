@@ -70,6 +70,9 @@ spring:
         await-termination: true
         await-termination-period: 120s
 
+server:
+  forward-headers-strategy: framework
+
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS}
   allowed-methods: ${CORS_ALLOWED_METHODS}
@@ -80,8 +83,14 @@ jwt:
   access-expires-in: ${JWT_ACCESS_EXPIRES_IN:3600} # 1시간
   refresh-expires-in: ${JWT_REFRESH_EXPIRES_IN:604800} # 7일
 
-server:
-  forward-headers-strategy: framework
+google:
+  youtube:
+    api-key: ${GOOGLE_YOUTUBE_API_KEY}
+  places:
+    api-key: ${GOOGLE_PLACES_API_KEY:}
+    base-url: https://places.googleapis.com
+    text-search-path: /v1/places:searchText
+    details-path: /v1/places/{placeId}
 
 waypoint:
   invitation:
@@ -92,10 +101,3 @@ waypoint:
     guest-access-token-name: "waypoint_guest"
     guest-access-token-max-age-seconds: 604800 # 7일
     refresh-token-name: "refresh_token"
-
-google:
-  places:
-    api-key: ${GOOGLE_PLACES_API_KEY:}
-    base-url: https://places.googleapis.com
-    text-search-path: /v1/places:searchText
-    details-path: /v1/places/{placeId}
