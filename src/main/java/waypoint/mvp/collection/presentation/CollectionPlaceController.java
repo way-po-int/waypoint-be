@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import waypoint.mvp.auth.security.principal.UserInfo;
+import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.collection.application.CollectionPlaceService;
 import waypoint.mvp.collection.application.dto.request.CollectionPlaceFromUrlRequest;
 import waypoint.mvp.collection.application.dto.response.ExtractionJobResponse;
@@ -26,9 +26,9 @@ public class CollectionPlaceController {
 	public ResponseEntity<ExtractionJobResponse> fromUrl(
 		@PathVariable Long collectionId,
 		@Valid @RequestBody CollectionPlaceFromUrlRequest request,
-		@AuthenticationPrincipal UserInfo userInfo
+		@AuthenticationPrincipal AuthPrincipal user
 	) {
-		ExtractionJobResponse response = collectionPlaceService.addPlacesFromUrl(collectionId, request, userInfo);
+		ExtractionJobResponse response = collectionPlaceService.addPlacesFromUrl(collectionId, request, user);
 		return ResponseEntity
 			.accepted()
 			.body(response);
