@@ -5,12 +5,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.place.error.SocialMediaError;
 
-@Getter
 @RequiredArgsConstructor
 public enum SocialMediaType {
 	YOUTUBE_SHORTS(List.of("youtube.com/shorts/")),
@@ -27,7 +25,7 @@ public enum SocialMediaType {
 				.findFirst()
 				.orElseThrow();
 		} catch (IllegalArgumentException | NullPointerException | NoSuchElementException e) {
-			throw new BusinessException(SocialMediaError.UNSUPPORTED_SOCIAL_MEDIA);
+			throw new BusinessException(SocialMediaError.SOCIAL_MEDIA_UNSUPPORTED);
 		}
 	}
 
