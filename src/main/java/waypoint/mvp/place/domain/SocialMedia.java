@@ -1,5 +1,11 @@
 package waypoint.mvp.place.domain;
 
+import java.util.Arrays;
+import java.util.List;
+
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -13,6 +19,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import waypoint.mvp.global.common.BaseTimeEntity;
+import waypoint.mvp.global.error.exception.BusinessException;
+import waypoint.mvp.place.error.SocialMediaError;
 
 @Entity
 @Table(name = "social_media")
@@ -37,6 +45,10 @@ public class SocialMedia extends BaseTimeEntity {
 	@Column
 	private String summary;
 
+	@JdbcTypeCode(SqlTypes.JSON)
+	@Column
+	private List<String> searchQueries;
+
 	@Enumerated(EnumType.STRING)
 	private ExtractStatus status;
 
@@ -54,9 +66,33 @@ public class SocialMedia extends BaseTimeEntity {
 			.build();
 	}
 
-	public void completeAnalysis(String title, String summary) {
-		this.title = title;
+	public void startAnalysis() {
+		validateStatus(ExtractStatus.PENDING);
+
+		this.status = ExtractStatus.ANALYZING;
+	}
+
+	public void completeAnalysis(String summary, List<String> searchQueries) {
+		validateStatus(ExtractStatus.ANALYZING);
+
 		this.summary = summary;
-		this.status = ExtractStatus.COMPLETED;
+		this.searchQueries = searchQueries;
+		this.status = ExtractStatus.VERIFYING;
+	}
+
+	public void failAnalysis() {
+		validateStatus(
+			ExtractStatus.ANALYZING,
+			ExtractStatus.VERIFYING
+		);
+
+		this.status = ExtractStatus.FAILED;
+	}
+
+	private void validateStatus(ExtractStatus... allowedStatuses) {
+		boolean isAllowed = Arrays.asList(allowedStatuses).contains(this.status);
+		if (!isAllowed) {
+			throw new BusinessException(SocialMediaError.SOCIAL_MEDIA_INVALID_STATUS, this.status, status);
+		}
 	}
 }
