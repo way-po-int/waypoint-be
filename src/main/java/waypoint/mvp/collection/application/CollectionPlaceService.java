@@ -8,15 +8,14 @@ import waypoint.mvp.auth.security.principal.UserInfo;
 import waypoint.mvp.collection.application.dto.request.CollectionPlaceFromUrlRequest;
 import waypoint.mvp.collection.application.dto.response.ExtractionJobResponse;
 import waypoint.mvp.collection.domain.CollectionMember;
-import waypoint.mvp.collection.domain.PlaceExtractionJob;
+import waypoint.mvp.collection.domain.CollectionPlaceDraft;
 import waypoint.mvp.collection.error.CollectionError;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionMemberRepository;
-import waypoint.mvp.collection.infrastructure.persistence.CollectionPlaceExtractionJobRepository;
+import waypoint.mvp.collection.infrastructure.persistence.CollectionPlaceDraftRepository;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.place.application.ExtractionJobService;
 import waypoint.mvp.place.application.dto.ExtractionJobInfo;
 import waypoint.mvp.place.domain.SocialMedia;
-import waypoint.mvp.place.error.SocialMediaError;
 import waypoint.mvp.place.infrastructure.persistence.SocialMediaRepository;
 
 @Service
@@ -26,34 +25,38 @@ public class CollectionPlaceService {
 
 	private final ExtractionJobService extractionJobService;
 	private final CollectionMemberRepository collectionMemberRepository;
-	private final CollectionPlaceExtractionJobRepository jobRepository;
+	private final CollectionPlaceDraftRepository jobRepository;
 	private final SocialMediaRepository socialMediaRepository;
 
 	@Transactional
 	public ExtractionJobResponse addPlacesFromUrl(Long collectionId, CollectionPlaceFromUrlRequest request,
 		UserInfo userInfo) {
+		CollectionMember collectionMember = getCollectionMember(collectionId, userInfo.id());
 
-		CollectionMember collectionMember = collectionMemberRepository
-			.findByCollectionIdAndUserId(collectionId, userInfo.id())
-			.orElseThrow(() -> new BusinessException(CollectionError.FORBIDDEN_NOT_MEMBER));
-		Long memberId = collectionMember.getId();
-
+		// 장소 추출 이벤트 요청
 		ExtractionJobInfo jobInfo = extractionJobService.addJob(request.url());
 
-		if (jobRepository.existsByMemberIdAndSocialMediaId(memberId, jobInfo.id())) {
-			throw new BusinessException(SocialMediaError.DUPLICATE_EXTRACTION_JOB);
-		}
-
-		PlaceExtractionJob job = createExtractionJob(collectionMember, jobInfo.id());
+		// 어떤 멤버가 어떤 URL을 요청했는지 구분하기 위한 중간 테이블
+		CollectionPlaceDraft job = createOrGetDraft(collectionMember, jobInfo.socialMediaId());
 		return new ExtractionJobResponse(
 			job.getId(),
 			jobInfo.status()
 		);
 	}
 
-	private PlaceExtractionJob createExtractionJob(CollectionMember member, Long socialMediaId) {
-		SocialMedia media = socialMediaRepository.getReferenceById(socialMediaId);
-		PlaceExtractionJob job = PlaceExtractionJob.create(member, media);
-		return jobRepository.save(job);
+	private CollectionMember getCollectionMember(Long collectionId, Long userId) {
+		return collectionMemberRepository
+			.findByCollectionIdAndUserId(collectionId, userId)
+			.orElseThrow(() -> new BusinessException(CollectionError.FORBIDDEN_NOT_MEMBER));
+	}
+
+	private CollectionPlaceDraft createOrGetDraft(CollectionMember member, Long socialMediaId) {
+		return jobRepository.findByMemberIdAndSocialMediaId(member.getId(), socialMediaId)
+			.orElseGet(() -> {
+				SocialMedia media = socialMediaRepository.getReferenceById(socialMediaId);
+
+				var draft = CollectionPlaceDraft.create(member, media);
+				return jobRepository.save(draft);
+			});
 	}
 }

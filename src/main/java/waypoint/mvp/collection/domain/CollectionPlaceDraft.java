@@ -1,6 +1,9 @@
 package waypoint.mvp.collection.domain;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -13,17 +16,18 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import waypoint.mvp.global.common.BaseTimeEntity;
 import waypoint.mvp.place.domain.SocialMedia;
 
 @Entity
 @Table(
-	name = "place_extraction_jobs",
+	name = "collection_place_drafts",
 	uniqueConstraints = @UniqueConstraint(columnNames = {"collection_member_id", "social_media_id"})
 )
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class PlaceExtractionJob extends BaseTimeEntity {
+public class CollectionPlaceDraft extends BaseTimeEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,16 +41,28 @@ public class PlaceExtractionJob extends BaseTimeEntity {
 	@JoinColumn(nullable = false)
 	private SocialMedia socialMedia;
 
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	private DraftStatus status;
+
 	@Builder(access = AccessLevel.PRIVATE)
-	private PlaceExtractionJob(CollectionMember member, SocialMedia socialMedia) {
+	private CollectionPlaceDraft(CollectionMember member, SocialMedia socialMedia) {
 		this.member = member;
 		this.socialMedia = socialMedia;
+		this.status = DraftStatus.WAITING;
 	}
 
-	public static PlaceExtractionJob create(CollectionMember member, SocialMedia socialMedia) {
+	public static CollectionPlaceDraft create(CollectionMember member, SocialMedia socialMedia) {
 		return builder()
 			.member(member)
 			.socialMedia(socialMedia)
 			.build();
+	}
+
+	@Getter
+	@RequiredArgsConstructor
+	public enum DraftStatus {
+		WAITING,
+		COMPLETED
 	}
 }
