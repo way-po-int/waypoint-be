@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.place.application.dto.SocialMediaInfo;
 import waypoint.mvp.place.application.dto.schema.PlaceExtractionResult;
+import waypoint.mvp.place.domain.ExtractFailureCode;
 import waypoint.mvp.place.domain.SocialMedia;
 import waypoint.mvp.place.domain.event.PlaceExtractionRequestedEvent;
 import waypoint.mvp.place.error.SocialMediaError;
@@ -48,9 +49,9 @@ public class SocialMediaService {
 	}
 
 	@Transactional
-	public void failAnalysis(Long socialMediaId) {
+	public void failAnalysis(Long socialMediaId, ExtractFailureCode failureCode) {
 		SocialMedia socialMedia = getSocialMedia(socialMediaId);
-		socialMedia.failAnalysis();
+		socialMedia.failAnalysis(failureCode);
 	}
 
 	private SocialMedia createOrGetSocialMedia(String url) {

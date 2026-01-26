@@ -9,8 +9,10 @@ import lombok.RequiredArgsConstructor;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.place.application.dto.schema.PlaceExtractionResult;
 import waypoint.mvp.place.application.strategy.ContentStrategy;
+import waypoint.mvp.place.domain.ExtractFailureCode;
 import waypoint.mvp.place.domain.SocialMediaType;
 import waypoint.mvp.place.error.SocialMediaError;
+import waypoint.mvp.place.error.exception.ExtractionException;
 
 @Service
 @RequiredArgsConstructor
@@ -25,9 +27,15 @@ public class PlaceExtractService {
 			.findFirst()
 			.orElseThrow(() -> new BusinessException(SocialMediaError.SOCIAL_MEDIA_UNSUPPORTED));
 
-		return chatClient.prompt()
-			.messages(strategy.getSystemMessage(), strategy.getUserMessage(url))
-			.call()
-			.entity(PlaceExtractionResult.class);
+		try {
+			return chatClient.prompt()
+				.messages(strategy.getSystemMessage(), strategy.getUserMessage(url))
+				.call()
+				.entity(PlaceExtractionResult.class);
+		} catch (ExtractionException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new ExtractionException(ExtractFailureCode.GENAI_ERROR, e);
+		}
 	}
 }

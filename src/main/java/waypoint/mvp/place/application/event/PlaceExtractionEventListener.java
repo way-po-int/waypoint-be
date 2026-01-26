@@ -10,8 +10,10 @@ import lombok.extern.slf4j.Slf4j;
 import waypoint.mvp.place.application.PlaceExtractService;
 import waypoint.mvp.place.application.SocialMediaService;
 import waypoint.mvp.place.application.dto.schema.PlaceExtractionResult;
+import waypoint.mvp.place.domain.ExtractFailureCode;
 import waypoint.mvp.place.domain.SocialMedia;
 import waypoint.mvp.place.domain.event.PlaceExtractionRequestedEvent;
+import waypoint.mvp.place.error.exception.ExtractionException;
 
 @Component
 @RequiredArgsConstructor
@@ -37,12 +39,24 @@ public class PlaceExtractionEventListener {
 
 			// 상태 변경 ANALYZING → VERIFYING
 			socialMediaService.completeAnalysis(socialMediaId, result);
+
+			// 장소를 찾지 못했다면 예외 발생
+			if (result.searchQueries().isEmpty()) {
+				throw new ExtractionException(ExtractFailureCode.NO_PLACE_EXTRACTED);
+			}
+
 			log.info("장소 추출 이벤트 성공: id={}, queryCount={}", socialMediaId, result.searchQueries().size());
 
-		} catch (Exception e) {
+		} catch (ExtractionException e) {
 			// 상태 변경 FAILED
-			socialMediaService.failAnalysis(socialMediaId);
-			log.error("장소 추출 이벤트 실패: id={}", socialMediaId, e);
+			log.atError()
+				.setMessage("장소 추출 이벤트 실패: socialMediaId={}, failureCode={}")
+				.addArgument(socialMediaId)
+				.addArgument(e.getFailureCode())
+				.setCause(e.getFailureCode().isRetryable() ? e : null)
+				.log();
+
+			socialMediaService.failAnalysis(socialMediaId, e.getFailureCode());
 		}
 	}
 }
