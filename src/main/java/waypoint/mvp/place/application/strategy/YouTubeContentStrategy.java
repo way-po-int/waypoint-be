@@ -10,15 +10,21 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.MimeType;
+import org.springframework.util.ObjectUtils;
+import org.springframework.util.StringUtils;
 
 import lombok.RequiredArgsConstructor;
+import waypoint.mvp.place.application.dto.content.YouTubeRawContent;
 import waypoint.mvp.place.domain.SocialMediaType;
+import waypoint.mvp.place.infrastructure.youtube.YouTubeApiClient;
 
 @Component
 @RequiredArgsConstructor
-public class YouTubeContentStrategy implements ContentStrategy {
+public class YouTubeContentStrategy implements ContentStrategy<YouTubeRawContent> {
 
 	private static final String VIDEO_MP4 = "video/mp4";
+
+	private final YouTubeApiClient apiClient;
 
 	@Value("classpath:prompts/system_youtube.txt")
 	private Resource system;
@@ -32,6 +38,11 @@ public class YouTubeContentStrategy implements ContentStrategy {
 	}
 
 	@Override
+	public YouTubeRawContent fetch(String url) {
+		return apiClient.getRawContent(url);
+	}
+
+	@Override
 	public SystemMessage getSystemMessage() {
 		return SystemMessage.builder()
 			.text(system)
@@ -39,14 +50,31 @@ public class YouTubeContentStrategy implements ContentStrategy {
 	}
 
 	@Override
-	public UserMessage getUserMessage(String url) {
+	public UserMessage getUserMessage(YouTubeRawContent rawContent) {
 		Media media = Media.builder()
 			.mimeType(MimeType.valueOf(VIDEO_MP4))
-			.data(URI.create(url))
+			.data(URI.create(rawContent.url()))
 			.build();
 		return UserMessage.builder()
-			.text("")
+			.text(generateRawText(rawContent))
 			.media(media)
 			.build();
+	}
+
+	private String generateRawText(YouTubeRawContent content) {
+		StringBuilder sb = new StringBuilder()
+			.append("[영상 제목] ").append(content.title());
+
+		if (StringUtils.hasText(content.description())) {
+			sb.append(" [설명] ").append(content.description());
+		}
+		if (!ObjectUtils.isEmpty(content.tags())) {
+			sb.append(" [태그] ").append(content.tags());
+		}
+		if (StringUtils.hasText(content.comment())) {
+			sb.append(" [댓글] ").append(content.comment());
+		}
+
+		return sb.toString();
 	}
 }

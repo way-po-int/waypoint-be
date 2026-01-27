@@ -17,6 +17,7 @@ import lombok.experimental.SuperBuilder;
 	property = "type"
 )
 @JsonSubTypes({
+	@JsonSubTypes.Type(value = YouTubeContentSnapshot.class, name = "YOUTUBE")
 })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
