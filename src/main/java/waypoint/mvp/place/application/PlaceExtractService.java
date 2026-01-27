@@ -27,19 +27,19 @@ public class PlaceExtractService {
 			.findFirst()
 			.orElseThrow(() -> new BusinessException(SocialMediaError.SOCIAL_MEDIA_UNSUPPORTED));
 
-		return analyzeContent(strategy, url);
+		return process(strategy, url);
 	}
 
-	private <T extends RawContent> PlaceExtractionResult analyzeContent(ContentStrategy<T> strategy, String url) {
+	private <T extends RawContent> PlaceExtractionResult process(ContentStrategy<T> strategy, String url) {
 		T rawContent = strategy.fetch(url);
 
-		PlaceAnalysis extractionResult = chatClient.prompt()
+		PlaceAnalysis analysis = chatClient.prompt()
 			.messages(
 				strategy.getSystemMessage(),
 				strategy.getUserMessage(rawContent))
 			.call()
 			.entity(PlaceAnalysis.class);
 
-		return new PlaceExtractionResult(rawContent, extractionResult);
+		return new PlaceExtractionResult(rawContent, analysis);
 	}
 }
