@@ -7,9 +7,11 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.place.application.dto.SocialMediaInfo;
-import waypoint.mvp.place.application.dto.schema.PlaceExtractionResult;
+import waypoint.mvp.place.application.dto.llm.PlaceAnalysis;
+import waypoint.mvp.place.application.dto.llm.PlaceExtractionResult;
 import waypoint.mvp.place.domain.ExtractFailureCode;
 import waypoint.mvp.place.domain.SocialMedia;
+import waypoint.mvp.place.domain.content.ContentSnapshot;
 import waypoint.mvp.place.domain.event.PlaceExtractionRequestedEvent;
 import waypoint.mvp.place.error.SocialMediaError;
 import waypoint.mvp.place.infrastructure.persistence.SocialMediaRepository;
@@ -42,10 +44,11 @@ public class SocialMediaService {
 	@Transactional
 	public void completeAnalysis(Long socialMediaId, PlaceExtractionResult result) {
 		SocialMedia socialMedia = getSocialMedia(socialMediaId);
-		socialMedia.completeAnalysis(
-			result.summary(),
-			result.searchQueries()
-		);
+
+		PlaceAnalysis analysis = result.placeAnalysis();
+		ContentSnapshot snapshot = result.rawContent().toSnapshot();
+
+		socialMedia.completeAnalysis(analysis.summary(), analysis.searchQueries(), snapshot);
 	}
 
 	@Transactional
