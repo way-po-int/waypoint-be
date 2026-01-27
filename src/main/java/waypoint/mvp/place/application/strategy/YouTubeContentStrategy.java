@@ -1,6 +1,7 @@
 package waypoint.mvp.place.application.strategy;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.EnumSet;
 
 import org.springframework.ai.chat.messages.SystemMessage;
@@ -15,7 +16,9 @@ import org.springframework.util.StringUtils;
 
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.place.application.dto.content.YouTubeRawContent;
+import waypoint.mvp.place.domain.ExtractFailureCode;
 import waypoint.mvp.place.domain.SocialMediaType;
+import waypoint.mvp.place.error.exception.ExtractionException;
 import waypoint.mvp.place.infrastructure.youtube.YouTubeApiClient;
 
 @Component
@@ -25,6 +28,9 @@ public class YouTubeContentStrategy implements ContentStrategy<YouTubeRawContent
 	private static final String VIDEO_MP4 = "video/mp4";
 
 	private final YouTubeApiClient apiClient;
+
+	@Value("${google.youtube.max-duration}")
+	private Duration maxDuration;
 
 	@Value("classpath:prompts/system_youtube.txt")
 	private Resource system;
@@ -39,7 +45,15 @@ public class YouTubeContentStrategy implements ContentStrategy<YouTubeRawContent
 
 	@Override
 	public YouTubeRawContent fetch(String url) {
-		return apiClient.getRawContent(url);
+		var content = apiClient.getRawContent(url);
+
+		// 영상 길이 검사
+		Duration duration = content.getDuration();
+		if (duration.compareTo(maxDuration) > 0) {
+			throw new ExtractionException(ExtractFailureCode.VIDEO_TOO_LONG);
+		}
+
+		return content;
 	}
 
 	@Override

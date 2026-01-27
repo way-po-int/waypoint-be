@@ -9,8 +9,7 @@ public class ExtractionException extends RuntimeException {
 	private final ExtractFailureCode failureCode;
 
 	public ExtractionException(ExtractFailureCode failureCode) {
-		super(failureCode.getMessage());
-		this.failureCode = failureCode;
+		this(failureCode, null);
 	}
 
 	public ExtractionException(ExtractFailureCode failureCode, Throwable cause) {
