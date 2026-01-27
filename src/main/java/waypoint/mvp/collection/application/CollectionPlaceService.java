@@ -39,14 +39,14 @@ public class CollectionPlaceService {
 		// 어떤 멤버가 어떤 URL을 요청했는지 구분하기 위한 중간 테이블
 		CollectionPlaceDraft draft = createOrGetDraft(collectionMember, socialMediaInfo.id());
 		return new ExtractionJobResponse(
-			draft.getId(),
+			draft.getId().toString(),
 			socialMediaInfo.status()
 		);
 	}
 
 	private CollectionMember getCollectionMember(Long collectionId, Long userId) {
 		return collectionMemberRepository
-			.findByCollectionIdAndUserId(collectionId, userId)
+			.findActiveByUserId(collectionId, userId)
 			.orElseThrow(() -> new BusinessException(CollectionError.FORBIDDEN_NOT_MEMBER));
 	}
 
