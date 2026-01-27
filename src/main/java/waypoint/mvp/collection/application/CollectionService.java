@@ -1,5 +1,7 @@
 package waypoint.mvp.collection.application;
 
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -14,6 +16,7 @@ import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.collection.application.dto.request.CollectionCreateRequest;
 import waypoint.mvp.collection.application.dto.request.CollectionUpdateRequest;
+import waypoint.mvp.collection.application.dto.response.CollectionMemberResponse;
 import waypoint.mvp.collection.application.dto.response.CollectionResponse;
 import waypoint.mvp.collection.domain.Collection;
 import waypoint.mvp.collection.domain.CollectionMember;
@@ -78,6 +81,17 @@ public class CollectionService {
 		collection.update(request.title());
 
 		return CollectionResponse.from(collection);
+	}
+
+	public List<CollectionMemberResponse> getCollectionMember(Long collectionId, UserPrincipal user) {
+		collectionAuthorizer.verifyMember(user, collectionId);
+
+		return collectionMemberRepository.findActiveAll(collectionId)
+			.stream()
+			.map(CollectionMemberResponse::from)
+			.collect(
+				Collectors.toList());
+
 	}
 
 	@Transactional
