@@ -132,9 +132,9 @@ class CollectionServiceTest {
 
 	private Collection createCollection(String title, UserPrincipal ownerUser) {
 		CollectionCreateRequest createRequest = new CollectionCreateRequest(title);
-		CollectionResponse CollectionResponse = collectionService.createCollection(createRequest, ownerUser);
+		CollectionResponse collectionResponse = collectionService.createCollection(createRequest, ownerUser);
 
-		return findCollectionById(CollectionResponse.id());
+		return findCollectionById(collectionResponse.id());
 
 	}
 
