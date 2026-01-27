@@ -15,14 +15,14 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import waypoint.mvp.global.common.BaseTimeEntity;
+import waypoint.mvp.global.common.LogicalDeleteEntity;
 import waypoint.mvp.user.domain.User;
 
 @Entity
 @Table(name = "collection_members")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class CollectionMember extends BaseTimeEntity {
+public class CollectionMember extends LogicalDeleteEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -44,20 +44,15 @@ public class CollectionMember extends BaseTimeEntity {
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
-	private CollectionMemberStatus status;
-
-	@Enumerated(EnumType.STRING)
-	@Column(nullable = false)
 	private CollectionRole role;
 
 	@Builder(access = AccessLevel.PRIVATE)
 	private CollectionMember(Collection collection, User user, String nickname, String picture,
-		CollectionMemberStatus status, CollectionRole role) {
+		CollectionRole role) {
 		this.collection = collection;
 		this.user = user;
 		this.nickname = nickname;
 		this.picture = picture;
-		this.status = status;
 		this.role = role;
 	}
 
@@ -67,7 +62,6 @@ public class CollectionMember extends BaseTimeEntity {
 			.user(user)
 			.nickname(user.getNickname())
 			.picture(user.getPicture())
-			.status(CollectionMemberStatus.ACTIVE)
 			.role(role)
 			.build();
 	}
@@ -75,4 +69,18 @@ public class CollectionMember extends BaseTimeEntity {
 	public boolean isOwner() {
 		return this.role == CollectionRole.OWNER;
 	}
+
+	public void withdraw() {
+		super.softDelete();
+	}
+
+	public void rejoin() {
+		super.restore();
+	}
+
+	public void updateProfile(String nickname, String picture) {
+		this.nickname = nickname;
+		this.picture = picture;
+	}
 }
+

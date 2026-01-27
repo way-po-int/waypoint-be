@@ -79,6 +79,23 @@ public class CollectionController {
 	}
 
 	@Authorize(level = AuthLevel.AUTHENTICATED)
+	@DeleteMapping("/{collectionId}/members/me")
+	public ResponseEntity<Void> withdrawMember(@PathVariable Long collectionId,
+		@AuthenticationPrincipal UserPrincipal user) {
+		collectionService.withdrawCollectionMember(collectionId, user);
+		return ResponseEntity.noContent().build();
+	}
+
+	@Authorize(level = AuthLevel.AUTHENTICATED)
+	@DeleteMapping("/{collectionId}/members/{memberId}")
+	public ResponseEntity<Void> expelMember(@PathVariable Long collectionId,
+		@PathVariable Long memberId,
+		@AuthenticationPrincipal UserPrincipal user) {
+		collectionService.expelCollectionMember(collectionId, memberId, user);
+		return ResponseEntity.noContent().build();
+	}
+
+	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@PostMapping("/{collectionId}/invitations")
 	public ResponseEntity<ShareLinkResponse> createInvitation(@PathVariable Long collectionId,
 		@AuthenticationPrincipal UserPrincipal user) {

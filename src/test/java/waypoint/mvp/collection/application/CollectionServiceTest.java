@@ -15,6 +15,7 @@ import waypoint.mvp.collection.application.dto.response.CollectionResponse;
 import waypoint.mvp.collection.domain.Collection;
 import waypoint.mvp.collection.domain.CollectionMember;
 import waypoint.mvp.collection.domain.CollectionRole;
+import waypoint.mvp.collection.error.CollectionError;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionMemberRepository;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionRepository;
 import waypoint.mvp.global.annotation.ServiceTest;
@@ -45,13 +46,13 @@ class CollectionServiceTest {
 	@Autowired
 	private ShareLinkRepository shareLinkRepository;
 
-	private User savedUser;
+	private User baseUser;
 
 	@BeforeEach
 	void setUp() {
 		SocialAccount socialAccount = SocialAccount.create(Provider.GOOGLE, "12345");
 		User user = User.create(socialAccount, "tester", "picture_url", "test@example.com");
-		savedUser = userRepository.save(user);
+		baseUser = userRepository.save(user);
 	}
 
 	@Test
@@ -59,53 +60,49 @@ class CollectionServiceTest {
 	void createCollection_withMember_success() {
 		// given
 		String title = "My First Collection";
-		CollectionCreateRequest request = new CollectionCreateRequest(title);
-		UserPrincipal userInfo = new UserPrincipal(savedUser.getId());
+		UserPrincipal requestPrincipal = new UserPrincipal(baseUser.getId());
 
 		// when
-		CollectionResponse collection = collectionService.createCollection(request, userInfo);
+		Collection collection = createCollection(title, requestPrincipal);
 
 		// then
 		// 1. Collection이 정상적으로 저장되었는지 검증
-		Optional<Collection> foundCollection = collectionRepository.findById(collection.id());
+		Optional<Collection> foundCollection = collectionRepository.findById(collection.getId());
 		assertThat(foundCollection).isPresent();
 		assertThat(foundCollection.get().getTitle()).isEqualTo(title);
 
 		// 2. CollectionMember가 정상적으로 저장되었는지 검증 (이벤트 리스너 동작 확인)
-		Optional<CollectionMember> foundMember = collectionMemberRepository.findByCollectionIdAndUserId(collection.id(),
-			savedUser.getId());
+		Optional<CollectionMember> foundMember = collectionMemberRepository.findActiveByUserId(collection.getId(),
+			baseUser.getId());
 		assertThat(foundMember).isPresent();
 		assertThat(foundMember.get().getRole()).isEqualTo(CollectionRole.OWNER);
-		assertThat(foundMember.get().getUser().getId()).isEqualTo(savedUser.getId());
+		assertThat(foundMember.get().getUser().getId()).isEqualTo(baseUser.getId());
 	}
 
 	@Test
 	@DisplayName("컬렉션 멤버는 성공적으로 초대 링크를 생성할 수 있다.")
 	void createInvitation_success() {
 		// given
-		// 1. 다른 유저(일반 멤버) 생성
-		SocialAccount memberAccount = SocialAccount.create(Provider.GOOGLE, "member123");
-		User memberUser = userRepository.save(User.create(memberAccount, "memberUser", "pic", "member@test.com"));
+		User anotherUser = createUser("anotherUser");
+		UserPrincipal anotherPrincipal = new UserPrincipal(anotherUser.getId());
+		UserPrincipal ownerPrincipal = new UserPrincipal(baseUser.getId());
 
 		// 2. 컬렉션 생성 및 소유자, 일반 멤버 등록
-		Collection collection = collectionRepository.save(Collection.create("Test Collection"));
-		collectionMemberRepository.save(CollectionMember.create(collection, savedUser, CollectionRole.OWNER));
-		collectionMemberRepository.save(CollectionMember.create(collection, memberUser, CollectionRole.MEMBER));
+		Collection collection = createCollection("Test Collection", ownerPrincipal);
+		collectionMemberRepository.save(CollectionMember.create(collection, anotherUser, CollectionRole.MEMBER));
 
 		// when & then
 		// Case 1: 소유자가 생성
-		ShareLinkResponse ownerResponse = collectionService.createInvitation(collection.getId(),
-			new UserPrincipal(savedUser.getId()));
+		ShareLinkResponse ownerResponse = collectionService.createInvitation(collection.getId(), ownerPrincipal);
 		Optional<ShareLink> ownerLink = shareLinkRepository.findByCode(ownerResponse.code());
 		assertThat(ownerLink).isPresent();
-		assertThat(ownerLink.get().getHostUserId()).isEqualTo(savedUser.getId());
+		assertThat(ownerLink.get().getHostUserId()).isEqualTo(ownerPrincipal.getId());
 
 		// Case 2: 일반 멤버가 생성
-		ShareLinkResponse memberResponse = collectionService.createInvitation(collection.getId(),
-			new UserPrincipal(memberUser.getId()));
+		ShareLinkResponse memberResponse = collectionService.createInvitation(collection.getId(), anotherPrincipal);
 		Optional<ShareLink> memberLink = shareLinkRepository.findByCode(memberResponse.code());
 		assertThat(memberLink).isPresent();
-		assertThat(memberLink.get().getHostUserId()).isEqualTo(memberUser.getId());
+		assertThat(memberLink.get().getHostUserId()).isEqualTo(anotherUser.getId());
 	}
 
 	@Test
@@ -113,17 +110,136 @@ class CollectionServiceTest {
 	void createInvitation_fail_notMember() {
 		// given
 		// 1. 다른 유저 생성
-		SocialAccount anotherAccount = SocialAccount.create(Provider.GOOGLE, "54321");
-		User anotherUser = userRepository.save(User.create(anotherAccount, "anotherUser", "pic", "another@test.com"));
+		UserPrincipal anotherPrinical = new UserPrincipal(createUser("anotherUser").getId());
+		UserPrincipal ownerPrincipal = new UserPrincipal(baseUser.getId());
 
 		// 2. 컬렉션 생성 (anotherUser는 멤버가 아님)
-		Collection collection = collectionRepository.save(Collection.create("Test Collection"));
+		Collection collection = createCollection("Test Collection", ownerPrincipal);
 
 		// when & then
 		assertThatThrownBy(
-			() -> collectionService.createInvitation(collection.getId(), new UserPrincipal(anotherUser.getId())))
+			() -> collectionService.createInvitation(collection.getId(), anotherPrinical))
 			.isInstanceOf(BusinessException.class)
 			.extracting(ex -> ((BusinessException)ex).getBody().getProperties().get("code"))
-			.isEqualTo("FORBIDDEN_NOT_MEMBER");
+			.isEqualTo(CollectionError.FORBIDDEN_NOT_MEMBER.name());
 	}
+
+	private User createUser(String userName) {
+		SocialAccount socialAccount = SocialAccount.create(Provider.GOOGLE, userName + "_12345");
+		User user = User.create(socialAccount, userName, "picture_url", userName + "@example.com");
+		return userRepository.save(user);
+	}
+
+	private Collection createCollection(String title, UserPrincipal ownerUser) {
+		CollectionCreateRequest createRequest = new CollectionCreateRequest(title);
+		CollectionResponse collectionResponse = collectionService.createCollection(createRequest, ownerUser);
+
+		return findCollectionById(collectionResponse.id());
+
+	}
+
+	private Collection findCollectionById(Long collectionId) {
+		return collectionRepository.findById(collectionId).orElseThrow();
+	}
+
+	@Test
+	@DisplayName("멤버가 자발적으로 컬렉션을 탈퇴하면 soft delete되고 멤버 수가 감소한다.")
+	void withdrawCollectionMember_byMember_success() {
+		// given
+		UserPrincipal owner = new UserPrincipal(baseUser.getId());
+		UserPrincipal member = new UserPrincipal(createUser("member1").getId());
+		Collection collection = createCollectionAndInvitedMember("Test Collection", owner, member);
+
+		// when
+		collectionService.withdrawCollectionMember(collection.getId(), member);
+
+		// then
+		Optional<CollectionMember> withdrawnMember = collectionMemberRepository.findWithdrawnMember(collection.getId(),
+			member.getId());
+		assertThat(withdrawnMember).isPresent();
+		assertThat(withdrawnMember.get().getDeletedAt()).isNotNull();
+
+		Collection updatedCollection = collectionRepository.findById(collection.getId()).orElseThrow();
+		assertThat(updatedCollection.getMemberCount()).isEqualTo(1);
+
+		// 활성 멤버 조회 시, 탈퇴한 멤버가 조회되지 않는지 추가 검증
+		assertThat(
+			collectionMemberRepository.findActiveByUserId(collection.getId(), member.getId())).isNotPresent();
+	}
+
+	@Test
+	@DisplayName("Owner가 컬렉션을 탈퇴하려고 하면 소유권 위임 필요 예외가 발생한다.")
+	void withdrawCollectionMember_byOwner_fail_needToDelegate() {
+		// given
+		UserPrincipal owner = new UserPrincipal(baseUser.getId());
+		UserPrincipal member = new UserPrincipal(createUser("member1").getId());
+		Collection collection = createCollectionAndInvitedMember("Test Collection", owner, member);
+
+		// when & then
+		assertThatThrownBy(() -> collectionService.withdrawCollectionMember(collection.getId(), owner))
+			.isInstanceOf(BusinessException.class)
+			.extracting(ex -> ((BusinessException)ex).getBody().getProperties().get("code"))
+			.isEqualTo(CollectionError.NEED_TO_DELEGATE_OWNERSHIP.name());
+	}
+
+	@Test
+	@DisplayName("Owner가 다른 멤버를 강제로 탈퇴시킬 수 있다.")
+	void expelCollectionMember_byOwner_success() {
+		// given
+		UserPrincipal owner = new UserPrincipal(baseUser.getId());
+		UserPrincipal member = new UserPrincipal(createUser("member1").getId());
+		Collection collection = createCollectionAndInvitedMember("Test Collection", owner, member);
+
+		// when
+		collectionService.expelCollectionMember(collection.getId(), member.getId(), owner);
+
+		// then
+		Optional<CollectionMember> expelledMember = collectionMemberRepository.findWithdrawnMember(collection.getId(),
+			member.getId());
+		assertThat(expelledMember).isPresent();
+		assertThat(expelledMember.get().getDeletedAt()).isNotNull();
+
+		Collection updatedCollection = collectionRepository.findById(collection.getId()).orElseThrow();
+		assertThat(updatedCollection.getMemberCount()).isEqualTo(1);
+
+		// 활성 멤버 조회 시, 추방된 멤버가 조회되지 않는지 추가 검증
+		assertThat(
+			collectionMemberRepository.findActiveByUserId(collection.getId(), member.getId())).isNotPresent();
+	}
+
+	@Test
+	@DisplayName("탈퇴했던 멤버가 다시 초대되면, 기존 데이터가 복구되고 멤버 수가 증가한다.")
+	void addCollectionMember_forWithdrawnMember_restores() {
+		// given
+		UserPrincipal host = new UserPrincipal(baseUser.getId());
+		UserPrincipal member = new UserPrincipal(createUser("member1").getId());
+
+		Collection collection = createCollectionAndInvitedMember("Test Collection", host, member);
+		collectionService.withdrawCollectionMember(collection.getId(), member); // 멤버 탈퇴
+
+		// when 재초대
+		ShareLink shareLink = shareLinkRepository.findByCode(
+			collectionService.createInvitation(collection.getId(), host).code()).get();
+		collectionService.addMemberFromShareLink(shareLink, member.getId());
+
+		// then
+		Optional<CollectionMember> restoredMember = collectionMemberRepository.findActiveByUserId(collection.getId(),
+			member.getId());
+		assertThat(restoredMember).isPresent();
+		assertThat(restoredMember.get().getDeletedAt()).isNull();
+
+		Collection updatedCollection = collectionRepository.findById(collection.getId()).orElseThrow();
+		assertThat(updatedCollection.getMemberCount()).isEqualTo(2);
+	}
+
+	private Collection createCollectionAndInvitedMember(String title, UserPrincipal owner, UserPrincipal member) {
+		Collection collection = createCollection(title, owner);
+
+		ShareLink shareLink = shareLinkRepository.findByCode(
+			collectionService.createInvitation(collection.getId(), owner).code()).orElseThrow();
+		collectionService.addMemberFromShareLink(shareLink, member.getId());
+
+		return findCollectionById(collection.getId()); // 멤버 추가 후 최신 상태의 컬렉션을 반환
+	}
+
 }

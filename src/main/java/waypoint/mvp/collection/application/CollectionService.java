@@ -1,5 +1,7 @@
 package waypoint.mvp.collection.application;
 
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -79,6 +81,37 @@ public class CollectionService {
 	}
 
 	@Transactional
+	public void withdrawCollectionMember(Long collectionId, UserPrincipal user) {
+		CollectionMember member = collectionMemberRepository.findActiveByUserId(collectionId, user.id())
+			.orElseThrow(() -> new BusinessException(CollectionError.FORBIDDEN_NOT_MEMBER));
+		removeCollectionMember(collectionId, member);
+
+	}
+
+	@Transactional
+	public void expelCollectionMember(Long collectionId, Long memberId, UserPrincipal user) {
+		collectionAuthorizer.verifyOwner(user, collectionId);
+
+		CollectionMember member = collectionMemberRepository.findActive(memberId, collectionId)
+			.orElseThrow(() -> new BusinessException(CollectionError.FORBIDDEN_NOT_MEMBER));
+		removeCollectionMember(collectionId, member);
+
+	}
+
+	private void removeCollectionMember(Long collectionId, CollectionMember member) {
+		Collection collection = getCollection(collectionId);
+
+		if (member.isOwner()) {
+			throw new BusinessException(CollectionError.NEED_TO_DELEGATE_OWNERSHIP);
+
+		} else {
+			// 일반 멤버는 탈퇴 처리
+			member.withdraw();
+			collection.decreaseMemberCount();
+		}
+	}
+
+	@Transactional
 	public void deleteCollection(Long collectionId, UserPrincipal user) {
 		collectionAuthorizer.verifyOwner(user, collectionId);
 		Collection collection = getCollection(collectionId);
@@ -119,11 +152,20 @@ public class CollectionService {
 	}
 
 	private void addCollectionMember(Collection collection, User user) {
-		collectionAuthorizer.checkIfMemberExists(collection.getId(), user.getId());
+		Optional<CollectionMember> withdrawnMemberOpt = collectionMemberRepository.findWithdrawnMember(
+			collection.getId(), user.getId());
 
-		CollectionMember newMember = CollectionMember.create(collection, user, CollectionRole.MEMBER);
-		collectionMemberRepository.save(newMember);
-
+		if (withdrawnMemberOpt.isPresent()) {
+			// 탈퇴한 멤버가 있으면 복구, User 프로필 최신화
+			CollectionMember rejoinedMember = withdrawnMemberOpt.get();
+			rejoinedMember.rejoin(); // deletedAt을 null로 변경
+			rejoinedMember.updateProfile(user.getNickname(), user.getPicture());
+		} else {
+			// 탈퇴한 멤버가 없으면 기존 멤버 존재 여부 확인 후 새로 생성
+			collectionAuthorizer.checkIfMemberExists(collection.getId(), user.getId());
+			CollectionMember newMember = CollectionMember.create(collection, user, CollectionRole.MEMBER);
+			collectionMemberRepository.save(newMember);
+		}
 		collection.increaseMemberCount();
 	}
 }
