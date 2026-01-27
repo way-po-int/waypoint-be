@@ -20,6 +20,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import waypoint.mvp.global.common.BaseTimeEntity;
 import waypoint.mvp.global.error.exception.BusinessException;
+import waypoint.mvp.place.domain.content.ContentSnapshot;
 import waypoint.mvp.place.error.SocialMediaError;
 
 @Entity
@@ -40,14 +41,15 @@ public class SocialMedia extends BaseTimeEntity {
 	private String url;
 
 	@Column
-	private String title;
-
-	@Column
 	private String summary;
 
 	@JdbcTypeCode(SqlTypes.JSON)
 	@Column
 	private List<String> searchQueries;
+
+	@JdbcTypeCode(SqlTypes.JSON)
+	@Column
+	private ContentSnapshot snapshot;
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
@@ -72,24 +74,22 @@ public class SocialMedia extends BaseTimeEntity {
 	}
 
 	public void startAnalysis() {
-		validateStatus(ExtractStatus.PENDING);
+		validateStatus(ExtractStatus.PENDING, ExtractStatus.FAILED);
 
 		this.status = ExtractStatus.ANALYZING;
 	}
 
-	public void completeAnalysis(String summary, List<String> searchQueries) {
+	public void completeAnalysis(String summary, List<String> searchQueries, ContentSnapshot snapshot) {
 		validateStatus(ExtractStatus.ANALYZING);
 
 		this.summary = summary;
 		this.searchQueries = searchQueries;
+		this.snapshot = snapshot;
 		this.status = ExtractStatus.VERIFYING;
 	}
 
 	public void failAnalysis(ExtractFailureCode failureCode) {
-		validateStatus(
-			ExtractStatus.ANALYZING,
-			ExtractStatus.VERIFYING
-		);
+		validateStatus(ExtractStatus.ANALYZING, ExtractStatus.VERIFYING);
 
 		this.status = ExtractStatus.FAILED;
 		this.failureCode = failureCode;

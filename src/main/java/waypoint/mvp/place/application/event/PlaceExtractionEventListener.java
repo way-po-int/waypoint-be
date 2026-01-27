@@ -9,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import waypoint.mvp.place.application.PlaceExtractService;
 import waypoint.mvp.place.application.SocialMediaService;
-import waypoint.mvp.place.application.dto.schema.PlaceExtractionResult;
+import waypoint.mvp.place.application.dto.llm.PlaceExtractionResult;
 import waypoint.mvp.place.domain.ExtractFailureCode;
 import waypoint.mvp.place.domain.SocialMedia;
 import waypoint.mvp.place.domain.event.PlaceExtractionRequestedEvent;
@@ -37,26 +37,30 @@ public class PlaceExtractionEventListener {
 			SocialMedia socialMedia = socialMediaService.getSocialMedia(socialMediaId);
 			PlaceExtractionResult result = placeExtractService.extract(socialMedia.getType(), socialMedia.getUrl());
 
-			// 상태 변경 ANALYZING → VERIFYING
-			socialMediaService.completeAnalysis(socialMediaId, result);
-
 			// 장소를 찾지 못했다면 예외 발생
-			if (result.searchQueries().isEmpty()) {
+			if (result.placeAnalysis().searchQueries().isEmpty()) {
 				throw new ExtractionException(ExtractFailureCode.NO_PLACE_EXTRACTED);
 			}
 
-			log.info("장소 추출 이벤트 성공: id={}, queryCount={}", socialMediaId, result.searchQueries().size());
+			// 상태 변경 ANALYZING → VERIFYING
+			socialMediaService.completeAnalysis(socialMediaId, result);
 
-		} catch (ExtractionException e) {
-			// 상태 변경 FAILED
+			log.info("장소 추출 이벤트 성공: id={}", socialMediaId);
+
+		} catch (Exception e) {
+			ExtractFailureCode failureCode = e instanceof ExtractionException ex
+				? ex.getFailureCode()
+				: ExtractFailureCode.GENAI_ERROR;
+
 			log.atError()
 				.setMessage("장소 추출 이벤트 실패: socialMediaId={}, failureCode={}")
 				.addArgument(socialMediaId)
-				.addArgument(e.getFailureCode())
-				.setCause(e.getFailureCode().isRetryable() ? e : null)
+				.addArgument(failureCode)
+				.setCause(failureCode.isRetryable() ? e : null)
 				.log();
 
-			socialMediaService.failAnalysis(socialMediaId, e.getFailureCode());
+			// 상태 변경 ANALYZING → FAILED
+			socialMediaService.failAnalysis(socialMediaId, failureCode);
 		}
 	}
 }
