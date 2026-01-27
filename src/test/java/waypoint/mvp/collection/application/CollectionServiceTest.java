@@ -139,7 +139,7 @@ class CollectionServiceTest {
 	}
 
 	private Collection findCollectionById(Long collectionId) {
-		return collectionRepository.findById(collectionId).get();
+		return collectionRepository.findById(collectionId).orElseThrow();
 	}
 
 	@Test
@@ -159,7 +159,7 @@ class CollectionServiceTest {
 		assertThat(withdrawnMember).isPresent();
 		assertThat(withdrawnMember.get().getDeletedAt()).isNotNull();
 
-		Collection updatedCollection = collectionRepository.findById(collection.getId()).get();
+		Collection updatedCollection = collectionRepository.findById(collection.getId()).orElseThrow();
 		assertThat(updatedCollection.getMemberCount()).isEqualTo(1);
 
 		// 활성 멤버 조회 시, 탈퇴한 멤버가 조회되지 않는지 추가 검증
@@ -199,7 +199,7 @@ class CollectionServiceTest {
 		assertThat(expelledMember).isPresent();
 		assertThat(expelledMember.get().getDeletedAt()).isNotNull();
 
-		Collection updatedCollection = collectionRepository.findById(collection.getId()).get();
+		Collection updatedCollection = collectionRepository.findById(collection.getId()).orElseThrow();
 		assertThat(updatedCollection.getMemberCount()).isEqualTo(1);
 
 		// 활성 멤버 조회 시, 추방된 멤버가 조회되지 않는지 추가 검증
@@ -228,7 +228,7 @@ class CollectionServiceTest {
 		assertThat(restoredMember).isPresent();
 		assertThat(restoredMember.get().getDeletedAt()).isNull();
 
-		Collection updatedCollection = collectionRepository.findById(collection.getId()).get();
+		Collection updatedCollection = collectionRepository.findById(collection.getId()).orElseThrow();
 		assertThat(updatedCollection.getMemberCount()).isEqualTo(2);
 	}
 
@@ -236,7 +236,7 @@ class CollectionServiceTest {
 		Collection collection = createCollection(title, owner);
 
 		ShareLink shareLink = shareLinkRepository.findByCode(
-			collectionService.createInvitation(collection.getId(), owner).code()).get();
+			collectionService.createInvitation(collection.getId(), owner).code()).orElseThrow();
 		collectionService.addMemberFromShareLink(shareLink, member.getId());
 
 		return findCollectionById(collection.getId()); // 멤버 추가 후 최신 상태의 컬렉션을 반환
