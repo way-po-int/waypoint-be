@@ -11,9 +11,16 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @EnableAsync
 public class AsyncConfig {
 
-	@Bean(name = "extractionTaskExecutor")
-	public Executor extractionTaskExecutor() {
-		SimpleAsyncTaskExecutor executor = new SimpleAsyncTaskExecutor("vt-extraction-");
+	@Bean(name = "placeExtractionTaskExecutor")
+	public Executor placeExtractionTaskExecutor() {
+		SimpleAsyncTaskExecutor executor = new SimpleAsyncTaskExecutor("vt-place-extraction-");
+		executor.setVirtualThreads(true);
+		return executor;
+	}
+
+	@Bean(name = "placeSearchTaskExecutor")
+	public Executor placeSearchTaskExecutor() {
+		SimpleAsyncTaskExecutor executor = new SimpleAsyncTaskExecutor("vt-place-search-");
 		executor.setVirtualThreads(true);
 		return executor;
 	}

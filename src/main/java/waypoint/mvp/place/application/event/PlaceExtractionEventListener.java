@@ -26,7 +26,7 @@ public class PlaceExtractionEventListener {
 	private final PlaceExtractService placeExtractService;
 	private final ApplicationEventPublisher eventPublisher;
 
-	@Async("extractionTaskExecutor")
+	@Async("placeExtractionTaskExecutor")
 	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
 	public void handlePlaceExtractionRequestedEvent(PlaceExtractionRequestedEvent event) {
 		Long socialMediaId = event.socialMediaId();
