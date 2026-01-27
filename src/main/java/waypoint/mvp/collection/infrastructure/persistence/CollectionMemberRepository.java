@@ -21,7 +21,7 @@ public interface CollectionMemberRepository extends JpaRepository<CollectionMemb
 	Optional<CollectionMember> findWithdrawnMember(@Param("collectionId") Long collectionId,
 		@Param("userId") Long userId);
 
-	@Query("SELECT CASE WHEN COUNT(cm) > 0 THEN true ELSE false END FROM CollectionMember cm WHERE cm.collection.id = :collectionId AND cm.user.id = :userId AND cm.deletedAt IS NULL")
+	@Query("SELECT count(cm) > 0 FROM CollectionMember cm WHERE cm.collection.id = :collectionId AND cm.user.id = :userId AND cm.deletedAt IS NULL")
 	boolean existsActive(@Param("collectionId") Long collectionId, @Param("userId") Long userId);
 
 }
