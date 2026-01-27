@@ -1,7 +1,6 @@
 package waypoint.mvp.collection.application;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -89,8 +88,7 @@ public class CollectionService {
 		return collectionMemberRepository.findActiveAll(collectionId)
 			.stream()
 			.map(CollectionMemberResponse::from)
-			.collect(
-				Collectors.toList());
+			.toList();
 
 	}
 

@@ -64,7 +64,7 @@ public class CollectionController {
 	}
 
 	@Authorize(level = AuthLevel.AUTHENTICATED)
-	@GetMapping("/collections/{collectionId}/members")
+	@GetMapping("/{collectionId}/members")
 	public ResponseEntity<List<CollectionMemberResponse>> getCollectionMembers(
 		@PathVariable Long collectionId,
 		@AuthenticationPrincipal UserPrincipal user
