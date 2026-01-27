@@ -1,6 +1,7 @@
 package waypoint.mvp.collection.presentation;
 
 import java.net.URI;
+import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +23,7 @@ import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.collection.application.CollectionService;
 import waypoint.mvp.collection.application.dto.request.CollectionCreateRequest;
 import waypoint.mvp.collection.application.dto.request.CollectionUpdateRequest;
+import waypoint.mvp.collection.application.dto.response.CollectionMemberResponse;
 import waypoint.mvp.collection.application.dto.response.CollectionResponse;
 import waypoint.mvp.global.auth.annotations.AuthLevel;
 import waypoint.mvp.global.auth.annotations.Authorize;
@@ -59,6 +61,18 @@ public class CollectionController {
 	) {
 		CollectionResponse collection = collectionService.findCollectionById(collectionId, user);
 		return ResponseEntity.ok(collection);
+	}
+
+	@Authorize(level = AuthLevel.AUTHENTICATED)
+	@GetMapping("/collections/{collectionId}/members")
+	public ResponseEntity<List<CollectionMemberResponse>> getCollectionMembers(
+		@PathVariable Long collectionId,
+		@AuthenticationPrincipal UserPrincipal user
+
+	) {
+		List<CollectionMemberResponse> members = collectionService.getCollectionMember(collectionId, user);
+
+		return ResponseEntity.ok(members);
 	}
 
 	@Authorize(level = AuthLevel.AUTHENTICATED)
