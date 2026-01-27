@@ -86,6 +86,7 @@ jwt:
 google:
   youtube:
     api-key: ${GOOGLE_YOUTUBE_API_KEY}
+    max-duration: ${GOOGLE_YOUTUBE_MAX_DURATION:20m}
   places:
     api-key: ${GOOGLE_PLACES_API_KEY:}
     base-url: https://places.googleapis.com

@@ -1,5 +1,6 @@
 package waypoint.mvp.place.application.dto.content;
 
+import java.time.Duration;
 import java.util.List;
 
 import waypoint.mvp.place.domain.content.ContentSnapshot;
@@ -29,5 +30,9 @@ public record YouTubeRawContent(
 			.channelTitle(channelTitle)
 			.duration(duration)
 			.build();
+	}
+
+	public Duration getDuration() {
+		return Duration.parse(duration);
 	}
 }
