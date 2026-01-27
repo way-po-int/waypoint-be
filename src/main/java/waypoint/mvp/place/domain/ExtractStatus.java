@@ -2,8 +2,7 @@ package waypoint.mvp.place.domain;
 
 public enum ExtractStatus {
 	PENDING,
-	ANALYZING,
-	VERIFYING,
+	PROCESSING,
 	COMPLETED,
 	FAILED
 }

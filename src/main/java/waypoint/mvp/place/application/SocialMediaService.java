@@ -36,25 +36,25 @@ public class SocialMediaService {
 	}
 
 	@Transactional
-	public void startAnalysis(Long socialMediaId) {
+	public void process(Long socialMediaId) {
 		SocialMedia socialMedia = getSocialMedia(socialMediaId);
-		socialMedia.startAnalysis();
+		socialMedia.process();
 	}
 
 	@Transactional
-	public void completeAnalysis(Long socialMediaId, PlaceExtractionResult result) {
+	public void complete(Long socialMediaId, PlaceExtractionResult result) {
 		SocialMedia socialMedia = getSocialMedia(socialMediaId);
 
 		PlaceAnalysis analysis = result.placeAnalysis();
 		ContentSnapshot snapshot = result.rawContent().toSnapshot();
 
-		socialMedia.completeAnalysis(analysis.summary(), analysis.searchQueries(), snapshot);
+		socialMedia.complete(analysis.summary(), analysis.searchQueries(), snapshot);
 	}
 
 	@Transactional
-	public void failAnalysis(Long socialMediaId, ExtractFailureCode failureCode) {
+	public void fail(Long socialMediaId, ExtractFailureCode failureCode) {
 		SocialMedia socialMedia = getSocialMedia(socialMediaId);
-		socialMedia.failAnalysis(failureCode);
+		socialMedia.fail(failureCode);
 	}
 
 	private SocialMedia createOrGetSocialMedia(String url) {
