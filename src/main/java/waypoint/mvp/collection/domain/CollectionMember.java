@@ -74,9 +74,13 @@ public class CollectionMember extends LogicalDeleteEntity {
 		super.softDelete();
 	}
 
-	@Override
-	public void restore() {
+	public void rejoin() {
 		super.restore();
+	}
+
+	public void updateProfile(String nickname, String picture) {
+		this.nickname = nickname;
+		this.picture = picture;
 	}
 }
 

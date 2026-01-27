@@ -156,9 +156,10 @@ public class CollectionService {
 			collection.getId(), user.getId());
 
 		if (withdrawnMemberOpt.isPresent()) {
-			// 탈퇴한 멤버가 있으면 복구 (deleted_at = NULL)
-			CollectionMember withdrawnMember = withdrawnMemberOpt.get();
-			withdrawnMember.restore();
+			// 탈퇴한 멤버가 있으면 복구, User 프로필 최신화
+			CollectionMember rejoinedMember = withdrawnMemberOpt.get();
+			rejoinedMember.rejoin(); // deletedAt을 null로 변경
+			rejoinedMember.updateProfile(user.getNickname(), user.getPicture());
 		} else {
 			// 탈퇴한 멤버가 없으면 기존 멤버 존재 여부 확인 후 새로 생성
 			collectionAuthorizer.checkIfMemberExists(collection.getId(), user.getId());
