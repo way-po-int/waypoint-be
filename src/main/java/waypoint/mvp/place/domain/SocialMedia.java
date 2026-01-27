@@ -1,6 +1,5 @@
 package waypoint.mvp.place.domain;
 
-import java.util.Arrays;
 import java.util.List;
 
 import org.hibernate.annotations.JdbcTypeCode;
@@ -73,31 +72,30 @@ public class SocialMedia extends BaseTimeEntity {
 			.build();
 	}
 
-	public void startAnalysis() {
-		validateStatus(ExtractStatus.PENDING, ExtractStatus.FAILED);
+	public void process() {
+		validateStatus(ExtractStatus.PENDING);
 
-		this.status = ExtractStatus.ANALYZING;
+		this.status = ExtractStatus.PROCESSING;
 	}
 
-	public void completeAnalysis(String summary, List<String> searchQueries, ContentSnapshot snapshot) {
-		validateStatus(ExtractStatus.ANALYZING);
+	public void complete(String summary, List<String> searchQueries, ContentSnapshot snapshot) {
+		validateStatus(ExtractStatus.PROCESSING);
 
 		this.summary = summary;
 		this.searchQueries = searchQueries;
 		this.snapshot = snapshot;
-		this.status = ExtractStatus.VERIFYING;
+		this.status = ExtractStatus.COMPLETED;
 	}
 
-	public void failAnalysis(ExtractFailureCode failureCode) {
-		validateStatus(ExtractStatus.ANALYZING, ExtractStatus.VERIFYING);
+	public void fail(ExtractFailureCode failureCode) {
+		validateStatus(ExtractStatus.PROCESSING);
 
 		this.status = ExtractStatus.FAILED;
 		this.failureCode = failureCode;
 	}
 
-	private void validateStatus(ExtractStatus... allowedStatuses) {
-		boolean isAllowed = Arrays.asList(allowedStatuses).contains(this.status);
-		if (!isAllowed) {
+	private void validateStatus(ExtractStatus extractStatus) {
+		if (this.status != extractStatus) {
 			throw new BusinessException(SocialMediaError.SOCIAL_MEDIA_INVALID_STATUS, this.status, status);
 		}
 	}
