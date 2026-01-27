@@ -50,7 +50,7 @@ public class PlaceExtractionEventListener {
 
 			log.info("장소 추출 이벤트 성공: socialMediaId={}", socialMediaId);
 
-			//  장소 검색 이벤트 발행
+			// 장소 검색 이벤트 발행
 			eventPublisher.publishEvent(new PlaceSearchRequestedEvent(socialMediaId));
 
 		} catch (Exception e) {
