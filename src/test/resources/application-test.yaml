@@ -17,6 +17,12 @@ jwt:
   access-expires-in: 3600
   refresh-expires-in: 604800
 
+google:
+  youtube:
+    api-key: dummy-key
+  places:
+    api-key: dummy-key
+
 cookie:
   secure: false
   same-site: Lax
