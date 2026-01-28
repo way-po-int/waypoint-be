@@ -5,14 +5,18 @@ import java.util.List;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
 
+import com.google.genai.errors.ClientException;
+
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.place.application.dto.content.RawContent;
 import waypoint.mvp.place.application.dto.llm.PlaceAnalysis;
 import waypoint.mvp.place.application.dto.llm.PlaceExtractionResult;
 import waypoint.mvp.place.application.strategy.ContentStrategy;
+import waypoint.mvp.place.domain.ExtractFailureCode;
 import waypoint.mvp.place.domain.SocialMediaType;
 import waypoint.mvp.place.error.SocialMediaError;
+import waypoint.mvp.place.error.exception.ExtractionException;
 
 @Service
 @RequiredArgsConstructor
@@ -31,15 +35,20 @@ public class PlaceExtractService {
 	}
 
 	private <T extends RawContent> PlaceExtractionResult process(ContentStrategy<T> strategy, String url) {
-		T rawContent = strategy.fetch(url);
+		try {
+			T rawContent = strategy.fetch(url);
 
-		PlaceAnalysis analysis = chatClient.prompt()
-			.messages(
-				strategy.getSystemMessage(),
-				strategy.getUserMessage(rawContent))
-			.call()
-			.entity(PlaceAnalysis.class);
+			PlaceAnalysis analysis = chatClient.prompt()
+				.messages(
+					strategy.getSystemMessage(),
+					strategy.getUserMessage(rawContent))
+				.call()
+				.entity(PlaceAnalysis.class);
 
-		return new PlaceExtractionResult(rawContent, analysis);
+			return new PlaceExtractionResult(rawContent, analysis);
+		} catch (ClientException e) {
+			// 429 Too Many Requests 등
+			throw new ExtractionException(ExtractFailureCode.GENAI_ERROR, e);
+		}
 	}
 }
