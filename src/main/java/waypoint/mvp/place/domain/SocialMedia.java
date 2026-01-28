@@ -94,8 +94,8 @@ public class SocialMedia extends BaseTimeEntity {
 		this.failureCode = failureCode;
 	}
 
-	private void validateStatus(ExtractStatus extractStatus) {
-		if (this.status != extractStatus) {
+	private void validateStatus(ExtractStatus status) {
+		if (this.status != status) {
 			throw new BusinessException(SocialMediaError.SOCIAL_MEDIA_INVALID_STATUS, this.status, status);
 		}
 	}
