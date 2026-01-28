@@ -67,8 +67,7 @@ public class CollectionController {
 	@GetMapping("/{collectionId}/members")
 	public ResponseEntity<List<CollectionMemberResponse>> getCollectionMembers(
 		@PathVariable Long collectionId,
-		@AuthenticationPrincipal UserPrincipal user
-
+		@AuthenticationPrincipal AuthPrincipal user
 	) {
 		List<CollectionMemberResponse> members = collectionService.getCollectionMembers(collectionId, user);
 

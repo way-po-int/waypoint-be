@@ -78,8 +78,8 @@ public class CollectionService {
 		return CollectionResponse.from(collection);
 	}
 
-	public List<CollectionMemberResponse> getCollectionMembers(Long collectionId, UserPrincipal user) {
-		collectionAuthorizer.verifyMember(user, collectionId);
+	public List<CollectionMemberResponse> getCollectionMembers(Long collectionId, AuthPrincipal user) {
+		collectionAuthorizer.verifyAccess(user, collectionId);
 
 		return collectionMemberService.getMembers(collectionId)
 			.stream()
