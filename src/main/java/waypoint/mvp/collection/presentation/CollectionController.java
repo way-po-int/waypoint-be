@@ -63,7 +63,7 @@ public class CollectionController {
 		return ResponseEntity.ok(collection);
 	}
 
-	@Authorize(level = AuthLevel.AUTHENTICATED)
+	@Authorize(level = AuthLevel.GUEST_OR_MEMBER)
 	@GetMapping("/{collectionId}/members")
 	public ResponseEntity<List<CollectionMemberResponse>> getCollectionMembers(
 		@PathVariable Long collectionId,
