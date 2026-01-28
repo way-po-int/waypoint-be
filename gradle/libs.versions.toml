@@ -1,9 +1,13 @@
 [versions]
 mockito = "5.21.0"
 jjwt = "0.13.0"
+spring-ai = "1.1.2"
+youtube = "v3-rev20251217-2.0.0"
 
 [libraries]
 mockito = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 jjwt-api = { group = "io.jsonwebtoken", name = "jjwt-api", version.ref = "jjwt" }
 jjwt-impl = { group = "io.jsonwebtoken", name = "jjwt-impl", version.ref = "jjwt" }
 jjwt-jackson = { group = "io.jsonwebtoken", name = "jjwt-jackson", version.ref = "jjwt" }
+spring-ai-bom = { group = "org.springframework.ai", name = "spring-ai-bom", version.ref = "spring-ai" }
+youtube-api = { group = "com.google.apis", name = "google-api-services-youtube", version.ref = "youtube" }
