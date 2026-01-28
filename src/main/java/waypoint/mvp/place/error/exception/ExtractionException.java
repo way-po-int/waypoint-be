@@ -16,4 +16,8 @@ public class ExtractionException extends RuntimeException {
 		super(failureCode.getMessage(), cause);
 		this.failureCode = failureCode;
 	}
+
+	public boolean isRetryable() {
+		return failureCode.isRetryable();
+	}
 }

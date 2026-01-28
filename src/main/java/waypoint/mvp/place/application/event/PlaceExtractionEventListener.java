@@ -53,20 +53,24 @@ public class PlaceExtractionEventListener {
 			// 장소 검색 이벤트 발행
 			eventPublisher.publishEvent(new PlaceSearchRequestedEvent(socialMediaId));
 
-		} catch (Exception e) {
-			ExtractFailureCode failureCode = e instanceof ExtractionException ex
-				? ex.getFailureCode()
-				: ExtractFailureCode.GENAI_ERROR;
-
+		} catch (ExtractionException e) {
 			log.atError()
 				.setMessage("장소 추출 이벤트 실패: socialMediaId={}, failureCode={}")
 				.addArgument(socialMediaId)
-				.addArgument(failureCode)
-				.setCause(failureCode.isRetryable() ? e : null)
+				.addArgument(e.getFailureCode())
+				.setCause(e.isRetryable() ? e : null)
 				.log();
 
 			// 상태 변경 PROCESSING → FAILED
-			socialMediaService.fail(socialMediaId, failureCode);
+			socialMediaService.fail(socialMediaId, e.getFailureCode());
+		} catch (Exception e) {
+			ExtractFailureCode code = ExtractFailureCode.UNEXPECTED_ERROR;
+
+			log.error("장소 추출 이벤트 실패(예기치 못한 오류): socialMediaId={}, failureCode={}",
+				socialMediaId, code, e);
+
+			// 상태 변경 PROCESSING → FAILED
+			socialMediaService.fail(socialMediaId, code);
 		}
 	}
 }
