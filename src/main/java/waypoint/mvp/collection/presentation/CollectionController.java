@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -21,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.collection.application.CollectionService;
+import waypoint.mvp.collection.application.dto.request.ChangeOwnerRequest;
 import waypoint.mvp.collection.application.dto.request.CollectionCreateRequest;
 import waypoint.mvp.collection.application.dto.request.CollectionUpdateRequest;
 import waypoint.mvp.collection.application.dto.response.CollectionMemberResponse;
@@ -81,6 +83,18 @@ public class CollectionController {
 		@AuthenticationPrincipal UserPrincipal user) {
 		CollectionResponse response = collectionService.updateCollection(collectionId, request, user);
 		return ResponseEntity.ok(response);
+	}
+
+	@Authorize(level = AuthLevel.AUTHENTICATED)
+	@PatchMapping("/{collectionId}/owner")
+	public ResponseEntity<Void> changeOwner(@PathVariable Long collectionId,
+		@RequestBody @Valid ChangeOwnerRequest request,
+		@AuthenticationPrincipal UserPrincipal user
+	) {
+		Long memberId = Long.parseLong(request.collectionMemberId());
+		collectionService.changeOwner(collectionId, memberId, user);
+
+		return ResponseEntity.noContent().build();
 	}
 
 	@Authorize(level = AuthLevel.AUTHENTICATED)
