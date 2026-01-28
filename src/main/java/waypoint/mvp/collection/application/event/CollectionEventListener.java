@@ -5,12 +5,10 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import lombok.RequiredArgsConstructor;
+import waypoint.mvp.collection.application.CollectionMemberService;
 import waypoint.mvp.collection.domain.Collection;
-import waypoint.mvp.collection.domain.CollectionMember;
-import waypoint.mvp.collection.domain.CollectionRole;
 import waypoint.mvp.collection.domain.event.CollectionCreatedEvent;
 import waypoint.mvp.collection.error.CollectionError;
-import waypoint.mvp.collection.infrastructure.persistence.CollectionMemberRepository;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionRepository;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.user.domain.User;
@@ -22,8 +20,8 @@ import waypoint.mvp.user.infrastructure.persistence.UserRepository;
 public class CollectionEventListener {
 
 	private final CollectionRepository collectionRepository;
-	private final CollectionMemberRepository collectionMemberRepository;
 	private final UserRepository userRepository;
+	private final CollectionMemberService collectionMemberService;
 
 	@TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
 	public void handleCollectionCreatedEvent(CollectionCreatedEvent event) {
@@ -33,7 +31,6 @@ public class CollectionEventListener {
 		User user = userRepository.findById(event.user().id())
 			.orElseThrow(() -> new BusinessException(UserError.USER_NOT_FOUND));
 
-		CollectionMember collectionMember = CollectionMember.create(collection, user, CollectionRole.OWNER);
-		collectionMemberRepository.save(collectionMember);
+		collectionMemberService.createInitialOwner(collection, user);
 	}
 }

@@ -1,7 +1,6 @@
 package waypoint.mvp.collection.application;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
@@ -18,12 +17,9 @@ import waypoint.mvp.collection.application.dto.request.CollectionUpdateRequest;
 import waypoint.mvp.collection.application.dto.response.CollectionMemberResponse;
 import waypoint.mvp.collection.application.dto.response.CollectionResponse;
 import waypoint.mvp.collection.domain.Collection;
-import waypoint.mvp.collection.domain.CollectionMember;
-import waypoint.mvp.collection.domain.CollectionRole;
 import waypoint.mvp.collection.domain.event.CollectionCreatedEvent;
 import waypoint.mvp.collection.domain.service.CollectionAuthorizer;
 import waypoint.mvp.collection.error.CollectionError;
-import waypoint.mvp.collection.infrastructure.persistence.CollectionMemberRepository;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionRepository;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.sharelink.application.dto.response.ShareLinkResponse;
@@ -39,7 +35,7 @@ import waypoint.mvp.user.domain.User;
 public class CollectionService {
 
 	private final CollectionRepository collectionRepository;
-	private final CollectionMemberRepository collectionMemberRepository;
+	private final CollectionMemberService collectionMemberService;
 	private final ApplicationEventPublisher eventPublisher;
 	private final ShareLinkRepository shareLinkRepository;
 	private final UserFinder userFinder;
@@ -82,53 +78,23 @@ public class CollectionService {
 		return CollectionResponse.from(collection);
 	}
 
-	public CollectionMemberResponse getCollectionMember(Long collectionId, UserPrincipal user) {
-		collectionAuthorizer.verifyMember(user, collectionId);
-
-		CollectionMember member = collectionMemberRepository.findActiveByUserId(collectionId, user.id())
-			.orElseThrow(() -> new BusinessException(CollectionError.FORBIDDEN_NOT_MEMBER));
-		return CollectionMemberResponse.from(member);
-	}
-
 	public List<CollectionMemberResponse> getCollectionMembers(Long collectionId, UserPrincipal user) {
 		collectionAuthorizer.verifyMember(user, collectionId);
 
-		return collectionMemberRepository.findActiveAll(collectionId)
+		return collectionMemberService.getMembers(collectionId)
 			.stream()
 			.map(CollectionMemberResponse::from)
 			.toList();
-
 	}
 
 	@Transactional
 	public void withdrawCollectionMember(Long collectionId, UserPrincipal user) {
-		CollectionMember member = collectionMemberRepository.findActiveByUserId(collectionId, user.id())
-			.orElseThrow(() -> new BusinessException(CollectionError.FORBIDDEN_NOT_MEMBER));
-		removeCollectionMember(collectionId, member);
-
+		collectionMemberService.withdraw(collectionId, user);
 	}
 
 	@Transactional
 	public void expelCollectionMember(Long collectionId, Long memberId, UserPrincipal user) {
-		collectionAuthorizer.verifyOwner(user, collectionId);
-
-		CollectionMember member = collectionMemberRepository.findActive(memberId, collectionId)
-			.orElseThrow(() -> new BusinessException(CollectionError.FORBIDDEN_NOT_MEMBER));
-		removeCollectionMember(collectionId, member);
-
-	}
-
-	private void removeCollectionMember(Long collectionId, CollectionMember member) {
-		Collection collection = getCollection(collectionId);
-
-		if (member.isOwner()) {
-			throw new BusinessException(CollectionError.NEED_TO_DELEGATE_OWNERSHIP);
-
-		} else {
-			// 일반 멤버는 탈퇴 처리
-			member.withdraw();
-			collection.decreaseMemberCount();
-		}
+		collectionMemberService.expel(collectionId, memberId, user);
 	}
 
 	@Transactional
@@ -159,7 +125,7 @@ public class CollectionService {
 
 		User inviteeUser = userFinder.findById(inviteeUserId);
 		Collection collection = getCollection(shareLink.getTargetId());
-		addCollectionMember(collection, inviteeUser);
+		collectionMemberService.addMember(collection, inviteeUser);
 
 		shareLink.increaseUseCount();
 
@@ -171,21 +137,4 @@ public class CollectionService {
 			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
 	}
 
-	private void addCollectionMember(Collection collection, User user) {
-		Optional<CollectionMember> withdrawnMemberOpt = collectionMemberRepository.findWithdrawnMember(
-			collection.getId(), user.getId());
-
-		if (withdrawnMemberOpt.isPresent()) {
-			// 탈퇴한 멤버가 있으면 복구, User 프로필 최신화
-			CollectionMember rejoinedMember = withdrawnMemberOpt.get();
-			rejoinedMember.rejoin(); // deletedAt을 null로 변경
-			rejoinedMember.updateProfile(user.getNickname(), user.getPicture());
-		} else {
-			// 탈퇴한 멤버가 없으면 기존 멤버 존재 여부 확인 후 새로 생성
-			collectionAuthorizer.checkIfMemberExists(collection.getId(), user.getId());
-			CollectionMember newMember = CollectionMember.create(collection, user, CollectionRole.MEMBER);
-			collectionMemberRepository.save(newMember);
-		}
-		collection.increaseMemberCount();
-	}
 }
