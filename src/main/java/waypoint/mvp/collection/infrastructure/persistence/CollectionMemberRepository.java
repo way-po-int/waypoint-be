@@ -1,5 +1,6 @@
 package waypoint.mvp.collection.infrastructure.persistence;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -24,4 +25,6 @@ public interface CollectionMemberRepository extends JpaRepository<CollectionMemb
 	@Query("SELECT count(cm) > 0 FROM CollectionMember cm WHERE cm.collection.id = :collectionId AND cm.user.id = :userId AND cm.deletedAt IS NULL")
 	boolean existsActive(@Param("collectionId") Long collectionId, @Param("userId") Long userId);
 
+	@Query("SELECT cm FROM CollectionMember cm WHERE cm.collection.id = :collectionId AND cm.deletedAt IS NULL")
+	List<CollectionMember> findActiveAll(@Param("collectionId") Long collectionId);
 }
