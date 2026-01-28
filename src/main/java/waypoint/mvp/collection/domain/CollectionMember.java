@@ -82,5 +82,9 @@ public class CollectionMember extends LogicalDeleteEntity {
 		this.nickname = nickname;
 		this.picture = picture;
 	}
+
+	public void updateRole(CollectionRole role) {
+		this.role = role;
+	}
 }
 

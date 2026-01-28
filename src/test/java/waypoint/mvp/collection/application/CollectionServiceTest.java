@@ -72,11 +72,9 @@ class CollectionServiceTest {
 		assertThat(foundCollection.get().getTitle()).isEqualTo(title);
 
 		// 2. CollectionMember가 정상적으로 저장되었는지 검증 (이벤트 리스너 동작 확인)
-		Optional<CollectionMember> foundMember = collectionMemberRepository.findActiveByUserId(collection.getId(),
-			baseUser.getId());
-		assertThat(foundMember).isPresent();
-		assertThat(foundMember.get().getRole()).isEqualTo(CollectionRole.OWNER);
-		assertThat(foundMember.get().getUser().getId()).isEqualTo(baseUser.getId());
+		CollectionMember foundMember = findActiveMember(collection.getId(), baseUser.getId());
+		assertThat(foundMember.getRole()).isEqualTo(CollectionRole.OWNER);
+		assertThat(foundMember.getUser().getId()).isEqualTo(baseUser.getId());
 	}
 
 	@Test
@@ -142,6 +140,10 @@ class CollectionServiceTest {
 		return collectionRepository.findById(collectionId).orElseThrow();
 	}
 
+	private CollectionMember findActiveMember(long collectionId, long userId) {
+		return collectionMemberRepository.findActiveByUserId(collectionId, userId).orElseThrow();
+	}
+
 	@Test
 	@DisplayName("멤버가 자발적으로 컬렉션을 탈퇴하면 soft delete되고 멤버 수가 감소한다.")
 	void withdrawCollectionMember_byMember_success() {
@@ -163,8 +165,7 @@ class CollectionServiceTest {
 		assertThat(updatedCollection.getMemberCount()).isEqualTo(1);
 
 		// 활성 멤버 조회 시, 탈퇴한 멤버가 조회되지 않는지 추가 검증
-		assertThat(
-			collectionMemberRepository.findActiveByUserId(collection.getId(), member.getId())).isNotPresent();
+		assertThat(collectionMemberRepository.findActiveByUserId(collection.getId(), member.getId())).isNotPresent();
 	}
 
 	@Test
@@ -203,8 +204,7 @@ class CollectionServiceTest {
 		assertThat(updatedCollection.getMemberCount()).isEqualTo(1);
 
 		// 활성 멤버 조회 시, 추방된 멤버가 조회되지 않는지 추가 검증
-		assertThat(
-			collectionMemberRepository.findActiveByUserId(collection.getId(), member.getId())).isNotPresent();
+		assertThat(collectionMemberRepository.findActiveByUserId(collection.getId(), member.getId())).isNotPresent();
 	}
 
 	@Test
@@ -223,10 +223,8 @@ class CollectionServiceTest {
 		collectionService.addMemberFromShareLink(shareLink, member.getId());
 
 		// then
-		Optional<CollectionMember> restoredMember = collectionMemberRepository.findActiveByUserId(collection.getId(),
-			member.getId());
-		assertThat(restoredMember).isPresent();
-		assertThat(restoredMember.get().getDeletedAt()).isNull();
+		CollectionMember restoredMember = findActiveMember(collection.getId(), member.getId());
+		assertThat(restoredMember.getDeletedAt()).isNull();
 
 		Collection updatedCollection = collectionRepository.findById(collection.getId()).orElseThrow();
 		assertThat(updatedCollection.getMemberCount()).isEqualTo(2);
@@ -240,6 +238,43 @@ class CollectionServiceTest {
 		collectionService.addMemberFromShareLink(shareLink, member.getId());
 
 		return findCollectionById(collection.getId()); // 멤버 추가 후 최신 상태의 컬렉션을 반환
+	}
+
+	@Test
+	@DisplayName("Owner는 다른 멤버에게 소유권을 위임할 수 있다.")
+	void changeOwner_byOwner_success() {
+		// given
+		UserPrincipal owner = new UserPrincipal(baseUser.getId());
+		User newOwnerUser = createUser("newOwner");
+		UserPrincipal newOwner = new UserPrincipal(newOwnerUser.getId());
+		Collection collection = createCollectionAndInvitedMember("Test Collection", owner, newOwner);
+		CollectionMember newOwnerMember = findActiveMember(collection.getId(), newOwner.getId());
+
+		// when
+		collectionService.changeOwner(collection.getId(), newOwnerMember.getId(), owner);
+
+		// then
+		CollectionMember formerOwnerMember = findActiveMember(collection.getId(), owner.getId());
+		CollectionMember currentOwnerMember = findActiveMember(collection.getId(), newOwner.getId());
+
+		assertThat(formerOwnerMember.getRole()).isEqualTo(CollectionRole.MEMBER);
+		assertThat(currentOwnerMember.getRole()).isEqualTo(CollectionRole.OWNER);
+	}
+
+	@Test
+	@DisplayName("Owner가 아니면 소유권을 위임할 수 없다.")
+	void changeOwner_byMember_fail() {
+		// given
+		UserPrincipal owner = new UserPrincipal(baseUser.getId());
+		UserPrincipal member = new UserPrincipal(createUser("member1").getId());
+		Collection collection = createCollectionAndInvitedMember("Test Collection", owner, member);
+		CollectionMember ownerMember = findActiveMember(collection.getId(), owner.getId());
+
+		// when & then
+		assertThatThrownBy(() -> collectionService.changeOwner(collection.getId(), ownerMember.getId(), member))
+			.isInstanceOf(BusinessException.class)
+			.extracting(ex -> ((BusinessException)ex).getBody().getProperties().get("code"))
+			.isEqualTo(CollectionError.FORBIDDEN_NOT_OWNER.name());
 	}
 
 }
