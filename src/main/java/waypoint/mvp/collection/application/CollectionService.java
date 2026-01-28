@@ -17,6 +17,8 @@ import waypoint.mvp.collection.application.dto.request.CollectionUpdateRequest;
 import waypoint.mvp.collection.application.dto.response.CollectionMemberResponse;
 import waypoint.mvp.collection.application.dto.response.CollectionResponse;
 import waypoint.mvp.collection.domain.Collection;
+import waypoint.mvp.collection.domain.CollectionMember;
+import waypoint.mvp.collection.domain.CollectionRole;
 import waypoint.mvp.collection.domain.event.CollectionCreatedEvent;
 import waypoint.mvp.collection.domain.service.CollectionAuthorizer;
 import waypoint.mvp.collection.error.CollectionError;
@@ -76,6 +78,17 @@ public class CollectionService {
 		collection.update(request.title());
 
 		return CollectionResponse.from(collection);
+	}
+
+	@Transactional
+	public void changeOwner(Long collectionId, Long memberId, UserPrincipal user) {
+		collectionAuthorizer.verifyOwner(user, collectionId);
+
+		CollectionMember currentOwner = collectionMemberService.getMemberByUserId(collectionId, user.id());
+		CollectionMember newOwner = collectionMemberService.getMember(collectionId, memberId);
+
+		newOwner.updateRole(CollectionRole.OWNER);
+		currentOwner.updateRole(CollectionRole.MEMBER);
 	}
 
 	public List<CollectionMemberResponse> getCollectionMembers(Long collectionId, AuthPrincipal user) {
