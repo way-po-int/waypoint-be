@@ -82,7 +82,7 @@ public class CollectionService {
 		return CollectionResponse.from(collection);
 	}
 
-	public List<CollectionMemberResponse> getCollectionMember(Long collectionId, UserPrincipal user) {
+	public List<CollectionMemberResponse> getCollectionMembers(Long collectionId, UserPrincipal user) {
 		collectionAuthorizer.verifyMember(user, collectionId);
 
 		return collectionMemberRepository.findActiveAll(collectionId)

@@ -70,7 +70,7 @@ public class CollectionController {
 		@AuthenticationPrincipal UserPrincipal user
 
 	) {
-		List<CollectionMemberResponse> members = collectionService.getCollectionMember(collectionId, user);
+		List<CollectionMemberResponse> members = collectionService.getCollectionMembers(collectionId, user);
 
 		return ResponseEntity.ok(members);
 	}
