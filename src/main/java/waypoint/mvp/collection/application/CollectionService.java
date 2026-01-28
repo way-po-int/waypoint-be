@@ -82,6 +82,14 @@ public class CollectionService {
 		return CollectionResponse.from(collection);
 	}
 
+	public CollectionMemberResponse getCollectionMember(Long collectionId, UserPrincipal user) {
+		collectionAuthorizer.verifyMember(user, collectionId);
+
+		CollectionMember member = collectionMemberRepository.findActiveByUserId(collectionId, user.id())
+			.orElseThrow(() -> new BusinessException(CollectionError.FORBIDDEN_NOT_MEMBER));
+		return CollectionMemberResponse.from(member);
+	}
+
 	public List<CollectionMemberResponse> getCollectionMembers(Long collectionId, UserPrincipal user) {
 		collectionAuthorizer.verifyMember(user, collectionId);
 
