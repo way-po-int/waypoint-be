@@ -49,6 +49,15 @@ public class Plan extends BaseTimeEntity {
 			.title(title)
 			.startDate(startDate)
 			.endDate(endDate)
+			.memberCount(1)
 			.build();
+	}
+
+	public void increaseMemberCount() {
+		this.memberCount++;
+	}
+
+	public void decreaseMemberCount() {
+		this.memberCount--;
 	}
 }
