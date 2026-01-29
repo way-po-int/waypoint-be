@@ -14,10 +14,10 @@ public interface CollectionPlacePreferenceRepository
 
 	Optional<CollectionPlacePreference> findByPlaceIdAndMemberId(Long collectionPlaceId, Long collectionMemberId);
 
-	@Query("select p from CollectionPlacePreference p join fetch p.member where p.place.id = :collectionPlaceId and p.type = :type")
-	List<CollectionPlacePreference> findAllByPlaceIdAndType(@Param("collectionPlaceId") Long collectionPlaceId,
-		@Param("type") CollectionPlacePreference.Type type);
-
 	@Query("SELECT p FROM CollectionPlacePreference p JOIN FETCH p.member WHERE p.place.id IN :collectionPlaceIds")
 	List<CollectionPlacePreference> findAllByPlaceIdIn(@Param("collectionPlaceIds") List<Long> collectionPlaceIds);
+
+	@Query("select p from CollectionPlacePreference p join fetch p.member where p.place.id = :collectionPlaceId")
+	List<CollectionPlacePreference> findAllByPlaceId(@Param("collectionPlaceId") Long collectionPlaceId);
+
 }
