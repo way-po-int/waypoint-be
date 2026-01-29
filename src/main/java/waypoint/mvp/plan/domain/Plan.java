@@ -13,6 +13,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import waypoint.mvp.global.common.LogicalDeleteEntity;
+import waypoint.mvp.global.error.exception.BusinessException;
+import waypoint.mvp.plan.error.PlanError;
 
 @Entity
 @Table(name = "plans")
@@ -38,6 +40,7 @@ public class Plan extends LogicalDeleteEntity {
 
 	@Builder(access = AccessLevel.PRIVATE)
 	private Plan(String title, LocalDate startDate, LocalDate endDate, int memberCount) {
+		validateDateRange(startDate, endDate);
 		this.title = title;
 		this.startDate = startDate;
 		this.endDate = endDate;
@@ -59,5 +62,11 @@ public class Plan extends LogicalDeleteEntity {
 
 	public void decreaseMemberCount() {
 		this.memberCount--;
+	}
+
+	private static void validateDateRange(LocalDate startDate, LocalDate endDate) {
+		if (endDate.isBefore(startDate)) {
+			throw new BusinessException(PlanError.INVALID_DATE_RANGE);
+		}
 	}
 }
