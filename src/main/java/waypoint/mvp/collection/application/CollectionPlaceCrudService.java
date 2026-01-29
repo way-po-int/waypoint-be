@@ -246,25 +246,20 @@ public class CollectionPlaceCrudService {
 			return Collections.emptyMap();
 		}
 
-		List<CollectionPlacePreference> prefs = preferenceRepository.findAllByPlaceIdIn(collectionPlaceIds);
+		List<CollectionPlacePreference> preference = preferenceRepository.findAllByPlaceIdIn(collectionPlaceIds);
 
-		Map<Long, Map<CollectionPlacePreference.Type, List<PickPassMemberResponse>>> result = new java.util.HashMap<>();
-
-		for (CollectionPlacePreference pref : prefs) {
-			Long placeId = pref.getPlace().getId();
-			CollectionPlacePreference.Type type = pref.getType();
-
-			result.computeIfAbsent(placeId, k -> new EnumMap<>(CollectionPlacePreference.Type.class));
-			Map<CollectionPlacePreference.Type, List<PickPassMemberResponse>> byType = result.get(placeId);
-
-			List<PickPassMemberResponse> list = new java.util.ArrayList<>(
-				byType.getOrDefault(type, List.of())
-			);
-			list.add(PickPassMemberResponse.from(pref.getMember()));
-			byType.put(type, List.copyOf(list));
-		}
-
-		return result;
+		return preference.stream()
+			.collect(java.util.stream.Collectors.groupingBy(
+				pref -> pref.getPlace().getId(),
+				java.util.stream.Collectors.groupingBy(
+					CollectionPlacePreference::getType,
+					() -> new EnumMap<>(CollectionPlacePreference.Type.class),
+					java.util.stream.Collectors.mapping(
+						pref -> PickPassMemberResponse.from(pref.getMember()),
+						java.util.stream.Collectors.toList()
+					)
+				)
+			));
 	}
 
 	public enum CollectionPlaceSort {
