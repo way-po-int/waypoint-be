@@ -47,8 +47,11 @@ public class YouTubeContentStrategy implements ContentStrategy<YouTubeRawContent
 	public YouTubeRawContent fetch(String url) {
 		var content = apiClient.getRawContent(url);
 
-		// 영상 길이 검사
+		// 분석 가능한 영상 길이인지 검증
 		Duration duration = content.getDuration();
+		if (duration.isZero()) {
+			throw new ExtractionException(ExtractFailureCode.VIDEO_TOO_SHORT);
+		}
 		if (duration.compareTo(maxDuration) > 0) {
 			throw new ExtractionException(ExtractFailureCode.VIDEO_TOO_LONG);
 		}
