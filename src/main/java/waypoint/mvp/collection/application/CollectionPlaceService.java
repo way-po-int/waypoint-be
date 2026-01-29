@@ -9,14 +9,10 @@ import waypoint.mvp.collection.application.dto.request.CollectionPlaceFromUrlReq
 import waypoint.mvp.collection.application.dto.response.ExtractionJobResponse;
 import waypoint.mvp.collection.domain.CollectionMember;
 import waypoint.mvp.collection.domain.CollectionPlaceDraft;
-import waypoint.mvp.collection.error.CollectionError;
-import waypoint.mvp.collection.infrastructure.persistence.CollectionMemberRepository;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionPlaceDraftRepository;
-import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.place.application.SocialMediaService;
 import waypoint.mvp.place.application.dto.SocialMediaInfo;
 import waypoint.mvp.place.domain.SocialMedia;
-import waypoint.mvp.place.infrastructure.persistence.SocialMediaRepository;
 
 @Service
 @Transactional(readOnly = true)
@@ -24,14 +20,13 @@ import waypoint.mvp.place.infrastructure.persistence.SocialMediaRepository;
 public class CollectionPlaceService {
 
 	private final SocialMediaService socialMediaService;
-	private final CollectionMemberRepository collectionMemberRepository;
+	private final CollectionMemberService collectionMemberService;
 	private final CollectionPlaceDraftRepository jobRepository;
-	private final SocialMediaRepository socialMediaRepository;
 
 	@Transactional
 	public ExtractionJobResponse addPlacesFromUrl(Long collectionId, CollectionPlaceFromUrlRequest request,
 		AuthPrincipal user) {
-		CollectionMember collectionMember = getCollectionMember(collectionId, user.getId());
+		CollectionMember collectionMember = collectionMemberService.getMemberByUserId(collectionId, user.getId());
 
 		// 장소 추출 이벤트 요청
 		SocialMediaInfo socialMediaInfo = socialMediaService.addJob(request.url());
@@ -44,16 +39,10 @@ public class CollectionPlaceService {
 		);
 	}
 
-	private CollectionMember getCollectionMember(Long collectionId, Long userId) {
-		return collectionMemberRepository
-			.findActiveByUserId(collectionId, userId)
-			.orElseThrow(() -> new BusinessException(CollectionError.FORBIDDEN_NOT_MEMBER));
-	}
-
 	private CollectionPlaceDraft createOrGetDraft(CollectionMember member, Long socialMediaId) {
 		return jobRepository.findByMemberIdAndSocialMediaId(member.getId(), socialMediaId)
 			.orElseGet(() -> {
-				SocialMedia media = socialMediaRepository.getReferenceById(socialMediaId);
+				SocialMedia media = socialMediaService.getSocialMedia(socialMediaId);
 
 				var draft = CollectionPlaceDraft.create(member, media);
 				return jobRepository.save(draft);
