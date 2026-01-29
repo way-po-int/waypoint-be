@@ -87,8 +87,12 @@ public class CollectionService {
 		CollectionMember currentOwner = collectionMemberService.getMemberByUserId(collectionId, user.id());
 		CollectionMember newOwner = collectionMemberService.getMember(collectionId, memberId);
 
-		newOwner.updateRole(CollectionRole.OWNER);
+		if (collectionMemberService.isSameMember(currentOwner, newOwner)) {
+			throw new BusinessException(CollectionError.CANNOT_DELEGATE_OWNERSHIP_TO_SELF, newOwner.getNickname());
+		}
+
 		currentOwner.updateRole(CollectionRole.MEMBER);
+		newOwner.updateRole(CollectionRole.OWNER);
 	}
 
 	public List<CollectionMemberResponse> getCollectionMembers(Long collectionId, AuthPrincipal user) {
