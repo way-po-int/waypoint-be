@@ -1,36 +1,34 @@
 package waypoint.mvp.place.domain;
 
-import java.net.URI;
 import java.util.Arrays;
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.regex.Pattern;
 
-import lombok.RequiredArgsConstructor;
+import org.springframework.util.ObjectUtils;
+
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.place.error.SocialMediaError;
 
-@RequiredArgsConstructor
 public enum SocialMediaType {
-	YOUTUBE_SHORTS(List.of("youtube.com/shorts/")),
-	YOUTUBE(List.of("youtube.com/", "youtu.be/"));
+	YOUTUBE_SHORTS("^https://(www\\.|m\\.)?youtube\\.com/shorts/.*"),
+	YOUTUBE("^https://((www\\.|m\\.)?youtube\\.com/(watch\\?v=|embed/|v/)|youtu\\.be/).*");
 
-	private final List<String> supports;
+	private final Pattern pattern;
+
+	SocialMediaType(String regex) {
+		this.pattern = Pattern.compile(regex);
+	}
 
 	public static SocialMediaType from(String url) {
-		try {
-			URI uri = URI.create(url);
-			String u = uri.getHost() + uri.getPath();
-			return Arrays.stream(values())
-				.filter(type -> type.isSupported(u))
-				.findFirst()
-				.orElseThrow();
-		} catch (IllegalArgumentException | NullPointerException | NoSuchElementException e) {
+		if (ObjectUtils.isEmpty(url)) {
 			throw new BusinessException(SocialMediaError.SOCIAL_MEDIA_UNSUPPORTED);
 		}
+		return Arrays.stream(values())
+			.filter(type -> type.isSupported(url))
+			.findFirst()
+			.orElseThrow(() -> new BusinessException(SocialMediaError.SOCIAL_MEDIA_UNSUPPORTED));
 	}
 
 	private boolean isSupported(String url) {
-		return supports.stream()
-			.anyMatch(url::contains);
+		return pattern.matcher(url).matches();
 	}
 }
