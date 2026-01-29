@@ -1,5 +1,10 @@
 package waypoint.mvp.place.domain;
 
+import java.util.List;
+
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -12,8 +17,10 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import waypoint.mvp.collection.domain.ExtractStatus;
 import waypoint.mvp.global.common.BaseTimeEntity;
+import waypoint.mvp.global.error.exception.BusinessException;
+import waypoint.mvp.place.domain.content.ContentSnapshot;
+import waypoint.mvp.place.error.SocialMediaError;
 
 @Entity
 @Table(name = "social_media")
@@ -29,17 +36,27 @@ public class SocialMedia extends BaseTimeEntity {
 	@Column(nullable = false)
 	private SocialMediaType type;
 
-	@Column(nullable = false)
+	@Column(nullable = false, unique = true)
 	private String url;
-
-	@Column
-	private String title;
 
 	@Column
 	private String summary;
 
+	@JdbcTypeCode(SqlTypes.JSON)
+	@Column
+	private List<String> searchQueries;
+
+	@JdbcTypeCode(SqlTypes.JSON)
+	@Column
+	private ContentSnapshot snapshot;
+
 	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
 	private ExtractStatus status;
+
+	@Enumerated(EnumType.STRING)
+	@Column
+	private ExtractFailureCode failureCode;
 
 	@Builder(access = AccessLevel.PRIVATE)
 	private SocialMedia(SocialMediaType type, String url) {
@@ -48,16 +65,38 @@ public class SocialMedia extends BaseTimeEntity {
 		this.status = ExtractStatus.PENDING;
 	}
 
-	public static SocialMedia create(SocialMediaType type, String url) {
+	public static SocialMedia create(String url) {
 		return builder()
-			.type(type)
+			.type(SocialMediaType.from(url))
 			.url(url)
 			.build();
 	}
 
-	public void completeAnalysis(String title, String summary) {
-		this.title = title;
+	public void process() {
+		validateStatus(ExtractStatus.PENDING);
+
+		this.status = ExtractStatus.PROCESSING;
+	}
+
+	public void complete(String summary, List<String> searchQueries, ContentSnapshot snapshot) {
+		validateStatus(ExtractStatus.PROCESSING);
+
 		this.summary = summary;
+		this.searchQueries = searchQueries;
+		this.snapshot = snapshot;
 		this.status = ExtractStatus.COMPLETED;
+	}
+
+	public void fail(ExtractFailureCode failureCode) {
+		validateStatus(ExtractStatus.PROCESSING);
+
+		this.status = ExtractStatus.FAILED;
+		this.failureCode = failureCode;
+	}
+
+	private void validateStatus(ExtractStatus status) {
+		if (this.status != status) {
+			throw new BusinessException(SocialMediaError.SOCIAL_MEDIA_INVALID_STATUS, this.status, status);
+		}
 	}
 }

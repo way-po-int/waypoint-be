@@ -16,3 +16,4 @@ logging:
     waypoint.mvp: DEBUG
     org.hibernate.SQL: DEBUG
     org.hibernate.orm.jdbc.bind: TRACE
+    org.springframework.ai: DEBUG
