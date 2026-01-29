@@ -188,13 +188,18 @@ public class CollectionPlaceCrudService {
 			preferenceRepository.save(CollectionPlacePreference.create(place, me, type));
 		}
 
-		List<PickPassMemberResponse> picked = preferenceRepository.findAllByPlaceIdAndType(collectionPlaceId,
-				CollectionPlacePreference.Type.PICK)
-			.stream().map(p -> PickPassMemberResponse.from(p.getMember())).toList();
-
-		List<PickPassMemberResponse> passed = preferenceRepository.findAllByPlaceIdAndType(collectionPlaceId,
-				CollectionPlacePreference.Type.PASS)
-			.stream().map(p -> PickPassMemberResponse.from(p.getMember())).toList();
+		Map<CollectionPlacePreference.Type, List<PickPassMemberResponse>> preferenceByType = preferenceRepository.findAllByPlaceId(
+				collectionPlaceId)
+			.stream()
+			.collect(java.util.stream.Collectors.groupingBy(
+				CollectionPlacePreference::getType,
+				java.util.stream.Collectors.mapping(p -> PickPassMemberResponse.from(p.getMember()),
+					java.util.stream.Collectors.toList())
+			));
+		List<PickPassMemberResponse> picked = preferenceByType.getOrDefault(CollectionPlacePreference.Type.PICK,
+			List.of());
+		List<PickPassMemberResponse> passed = preferenceByType.getOrDefault(CollectionPlacePreference.Type.PASS,
+			List.of());
 
 		return PickPassResponse.of(picked, passed);
 	}
