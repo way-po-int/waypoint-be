@@ -1,4 +1,6 @@
-package waypoint.mvp.collection.domain;
+package waypoint.mvp.plan.domain;
+
+import java.time.LocalDate;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -11,12 +13,14 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import waypoint.mvp.global.common.LogicalDeleteEntity;
+import waypoint.mvp.global.error.exception.BusinessException;
+import waypoint.mvp.plan.error.PlanError;
 
 @Entity
-@Table(name = "collections")
+@Table(name = "plans")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Collection extends LogicalDeleteEntity {
+public class Plan extends LogicalDeleteEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,23 +30,30 @@ public class Collection extends LogicalDeleteEntity {
 	private String title;
 
 	@Column(nullable = false)
+	private LocalDate startDate;
+
+	@Column(nullable = false)
+	private LocalDate endDate;
+
+	@Column(nullable = false)
 	private int memberCount = 0;
 
 	@Builder(access = AccessLevel.PRIVATE)
-	private Collection(String title, int memberCount) {
+	private Plan(String title, LocalDate startDate, LocalDate endDate, int memberCount) {
+		validateDateRange(startDate, endDate);
 		this.title = title;
+		this.startDate = startDate;
+		this.endDate = endDate;
 		this.memberCount = memberCount;
 	}
 
-	public static Collection create(String title) {
+	public static Plan create(String title, LocalDate startDate, LocalDate endDate) {
 		return builder()
 			.title(title)
+			.startDate(startDate)
+			.endDate(endDate)
 			.memberCount(1)
 			.build();
-	}
-
-	public void update(String title) {
-		this.title = title;
 	}
 
 	public void increaseMemberCount() {
@@ -51,5 +62,11 @@ public class Collection extends LogicalDeleteEntity {
 
 	public void decreaseMemberCount() {
 		this.memberCount--;
+	}
+
+	private static void validateDateRange(LocalDate startDate, LocalDate endDate) {
+		if (endDate.isBefore(startDate)) {
+			throw new BusinessException(PlanError.INVALID_DATE_RANGE);
+		}
 	}
 }
