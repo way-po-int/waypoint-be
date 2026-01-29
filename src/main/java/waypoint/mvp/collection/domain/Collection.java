@@ -10,13 +10,13 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import waypoint.mvp.global.common.BaseTimeEntity;
+import waypoint.mvp.global.common.LogicalDeleteEntity;
 
 @Entity
 @Table(name = "collections")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Collection extends BaseTimeEntity {
+public class Collection extends LogicalDeleteEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
