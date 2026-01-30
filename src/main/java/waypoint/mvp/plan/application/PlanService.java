@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
+import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.global.common.SliceResponse;
 import waypoint.mvp.global.error.exception.BusinessException;
@@ -45,13 +46,13 @@ public class PlanService {
 		return SliceResponse.from(plans);
 	}
 
-	public PlanResponse findPlanById(Long planId) {
+	public PlanResponse findPlanById(Long planId, AuthPrincipal user) {
 		Plan plan = getPlan(planId);
 
 		return PlanResponse.from(plan);
 	}
 
-	public PlanResponse findPlanByExternalId(String externalId) {
+	public PlanResponse findPlanByExternalId(String externalId, AuthPrincipal user) {
 		Plan plan = getPlan(externalId);
 
 		return PlanResponse.from(plan);
