@@ -7,7 +7,7 @@ import lombok.Getter;
 
 @Getter
 @MappedSuperclass
-public abstract class LogicalDeleteEntity extends BaseTimeEntity {
+public abstract class LogicalDeleteEntity extends ExternalIdEntity {
 
 	private Instant deletedAt;
 
