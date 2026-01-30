@@ -21,7 +21,7 @@ public record PlanResponse(
 
 	public static PlanResponse from(Plan plan) {
 		return new PlanResponse(
-			plan.getId().toString(),
+			plan.getExternalId(),
 			plan.getTitle(),
 			plan.getStartDate(),
 			plan.getEndDate(),

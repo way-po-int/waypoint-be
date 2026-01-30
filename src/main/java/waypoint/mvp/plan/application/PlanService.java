@@ -51,23 +51,34 @@ public class PlanService {
 		return PlanResponse.from(plan);
 	}
 
+	public PlanResponse findPlanByExternalId(String externalId) {
+		Plan plan = getPlan(externalId);
+
+		return PlanResponse.from(plan);
+	}
+
 	@Transactional
-	public PlanResponse updatePlan(Long planId, PlanUpdateRequest request, UserPrincipal user) {
-		Plan plan = getPlan(planId);
+	public PlanResponse updatePlan(String planExternalId, PlanUpdateRequest request, UserPrincipal user) {
+		Plan plan = getPlan(planExternalId);
 		plan.update(request.title(), request.startDate(), request.endDate());
 
 		return PlanResponse.from(plan);
 	}
 
 	@Transactional
-	public void deletePlan(Long planId, UserPrincipal user) {
-		Plan plan = getPlan(planId);
+	public void deletePlan(String planExternalId, UserPrincipal user) {
+		Plan plan = getPlan(planExternalId);
 
 		plan.softDelete();
 	}
 
 	private Plan getPlan(Long planId) {
 		return planRepository.findActive(planId)
+			.orElseThrow(() -> new BusinessException(PlanError.Plan_NOT_FOUND));
+	}
+
+	private Plan getPlan(String externalId) {
+		return planRepository.findActiveByExternalId(externalId)
 			.orElseThrow(() -> new BusinessException(PlanError.Plan_NOT_FOUND));
 	}
 }
