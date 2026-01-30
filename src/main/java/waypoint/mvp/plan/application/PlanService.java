@@ -38,7 +38,7 @@ public class PlanService {
 	}
 
 	public SliceResponse<PlanResponse> findPlans(UserPrincipal user, Pageable pageable) {
-		Slice<PlanResponse> plans = planRepository.findAllByUserId(user.id(), pageable)
+		Slice<PlanResponse> plans = planRepository.findAllActiveByUserId(user.id(), pageable)
 			.map(PlanResponse::from);
 
 		return SliceResponse.from(plans);
@@ -51,7 +51,7 @@ public class PlanService {
 	}
 
 	private Plan getPlan(Long planId) {
-		return planRepository.findById(planId)
+		return planRepository.findActive(planId)
 			.orElseThrow(() -> new BusinessException(PlanError.Plan_NOT_FOUND));
 	}
 }
