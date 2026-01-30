@@ -147,12 +147,13 @@ jobs:
           echo "EC2 배포 스크립트 생성 중..."
           cat <<EOF > deploy_script.sh
           #!/bin/bash
+          set -euo pipefail
           
           IMAGE="${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}"
           CONTAINER_NAME="${{ env.CONTAINER_NAME }}"
           
           aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
-          docker pull $IMAGE
+          docker pull \$IMAGE
           
           docker stop \$CONTAINER_NAME || true
           docker rm \$CONTAINER_NAME || true
@@ -167,6 +168,8 @@ jobs:
             --log-opt awslogs-stream=deploy-${{ env.IMAGE_TAG }} \
             --log-opt awslogs-create-group=true \
             \$IMAGE
+          
+          docker image prune -a -f
           EOF
           
           B64_SCRIPT=$(base64 -w 0 deploy_script.sh)
