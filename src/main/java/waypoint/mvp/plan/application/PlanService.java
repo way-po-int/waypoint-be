@@ -1,11 +1,14 @@
 package waypoint.mvp.plan.application;
 
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
+import waypoint.mvp.global.common.SliceResponse;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.plan.application.dto.request.PlanCreateRequest;
 import waypoint.mvp.plan.application.dto.response.PlanResponse;
@@ -32,6 +35,19 @@ public class PlanService {
 		);
 
 		return PlanResponse.from(getPlan(savedPlan.getId()));
+	}
+
+	public SliceResponse<PlanResponse> findPlans(UserPrincipal user, Pageable pageable) {
+		Slice<PlanResponse> plans = planRepository.findAllByUserId(user.id(), pageable)
+			.map(PlanResponse::from);
+
+		return SliceResponse.from(plans);
+	}
+
+	public PlanResponse findPlanById(Long planId) {
+		Plan plan = getPlan(planId);
+
+		return PlanResponse.from(plan);
 	}
 
 	private Plan getPlan(Long planId) {
