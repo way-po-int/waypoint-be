@@ -168,6 +168,8 @@ jobs:
             --log-opt awslogs-stream=deploy-${{ env.IMAGE_TAG }} \
             --log-opt awslogs-create-group=true \
             \$IMAGE
+          
+          docker image prune -a -f
           EOF
           
           B64_SCRIPT=$(base64 -w 0 deploy_script.sh)
