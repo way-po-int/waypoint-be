@@ -61,18 +61,23 @@ class CollectionServiceTest {
 		// given
 		String title = "My First Collection";
 		UserPrincipal requestPrincipal = new UserPrincipal(baseUser.getId());
+		CollectionCreateRequest createRequest = new CollectionCreateRequest(title);
 
 		// when
-		Collection collection = createCollection(title, requestPrincipal);
+		CollectionResponse response = collectionService.createCollection(createRequest, requestPrincipal);
 
 		// then
-		// 1. Collection이 정상적으로 저장되었는지 검증
-		Optional<Collection> foundCollection = collectionRepository.findById(collection.getId());
+		// 1. 응답 값 검증 (가장 중요)
+		assertThat(response.title()).isEqualTo(title);
+		assertThat(response.memberCount()).isEqualTo(1);
+
+		// 2. DB 데이터 검증 (Side Effect 검증)
+		Optional<Collection> foundCollection = collectionRepository.findById(response.id());
 		assertThat(foundCollection).isPresent();
 		assertThat(foundCollection.get().getTitle()).isEqualTo(title);
+		assertThat(foundCollection.get().getMemberCount()).isEqualTo(1);
 
-		// 2. CollectionMember가 정상적으로 저장되었는지 검증 (이벤트 리스너 동작 확인)
-		CollectionMember foundMember = findActiveMember(collection.getId(), baseUser.getId());
+		CollectionMember foundMember = findActiveMember(response.id(), baseUser.getId());
 		assertThat(foundMember.getRole()).isEqualTo(CollectionRole.OWNER);
 		assertThat(foundMember.getUser().getId()).isEqualTo(baseUser.getId());
 	}
