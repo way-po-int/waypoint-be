@@ -11,6 +11,7 @@ import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.global.common.SliceResponse;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.plan.application.dto.request.PlanCreateRequest;
+import waypoint.mvp.plan.application.dto.request.PlanUpdateRequest;
 import waypoint.mvp.plan.application.dto.response.PlanResponse;
 import waypoint.mvp.plan.domain.Plan;
 import waypoint.mvp.plan.domain.event.PlanCreateEvent;
@@ -46,6 +47,14 @@ public class PlanService {
 
 	public PlanResponse findPlanById(Long planId) {
 		Plan plan = getPlan(planId);
+
+		return PlanResponse.from(plan);
+	}
+
+	@Transactional
+	public PlanResponse updatePlan(Long planId, PlanUpdateRequest request, UserPrincipal user) {
+		Plan plan = getPlan(planId);
+		plan.update(request.title(), request.startDate(), request.endDate());
 
 		return PlanResponse.from(plan);
 	}

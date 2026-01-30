@@ -69,4 +69,11 @@ public class Plan extends LogicalDeleteEntity {
 			throw new BusinessException(PlanError.INVALID_DATE_RANGE);
 		}
 	}
+
+	public void update(String title, LocalDate startDate, LocalDate endDate) {
+		validateDateRange(startDate, endDate);
+		this.title = title;
+		this.startDate = startDate;
+		this.endDate = endDate;
+	}
 }
