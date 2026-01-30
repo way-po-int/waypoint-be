@@ -18,4 +18,7 @@ public interface PlanRepository extends JpaRepository<Plan, Long> {
 
 	@Query("SELECT p FROM Plan p WHERE p.id = :planId AND p.deletedAt IS NULL")
 	Optional<Plan> findActive(@Param("planId") Long planId);
+
+	@Query("SELECT p FROM Plan p WHERE p.externalId = :externalId AND p.deletedAt IS NULL")
+	Optional<Plan> findActiveByExternalId(@Param("externalId") String externalId);
 }
