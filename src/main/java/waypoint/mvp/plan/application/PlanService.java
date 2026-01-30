@@ -59,6 +59,13 @@ public class PlanService {
 		return PlanResponse.from(plan);
 	}
 
+	@Transactional
+	public void deletePlan(Long planId, UserPrincipal user) {
+		Plan plan = getPlan(planId);
+
+		plan.softDelete();
+	}
+
 	private Plan getPlan(Long planId) {
 		return planRepository.findActive(planId)
 			.orElseThrow(() -> new BusinessException(PlanError.Plan_NOT_FOUND));
