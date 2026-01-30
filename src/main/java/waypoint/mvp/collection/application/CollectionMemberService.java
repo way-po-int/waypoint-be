@@ -1,6 +1,7 @@
 package waypoint.mvp.collection.application;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
@@ -27,6 +28,13 @@ public class CollectionMemberService {
 	private final CollectionMemberRepository collectionMemberRepository;
 	private final CollectionRepository collectionRepository;
 	private final CollectionAuthorizer collectionAuthorizer;
+
+	public boolean isSameMember(CollectionMember member, CollectionMember other) {
+		if (member == null || other == null) {
+			return false;
+		}
+		return Objects.equals(member.getId(), other.getId());
+	}
 
 	@Transactional
 	public void createInitialOwner(Collection collection, User user) {
