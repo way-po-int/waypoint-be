@@ -76,4 +76,9 @@ public class Plan extends LogicalDeleteEntity {
 		this.startDate = startDate;
 		this.endDate = endDate;
 	}
+
+	@Override
+	public void softDelete() {
+		super.softDelete();
+	}
 }
