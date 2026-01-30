@@ -28,6 +28,7 @@ dependencies {
     implementation(platform(libs.spring.ai.bom))
     implementation("org.springframework.ai:spring-ai-starter-model-google-genai")
     implementation("org.hibernate.orm:hibernate-spatial")
+    implementation("com.aventrix.jnanoid:jnanoid:2.0.0")
     implementation(libs.jjwt.api)
     implementation(libs.youtube.api)
 
