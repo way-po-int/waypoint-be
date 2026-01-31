@@ -7,10 +7,13 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import waypoint.mvp.global.util.DateUtils;
 
 public record PlanCreateRequest(
 
 	@NotBlank(message = "제목은 비어있을 수 없습니다.")
+	@Size(min = 1, max = 20, message = "제목은 1자 이상 20자 이하로 입력해주세요.")
 	String title,
 
 	@NotNull(message = "시작일은 필수입니다.")
@@ -24,9 +27,11 @@ public record PlanCreateRequest(
 ) {
 	@AssertTrue(message = "종료일이 시작일보다 빠를 수 없습니다.")
 	public boolean isValidPeriod() {
-		if (startDate == null || endDate == null) {
-			return true; // Null 체크는 @NotNull 담당이므로 여기선 통과시켜야 중복 에러가 안 나
-		}
-		return !endDate.isBefore(startDate);
+		return DateUtils.isNotBefore(startDate, endDate);
+	}
+
+	@AssertTrue(message = "여행 기간은 최대 30일입니다.")
+	public boolean isWithinMaxPeriod() {
+		return DateUtils.isWithinMaxPlanPeriod(startDate, endDate);
 	}
 }
