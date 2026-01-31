@@ -1,4 +1,4 @@
-package waypoint.mvp.collection.application.dto.response;
+package waypoint.mvp.place.application.dto;
 
 import java.util.List;
 
