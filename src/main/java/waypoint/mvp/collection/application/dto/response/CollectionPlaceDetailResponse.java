@@ -1,6 +1,7 @@
 package waypoint.mvp.collection.application.dto.response;
 
 import waypoint.mvp.collection.domain.CollectionPlace;
+import waypoint.mvp.place.application.dto.PlaceResponse;
 
 public record CollectionPlaceDetailResponse(
 	String collectionPlaceId,
