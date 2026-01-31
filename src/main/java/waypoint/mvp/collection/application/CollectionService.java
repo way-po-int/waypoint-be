@@ -54,7 +54,7 @@ public class CollectionService {
 		eventPublisher.publishEvent(
 			CollectionCreatedEvent.of(savedCollection.getId(), user)); // 이벤트는 실제 유저만 발생시키므로 캐스팅
 
-		return CollectionResponse.from(getCollection(savedCollection.getId()));
+		return CollectionResponse.from(savedCollection);
 	}
 
 	public Page<CollectionResponse> findCollections(UserPrincipal user, Pageable pageable) {

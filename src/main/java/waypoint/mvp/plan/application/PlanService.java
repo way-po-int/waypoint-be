@@ -36,7 +36,7 @@ public class PlanService {
 			PlanCreateEvent.of(savedPlan.getId(), user)
 		);
 
-		return PlanResponse.from(getPlan(savedPlan.getId()));
+		return PlanResponse.from(savedPlan);
 	}
 
 	public SliceResponse<PlanResponse> findPlans(UserPrincipal user, Pageable pageable) {
@@ -75,11 +75,11 @@ public class PlanService {
 
 	private Plan getPlan(Long planId) {
 		return planRepository.findActive(planId)
-			.orElseThrow(() -> new BusinessException(PlanError.Plan_NOT_FOUND));
+			.orElseThrow(() -> new BusinessException(PlanError.PLAN_NOT_FOUND));
 	}
 
 	private Plan getPlan(String externalId) {
 		return planRepository.findActiveByExternalId(externalId)
-			.orElseThrow(() -> new BusinessException(PlanError.Plan_NOT_FOUND));
+			.orElseThrow(() -> new BusinessException(PlanError.PLAN_NOT_FOUND));
 	}
 }
