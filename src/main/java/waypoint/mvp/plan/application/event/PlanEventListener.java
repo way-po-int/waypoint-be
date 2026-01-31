@@ -26,7 +26,7 @@ public class PlanEventListener {
 	@TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
 	public void handlePlanCreateEvent(PlanCreateEvent event) {
 		Plan plan = planRepository.findById(event.planId())
-			.orElseThrow(() -> new BusinessException(PlanError.Plan_NOT_FOUND));
+			.orElseThrow(() -> new BusinessException(PlanError.PLAN_NOT_FOUND));
 		User user = userRepository.findById(event.user().id())
 			.orElseThrow(() -> new BusinessException(UserError.USER_NOT_FOUND));
 
