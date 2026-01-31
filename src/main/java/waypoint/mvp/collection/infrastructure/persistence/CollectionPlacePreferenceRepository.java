@@ -14,10 +14,7 @@ public interface CollectionPlacePreferenceRepository
 
 	Optional<CollectionPlacePreference> findByPlaceIdAndMemberId(Long collectionPlaceId, Long collectionMemberId);
 
-	@Query("SELECT p FROM CollectionPlacePreference p JOIN FETCH p.member WHERE p.place.id IN :collectionPlaceIds")
+	@Query("SELECT p FROM CollectionPlacePreference p JOIN FETCH p.member JOIN FETCH p.place WHERE p.place.id IN :collectionPlaceIds")
 	List<CollectionPlacePreference> findAllByPlaceIdIn(@Param("collectionPlaceIds") List<Long> collectionPlaceIds);
-
-	@Query("select p from CollectionPlacePreference p join fetch p.member where p.place.id = :collectionPlaceId")
-	List<CollectionPlacePreference> findAllByPlaceId(@Param("collectionPlaceId") Long collectionPlaceId);
 
 }
