@@ -17,7 +17,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import waypoint.mvp.global.common.BaseTimeEntity;
+import waypoint.mvp.global.common.ExternalIdEntity;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.place.domain.content.ContentSnapshot;
 import waypoint.mvp.place.error.SocialMediaError;
@@ -26,7 +26,7 @@ import waypoint.mvp.place.error.SocialMediaError;
 @Table(name = "social_media")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class SocialMedia extends BaseTimeEntity {
+public class SocialMedia extends ExternalIdEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

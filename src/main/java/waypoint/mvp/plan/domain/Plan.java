@@ -14,6 +14,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import waypoint.mvp.global.common.LogicalDeleteEntity;
 import waypoint.mvp.global.error.exception.BusinessException;
+import waypoint.mvp.global.util.DateUtils;
 import waypoint.mvp.plan.error.PlanError;
 
 @Entity
@@ -65,8 +66,20 @@ public class Plan extends LogicalDeleteEntity {
 	}
 
 	private static void validateDateRange(LocalDate startDate, LocalDate endDate) {
-		if (endDate.isBefore(startDate)) {
+		if (!DateUtils.isNotBefore(startDate, endDate)) {
 			throw new BusinessException(PlanError.INVALID_DATE_RANGE);
 		}
+	}
+
+	public void update(String title, LocalDate startDate, LocalDate endDate) {
+		validateDateRange(startDate, endDate);
+		this.title = title;
+		this.startDate = startDate;
+		this.endDate = endDate;
+	}
+
+	@Override
+	public void softDelete() {
+		super.softDelete();
 	}
 }

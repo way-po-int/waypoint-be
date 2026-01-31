@@ -49,12 +49,12 @@ public class CollectionService {
 	@Transactional
 	public CollectionResponse createCollection(CollectionCreateRequest request, UserPrincipal user) {
 		Collection collection = Collection.create(request.title());
-		collectionRepository.save(collection);
+		Collection savedCollection = collectionRepository.save(collection);
 
 		eventPublisher.publishEvent(
-			CollectionCreatedEvent.of(collection.getId(), user)); // 이벤트는 실제 유저만 발생시키므로 캐스팅
+			CollectionCreatedEvent.of(savedCollection.getId(), user)); // 이벤트는 실제 유저만 발생시키므로 캐스팅
 
-		return CollectionResponse.from(collection);
+		return CollectionResponse.from(savedCollection);
 	}
 
 	public Page<CollectionResponse> findCollections(UserPrincipal user, Pageable pageable) {
