@@ -123,10 +123,12 @@ public class CollectionService {
 	}
 
 	@Transactional
-	public ShareLinkResponse createInvitation(Long collectionId, UserPrincipal user) {
-		collectionAuthorizer.verifyMember(user, collectionId);
+	public ShareLinkResponse createInvitation(String collectionId, UserPrincipal user) {
+		Collection collection = getCollection(collectionId);
+		collectionAuthorizer.verifyMember(user, collection.getId());
 
-		ShareLink shareLink = ShareLink.create(ShareLink.ShareLinkType.COLLECTION, collectionId, user.getId(),
+		ShareLink shareLink = ShareLink.create(ShareLink.ShareLinkType.COLLECTION, collection.getExternalId(),
+			collection.getId(), user.getId(),
 			invitationExpirationHours);
 
 		shareLinkRepository.save(shareLink);

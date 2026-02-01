@@ -124,7 +124,7 @@ public class CollectionController {
 
 	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@PostMapping("/{collectionId}/invitations")
-	public ResponseEntity<ShareLinkResponse> createInvitation(@PathVariable Long collectionId,
+	public ResponseEntity<ShareLinkResponse> createInvitation(@PathVariable String collectionId,
 		@AuthenticationPrincipal UserPrincipal user) {
 		ShareLinkResponse response = collectionService.createInvitation(collectionId, user);
 		return ResponseEntity.ok(response);
