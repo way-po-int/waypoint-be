@@ -20,9 +20,9 @@ import waypoint.mvp.collection.domain.Collection;
 import waypoint.mvp.collection.domain.CollectionMember;
 import waypoint.mvp.collection.domain.CollectionRole;
 import waypoint.mvp.collection.domain.event.CollectionCreatedEvent;
-import waypoint.mvp.collection.domain.service.CollectionAuthorizer;
 import waypoint.mvp.collection.error.CollectionError;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionRepository;
+import waypoint.mvp.global.auth.ResourceAuthorizer;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.sharelink.application.dto.response.ShareLinkResponse;
 import waypoint.mvp.sharelink.domain.ShareLink;
@@ -41,7 +41,7 @@ public class CollectionService {
 	private final ApplicationEventPublisher eventPublisher;
 	private final ShareLinkRepository shareLinkRepository;
 	private final UserFinder userFinder;
-	private final CollectionAuthorizer collectionAuthorizer;
+	private final ResourceAuthorizer collectionAuthorizer;
 
 	@Value("${waypoint.invitation.expiration-hours}")
 	private long invitationExpirationHours;
