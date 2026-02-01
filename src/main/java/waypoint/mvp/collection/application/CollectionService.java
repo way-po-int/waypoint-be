@@ -154,4 +154,9 @@ public class CollectionService {
 			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
 	}
 
+	private Collection getCollection(String externalId) {
+		return collectionRepository.findByExternalId(externalId)
+			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
+	}
+
 }
