@@ -40,7 +40,7 @@ public class PlanService {
 	}
 
 	public SliceResponse<PlanResponse> findPlans(UserPrincipal user, Pageable pageable) {
-		Slice<PlanResponse> plans = planRepository.findAllActiveByUserId(user.id(), pageable)
+		Slice<PlanResponse> plans = planRepository.findAllByUserId(user.id(), pageable)
 			.map(PlanResponse::from);
 
 		return SliceResponse.from(plans);
@@ -70,16 +70,16 @@ public class PlanService {
 	public void deletePlan(String planExternalId, UserPrincipal user) {
 		Plan plan = getPlan(planExternalId);
 
-		plan.softDelete();
+		planRepository.delete(plan);
 	}
 
 	private Plan getPlan(Long planId) {
-		return planRepository.findActive(planId)
+		return planRepository.findById(planId)
 			.orElseThrow(() -> new BusinessException(PlanError.PLAN_NOT_FOUND));
 	}
 
 	private Plan getPlan(String externalId) {
-		return planRepository.findActiveByExternalId(externalId)
+		return planRepository.findByExternalId(externalId)
 			.orElseThrow(() -> new BusinessException(PlanError.PLAN_NOT_FOUND));
 	}
 }

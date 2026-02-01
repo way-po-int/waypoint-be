@@ -70,7 +70,7 @@ class PlanServiceTest {
 		assertPlanResponseMatches(response, expectedResponse);
 
 		// 2. DB 데이터 검증 (Side Effect 검증)
-		Optional<Plan> foundPlanOpt = planRepository.findActiveByExternalId(response.planId());
+		Optional<Plan> foundPlanOpt = planRepository.findByExternalId(response.planId());
 		assertThat(foundPlanOpt).isPresent();
 		Plan foundPlan = foundPlanOpt.get();
 
