@@ -1,5 +1,6 @@
 package waypoint.mvp.plan.application;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -9,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
+import waypoint.mvp.global.auth.ResourceAuthorizer;
 import waypoint.mvp.global.common.SliceResponse;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.plan.application.dto.request.PlanCreateRequest;
@@ -18,6 +20,10 @@ import waypoint.mvp.plan.domain.Plan;
 import waypoint.mvp.plan.domain.event.PlanCreateEvent;
 import waypoint.mvp.plan.error.PlanError;
 import waypoint.mvp.plan.infrastructure.persistence.PlanRepository;
+import waypoint.mvp.sharelink.application.dto.response.ShareLinkResponse;
+import waypoint.mvp.sharelink.domain.ShareLink;
+import waypoint.mvp.sharelink.infrastructure.ShareLinkRepository;
+import waypoint.mvp.user.application.UserFinder;
 
 @Service
 @Transactional(readOnly = true)
@@ -26,6 +32,13 @@ public class PlanService {
 
 	private final PlanRepository planRepository;
 	private final ApplicationEventPublisher eventPublisher;
+	private final ShareLinkRepository shareLinkRepository;
+	private final UserFinder userFinder;
+	private final PlanMemberService planMemberService;
+	private final ResourceAuthorizer planAuthorizer;
+
+	@Value("${waypoint.invitation.expiration-hours}")
+	private long invitationExpirationHours;
 
 	@Transactional
 	public PlanResponse createPlan(PlanCreateRequest request, UserPrincipal user) {
@@ -71,6 +84,19 @@ public class PlanService {
 		Plan plan = getPlan(planExternalId);
 
 		planRepository.delete(plan);
+	}
+
+	@Transactional
+	public ShareLinkResponse createInvitation(String planExternalId, UserPrincipal user) {
+		Plan plan = getPlan(planExternalId);
+		planAuthorizer.verifyMember(user, plan.getId());
+		ShareLink shareLink = ShareLink.create(ShareLink.ShareLinkType.PLAN, plan.getExternalId(), plan.getId(),
+			user.getId(),
+			invitationExpirationHours);
+
+		shareLinkRepository.save(shareLink);
+
+		return ShareLinkResponse.from(shareLink);
 	}
 
 	private Plan getPlan(Long planId) {
