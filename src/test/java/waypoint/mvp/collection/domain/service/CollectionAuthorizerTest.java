@@ -20,7 +20,9 @@ import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.collection.domain.Collection;
 import waypoint.mvp.collection.domain.CollectionMember;
 import waypoint.mvp.collection.domain.CollectionRole;
+import waypoint.mvp.collection.error.CollectionError;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionMemberRepository;
+import waypoint.mvp.global.auth.ResourceAuthorizer;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.sharelink.domain.ShareLink.ShareLinkType;
 import waypoint.mvp.user.domain.User;
@@ -29,7 +31,7 @@ import waypoint.mvp.user.domain.User;
 class CollectionAuthorizerTest {
 
 	@InjectMocks
-	private CollectionAuthorizer collectionAuthorizer;
+	private ResourceAuthorizer collectionAuthorizer;
 
 	@Mock
 	private CollectionMemberRepository memberRepository;
@@ -47,8 +49,23 @@ class CollectionAuthorizerTest {
 
 	@BeforeEach
 	void setUp() {
+		// MockitoAnnotations.openMocks(this)가 호출된 후 직접 생성
+		collectionAuthorizer = new ResourceAuthorizer(
+			memberRepository::findActiveByUserId,
+			memberRepository::existsActive,
+			(user, resId) -> { // 게스트 검증 람다 (실제 로직과 동일하게)
+				if (!(user instanceof GuestPrincipal guest))
+					throw new BusinessException(CollectionError.FORBIDDEN_NOT_GUEST);
+				guest.getTargetIdFor(ShareLinkType.COLLECTION)
+					.filter(id -> id.equals(resId))
+					.orElseThrow(() -> new BusinessException(CollectionError.FORBIDDEN_NOT_GUEST));
+			},
+			CollectionError.FORBIDDEN_NOT_OWNER,
+			CollectionError.FORBIDDEN_NOT_MEMBER,
+			CollectionError.MEMBER_ALREADY_EXISTS
+		);
+
 		loggedInUser = new UserPrincipal(userId);
-		// GuestPrincipal은 targetId를 가질 수 있음
 		guestUser = new GuestPrincipal("test-guest-code", ShareLinkType.COLLECTION, collectionId);
 	}
 
