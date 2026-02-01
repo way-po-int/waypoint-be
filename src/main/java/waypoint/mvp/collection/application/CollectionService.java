@@ -70,18 +70,26 @@ public class CollectionService {
 		return CollectionResponse.from(collection);
 	}
 
-	@Transactional
-	public CollectionResponse updateCollection(Long collectionId, CollectionUpdateRequest request, UserPrincipal user) {
-		collectionAuthorizer.verifyMember(user, collectionId);
-		Collection collection = getCollection(collectionId);
+	public CollectionResponse findCollectionByExternalId(String externalId, AuthPrincipal user) {
+		Collection collection = getCollection(externalId);
+		collectionAuthorizer.verifyAccess(user, collection.getId());
 
+		return CollectionResponse.from(collection);
+	}
+
+	@Transactional
+	public CollectionResponse updateCollection(String externalId, CollectionUpdateRequest request, UserPrincipal user) {
+		Collection collection = getCollection(externalId);
+		collectionAuthorizer.verifyMember(user, collection.getId());
 		collection.update(request.title());
 
 		return CollectionResponse.from(collection);
 	}
 
 	@Transactional
-	public void changeOwner(Long collectionId, Long memberId, UserPrincipal user) {
+	public void changeOwner(String externalId, Long memberId, UserPrincipal user) {
+		Collection collection = getCollection(externalId);
+		Long collectionId = collection.getId();
 		collectionAuthorizer.verifyOwner(user, collectionId);
 
 		CollectionMember currentOwner = collectionMemberService.getMemberByUserId(collectionId, user.id());
@@ -95,7 +103,9 @@ public class CollectionService {
 		newOwner.updateRole(CollectionRole.OWNER);
 	}
 
-	public List<CollectionMemberResponse> getCollectionMembers(Long collectionId, AuthPrincipal user) {
+	public List<CollectionMemberResponse> getCollectionMembers(String externalId, AuthPrincipal user) {
+		Collection collection = getCollection(externalId);
+		Long collectionId = collection.getId();
 		collectionAuthorizer.verifyAccess(user, collectionId);
 
 		return collectionMemberService.getMembers(collectionId)
@@ -115,9 +125,10 @@ public class CollectionService {
 	}
 
 	@Transactional
-	public void deleteCollection(Long collectionId, UserPrincipal user) {
+	public void deleteCollection(String externalId, UserPrincipal user) {
+		Collection collection = getCollection(externalId);
+		Long collectionId = collection.getId();
 		collectionAuthorizer.verifyOwner(user, collectionId);
-		Collection collection = getCollection(collectionId);
 
 		collectionRepository.delete(collection);
 	}

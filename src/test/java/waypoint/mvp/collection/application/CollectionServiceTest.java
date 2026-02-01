@@ -258,7 +258,7 @@ class CollectionServiceTest {
 		CollectionMember newOwnerMember = findActiveMember(collection.getId(), newOwner.getId());
 
 		// when
-		collectionService.changeOwner(collection.getId(), newOwnerMember.getId(), owner);
+		collectionService.changeOwner(collection.getExternalId(), newOwnerMember.getId(), owner);
 
 		// then
 		CollectionMember formerOwnerMember = findActiveMember(collection.getId(), owner.getId());
@@ -278,7 +278,7 @@ class CollectionServiceTest {
 		CollectionMember ownerMember = findActiveMember(collection.getId(), owner.getId());
 
 		// when & then
-		assertThatThrownBy(() -> collectionService.changeOwner(collection.getId(), ownerMember.getId(), member))
+		assertThatThrownBy(() -> collectionService.changeOwner(collection.getExternalId(), ownerMember.getId(), member))
 			.isInstanceOf(BusinessException.class)
 			.extracting(ex -> ((BusinessException)ex).getBody().getProperties().get("code"))
 			.isEqualTo(CollectionError.FORBIDDEN_NOT_OWNER.name());

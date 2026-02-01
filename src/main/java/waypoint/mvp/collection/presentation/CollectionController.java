@@ -68,7 +68,7 @@ public class CollectionController {
 	@Authorize(level = AuthLevel.GUEST_OR_MEMBER)
 	@GetMapping("/{collectionId}/members")
 	public ResponseEntity<List<CollectionMemberResponse>> getCollectionMembers(
-		@PathVariable Long collectionId,
+		@PathVariable String collectionId,
 		@AuthenticationPrincipal AuthPrincipal user
 	) {
 		List<CollectionMemberResponse> members = collectionService.getCollectionMembers(collectionId, user);
@@ -78,7 +78,8 @@ public class CollectionController {
 
 	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@PutMapping("/{collectionId}")
-	public ResponseEntity<CollectionResponse> updateCollection(@PathVariable Long collectionId,
+	public ResponseEntity<CollectionResponse> updateCollection(
+		@PathVariable String collectionId,
 		@RequestBody @Valid CollectionUpdateRequest request,
 		@AuthenticationPrincipal UserPrincipal user) {
 		CollectionResponse response = collectionService.updateCollection(collectionId, request, user);
@@ -87,7 +88,8 @@ public class CollectionController {
 
 	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@PatchMapping("/{collectionId}/owner")
-	public ResponseEntity<Void> changeOwner(@PathVariable Long collectionId,
+	public ResponseEntity<Void> changeOwner(
+		@PathVariable String collectionId,
 		@RequestBody @Valid ChangeOwnerRequest request,
 		@AuthenticationPrincipal UserPrincipal user
 	) {
@@ -99,7 +101,8 @@ public class CollectionController {
 
 	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@DeleteMapping("/{collectionId}")
-	public ResponseEntity<Void> deleteCollection(@PathVariable Long collectionId,
+	public ResponseEntity<Void> deleteCollection(
+		@PathVariable String collectionId,
 		@AuthenticationPrincipal UserPrincipal user) {
 		collectionService.deleteCollection(collectionId, user);
 		return ResponseEntity.noContent().build();
