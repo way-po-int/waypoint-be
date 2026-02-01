@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.collection.application.CollectionService;
 import waypoint.mvp.global.error.exception.BusinessException;
+import waypoint.mvp.plan.application.PlanService;
 import waypoint.mvp.sharelink.domain.ShareLink;
 import waypoint.mvp.sharelink.domain.ShareLink.ShareLinkType;
 import waypoint.mvp.sharelink.error.ShareLinkError;
@@ -20,6 +21,7 @@ public class ShareLinkService {
 
 	private final ShareLinkRepository shareLinkRepository;
 	private final CollectionService collectionService;
+	private final PlanService planService;
 
 	@Value("${waypoint.frontend.base-url}")
 	private String frontendBaseUrl;
@@ -67,6 +69,7 @@ public class ShareLinkService {
 				collectionService.addMemberFromShareLink(shareLink, userId);
 				break;
 			case PLAN:
+				planService.addMemberFromShareLink(shareLink, userId);
 				break;
 		}
 	}
@@ -76,7 +79,7 @@ public class ShareLinkService {
 
 		String path = shareLinkType.getPath();
 
-		return frontendBaseUrl + path + shareLink.getTargetId();
+		return frontendBaseUrl + path + shareLink.getTargetExternalId();
 	}
 
 	private ShareLink findShareLinkByCode(String code) {

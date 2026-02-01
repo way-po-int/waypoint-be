@@ -22,8 +22,10 @@ import waypoint.mvp.plan.error.PlanError;
 import waypoint.mvp.plan.infrastructure.persistence.PlanRepository;
 import waypoint.mvp.sharelink.application.dto.response.ShareLinkResponse;
 import waypoint.mvp.sharelink.domain.ShareLink;
+import waypoint.mvp.sharelink.error.ShareLinkError;
 import waypoint.mvp.sharelink.infrastructure.ShareLinkRepository;
 import waypoint.mvp.user.application.UserFinder;
+import waypoint.mvp.user.domain.User;
 
 @Service
 @Transactional(readOnly = true)
@@ -97,6 +99,21 @@ public class PlanService {
 		shareLinkRepository.save(shareLink);
 
 		return ShareLinkResponse.from(shareLink);
+	}
+
+	@Transactional
+	public Long addMemberFromShareLink(ShareLink shareLink, Long inviteeUserId) {
+		if (shareLink.getTargetType() != ShareLink.ShareLinkType.COLLECTION) {
+			throw new BusinessException(ShareLinkError.INVALID_INVITATION_LINK);
+		}
+
+		User inviteeUser = userFinder.findById(inviteeUserId);
+		Plan plan = getPlan(shareLink.getTargetId());
+		planMemberService.addMember(plan, inviteeUser);
+
+		shareLink.increaseUseCount();
+
+		return plan.getId();
 	}
 
 	private Plan getPlan(Long planId) {
