@@ -37,6 +37,9 @@ public class ShareLink extends BaseTimeEntity {
 	private ShareLinkType targetType;
 
 	@Column(nullable = false)
+	private String targetExternalId;
+
+	@Column(nullable = false)
 	private Long targetId;
 
 	@Column(nullable = false)
@@ -49,16 +52,18 @@ public class ShareLink extends BaseTimeEntity {
 	private Instant expiresAt;
 
 	@Builder(access = AccessLevel.PRIVATE)
-	private ShareLink(String code, ShareLinkType targetType, Long targetId, Long hostUserId, Instant expiresAt) {
+	private ShareLink(String code, ShareLinkType targetType, String targetExternalId, Long targetId, Long hostUserId,
+		Instant expiresAt) {
 		this.code = code;
 		this.targetType = targetType;
+		this.targetExternalId = targetExternalId;
 		this.targetId = targetId;
 		this.hostUserId = hostUserId;
 		this.useCount = 0;
 		this.expiresAt = expiresAt;
 	}
 
-	public static ShareLink create(ShareLinkType targetType, Long targetId, Long hostUserId,
+	public static ShareLink create(ShareLinkType targetType, String targetExternalId, Long targetId, Long hostUserId,
 		long expirationHours) {
 		String code = UUID.randomUUID().toString();
 		Instant expiresAt = Instant.now().plus(expirationHours, ChronoUnit.HOURS);
@@ -66,6 +71,7 @@ public class ShareLink extends BaseTimeEntity {
 		return builder()
 			.code(code)
 			.targetType(targetType)
+			.targetExternalId(targetExternalId)
 			.targetId(targetId)
 			.hostUserId(hostUserId)
 			.expiresAt(expiresAt)
