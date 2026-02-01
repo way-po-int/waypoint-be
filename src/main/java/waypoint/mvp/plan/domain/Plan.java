@@ -2,6 +2,9 @@ package waypoint.mvp.plan.domain;
 
 import java.time.LocalDate;
 
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -14,12 +17,15 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import waypoint.mvp.global.common.LogicalDeleteEntity;
 import waypoint.mvp.global.error.exception.BusinessException;
+import waypoint.mvp.global.util.DateUtils;
 import waypoint.mvp.plan.error.PlanError;
 
 @Entity
 @Table(name = "plans")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SQLDelete(sql = "UPDATE plans SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
 public class Plan extends LogicalDeleteEntity {
 
 	@Id
@@ -65,8 +71,16 @@ public class Plan extends LogicalDeleteEntity {
 	}
 
 	private static void validateDateRange(LocalDate startDate, LocalDate endDate) {
-		if (endDate.isBefore(startDate)) {
+		if (!DateUtils.isNotBefore(startDate, endDate)) {
 			throw new BusinessException(PlanError.INVALID_DATE_RANGE);
 		}
 	}
+
+	public void update(String title, LocalDate startDate, LocalDate endDate) {
+		validateDateRange(startDate, endDate);
+		this.title = title;
+		this.startDate = startDate;
+		this.endDate = endDate;
+	}
+
 }
