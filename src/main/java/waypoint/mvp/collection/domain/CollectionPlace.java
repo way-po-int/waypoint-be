@@ -36,31 +36,39 @@ public class CollectionPlace extends BaseTimeEntity {
 	private Place place;
 
 	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "added_by_member_id", nullable = false)
+	private CollectionMember addedBy;
+
+	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn
 	private SocialMedia socialMedia;
 
-	@Column
+	@Column(length = 300)
 	private String memo;
 
 	@Builder(access = AccessLevel.PRIVATE)
-	private CollectionPlace(Collection collection, Place place, SocialMedia socialMedia) {
+	private CollectionPlace(Collection collection, Place place, CollectionMember addedBy, SocialMedia socialMedia) {
 		this.collection = collection;
 		this.place = place;
+		this.addedBy = addedBy;
 		this.socialMedia = socialMedia;
 	}
 
-	public static CollectionPlace create(Collection collection, Place place, SocialMedia socialMedia) {
+	public static CollectionPlace create(Collection collection, Place place, CollectionMember addedBy) {
+		return create(collection, place, addedBy, null);
+	}
+
+	public static CollectionPlace create(Collection collection, Place place, CollectionMember addedBy,
+		SocialMedia socialMedia) {
 		return builder()
 			.collection(collection)
 			.place(place)
+			.addedBy(addedBy)
 			.socialMedia(socialMedia)
 			.build();
 	}
 
-	public static CollectionPlace create(Collection collection, Place place) {
-		return builder()
-			.collection(collection)
-			.place(place)
-			.build();
+	public void updateMemo(String memo) {
+		this.memo = memo;
 	}
 }

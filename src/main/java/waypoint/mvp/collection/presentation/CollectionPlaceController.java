@@ -1,19 +1,35 @@
 package waypoint.mvp.collection.presentation;
 
+import java.net.URI;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.collection.application.CollectionPlaceService;
+import waypoint.mvp.collection.application.CollectionPlaceService.CollectionPlaceSort;
+import waypoint.mvp.collection.application.dto.request.CollectionPlaceCreateRequest;
 import waypoint.mvp.collection.application.dto.request.CollectionPlaceFromUrlRequest;
+import waypoint.mvp.collection.application.dto.request.CollectionPlaceUpdateRequest;
+import waypoint.mvp.collection.application.dto.response.CollectionPlaceDetailResponse;
+import waypoint.mvp.collection.application.dto.response.CollectionPlaceListResponse;
+import waypoint.mvp.collection.application.dto.response.CollectionPlaceResponse;
 import waypoint.mvp.collection.application.dto.response.ExtractionJobResponse;
+import waypoint.mvp.collection.application.dto.response.PickPassResponse;
+import waypoint.mvp.collection.domain.CollectionPlacePreference;
+import waypoint.mvp.global.auth.annotations.AuthLevel;
+import waypoint.mvp.global.auth.annotations.Authorize;
 
 @RestController
 @RequiredArgsConstructor
@@ -22,15 +38,91 @@ public class CollectionPlaceController {
 
 	private final CollectionPlaceService collectionPlaceService;
 
+	@Authorize(level = AuthLevel.AUTHENTICATED)
+	@PostMapping
+	public ResponseEntity<CollectionPlaceResponse> addPlace(
+		@PathVariable Long collectionId,
+		@RequestBody @Valid CollectionPlaceCreateRequest request,
+		@AuthenticationPrincipal AuthPrincipal principal
+	) {
+		CollectionPlaceResponse response = collectionPlaceService.addPlace(collectionId, request, principal);
+
+		URI location = URI.create("/collections/" + collectionId + "/places/" + response.collectionPlaceId());
+		return ResponseEntity.created(location).body(response);
+	}
+
+	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@PostMapping("/from-url")
 	public ResponseEntity<ExtractionJobResponse> fromUrl(
 		@PathVariable Long collectionId,
 		@Valid @RequestBody CollectionPlaceFromUrlRequest request,
-		@AuthenticationPrincipal AuthPrincipal user
+		@AuthenticationPrincipal AuthPrincipal principal
 	) {
-		ExtractionJobResponse response = collectionPlaceService.addPlacesFromUrl(collectionId, request, user);
-		return ResponseEntity
-			.accepted()
-			.body(response);
+		ExtractionJobResponse response = collectionPlaceService.addPlacesFromUrl(collectionId, request, principal);
+		return ResponseEntity.accepted().body(response);
+	}
+
+	@Authorize(level = AuthLevel.GUEST_OR_MEMBER)
+	@GetMapping
+	public ResponseEntity<CollectionPlaceListResponse> getPlaces(
+		@PathVariable Long collectionId,
+		@RequestParam(defaultValue = "1") int page,
+		@RequestParam(defaultValue = "10") int size,
+		@RequestParam(defaultValue = "LATEST") CollectionPlaceSort sort,
+		@RequestParam(required = false) Long addedByMemberId,
+		@AuthenticationPrincipal AuthPrincipal principal
+	) {
+		CollectionPlaceListResponse response =
+			collectionPlaceService.getPlaces(collectionId, page, size, sort, addedByMemberId, principal);
+
+		return ResponseEntity.ok(response);
+	}
+
+	@Authorize(level = AuthLevel.GUEST_OR_MEMBER)
+	@GetMapping("/{collectionPlaceId}")
+	public ResponseEntity<CollectionPlaceDetailResponse> getPlaceDetail(
+		@PathVariable Long collectionId,
+		@PathVariable Long collectionPlaceId,
+		@AuthenticationPrincipal AuthPrincipal principal
+	) {
+		CollectionPlaceDetailResponse response =
+			collectionPlaceService.getPlaceDetail(collectionId, collectionPlaceId, principal);
+
+		return ResponseEntity.ok(response);
+	}
+
+	@Authorize(level = AuthLevel.AUTHENTICATED)
+	@PatchMapping("/{collectionPlaceId}/memo")
+	public ResponseEntity<Void> updateMemo(
+		@PathVariable Long collectionId,
+		@PathVariable Long collectionPlaceId,
+		@RequestBody @Valid CollectionPlaceUpdateRequest request,
+		@AuthenticationPrincipal AuthPrincipal principal
+	) {
+		collectionPlaceService.updateMemo(collectionId, collectionPlaceId, request, principal);
+		return ResponseEntity.noContent().build();
+	}
+
+	@Authorize(level = AuthLevel.AUTHENTICATED)
+	@DeleteMapping("/{collectionPlaceId}")
+	public ResponseEntity<Void> deletePlace(
+		@PathVariable Long collectionId,
+		@PathVariable Long collectionPlaceId,
+		@AuthenticationPrincipal AuthPrincipal principal
+	) {
+		collectionPlaceService.deletePlace(collectionId, collectionPlaceId, principal);
+		return ResponseEntity.noContent().build();
+	}
+
+	@Authorize(level = AuthLevel.AUTHENTICATED)
+	@PostMapping("/{collectionPlaceId}/preference")
+	public ResponseEntity<PickPassResponse> pickOrPass(
+		@PathVariable Long collectionId,
+		@PathVariable Long collectionPlaceId,
+		@RequestParam CollectionPlacePreference.Type type,
+		@AuthenticationPrincipal AuthPrincipal principal
+	) {
+		PickPassResponse response = collectionPlaceService.pickOrPass(collectionId, collectionPlaceId, type, principal);
+		return ResponseEntity.ok(response);
 	}
 }

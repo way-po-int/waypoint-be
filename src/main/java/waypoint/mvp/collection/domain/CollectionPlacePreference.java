@@ -62,6 +62,10 @@ public class CollectionPlacePreference extends BaseTimeEntity {
 			.build();
 	}
 
+	public void changeType(Type type) {
+		this.type = type;
+	}
+
 	public enum Type {
 		PICK,
 		PASS
