@@ -87,6 +87,29 @@ public class PlanController {
 	}
 
 	@Authorize(level = AuthLevel.AUTHENTICATED)
+	@DeleteMapping("/{planId}/member/me")
+	public ResponseEntity<Void> withdrawMember(
+		@PathVariable String planId,
+		@AuthenticationPrincipal UserPrincipal user
+	) {
+		planService.withdrawPlanMember(planId, user);
+
+		return ResponseEntity.noContent().build();
+	}
+
+	@Authorize(level = AuthLevel.AUTHENTICATED)
+	@DeleteMapping("/{planId}/member/{memberId}")
+	public ResponseEntity<Void> expelMember(
+		@PathVariable String planId,
+		@PathVariable String memberId,
+		@AuthenticationPrincipal UserPrincipal user
+	) {
+		planService.expelPlanMember(planId, memberId, user);
+
+		return ResponseEntity.noContent().build();
+	}
+
+	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@PostMapping("/{planId}/invitations")
 	public ResponseEntity<ShareLinkResponse> createInvitation(
 		@PathVariable String planId,
