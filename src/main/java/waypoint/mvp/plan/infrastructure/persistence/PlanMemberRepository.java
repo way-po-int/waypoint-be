@@ -10,6 +10,15 @@ import waypoint.mvp.plan.domain.PlanMember;
 
 public interface PlanMemberRepository extends JpaRepository<PlanMember, Long> {
 
+	@Query("SELECT pm FROM PlanMember pm WHERE pm.id = :memberId AND pm.plan.id = :planId AND pm.deletedAt IS NULL")
+	Optional<PlanMember> findActive(@Param("planId") Long planId, @Param("memberId") Long memberId);
+
+	@Query("SELECT pm FROM PlanMember pm WHERE pm.externalId = :memberExternalId AND pm.plan.id = :planId AND pm.deletedAt IS NULL")
+	Optional<PlanMember> findActiveByMemberExternalId(
+		@Param("planId") Long planId,
+		@Param("memberExternalId") String memberExternalId
+	);
+
 	@Query("SELECT pm FROM PlanMember pm WHERE pm.plan.id = :planId AND pm.user.id = :userId AND pm.deletedAt IS NULL")
 	Optional<PlanMember> findActiveByUserId(@Param("planId") Long planId, @Param("userId") Long userId);
 

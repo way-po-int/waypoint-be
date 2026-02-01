@@ -82,6 +82,20 @@ public class PlanService {
 	}
 
 	@Transactional
+	public void withdrawPlanMember(String planExternalId, UserPrincipal user) {
+		Plan plan = getPlan(planExternalId);
+
+		planMemberService.withdraw(plan.getId(), user);
+	}
+
+	@Transactional
+	public void expelPlanMember(String planExternalId, String memberExternalId, UserPrincipal user) {
+		Plan plan = getPlan(planExternalId);
+
+		planMemberService.expel(plan.getId(), memberExternalId, user);
+	}
+
+	@Transactional
 	public void deletePlan(String planExternalId, UserPrincipal user) {
 		Plan plan = getPlan(planExternalId);
 
