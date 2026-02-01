@@ -63,12 +63,14 @@ public class PlanService {
 
 	public PlanResponse findPlanById(Long planId, AuthPrincipal user) {
 		Plan plan = getPlan(planId);
+		planAuthorizer.verifyAccess(user, plan.getId());
 
 		return PlanResponse.from(plan);
 	}
 
 	public PlanResponse findPlanByExternalId(String externalId, AuthPrincipal user) {
 		Plan plan = getPlan(externalId);
+		planAuthorizer.verifyAccess(user, plan.getId());
 
 		return PlanResponse.from(plan);
 	}
@@ -76,6 +78,7 @@ public class PlanService {
 	@Transactional
 	public PlanResponse updatePlan(String planExternalId, PlanUpdateRequest request, UserPrincipal user) {
 		Plan plan = getPlan(planExternalId);
+		planAuthorizer.verifyMember(user, plan.getId());
 		plan.update(request.title(), request.startDate(), request.endDate());
 
 		return PlanResponse.from(plan);
@@ -98,6 +101,7 @@ public class PlanService {
 	@Transactional
 	public void deletePlan(String planExternalId, UserPrincipal user) {
 		Plan plan = getPlan(planExternalId);
+		planAuthorizer.verifyOwner(user, plan.getId());
 
 		planRepository.delete(plan);
 	}
