@@ -17,6 +17,16 @@ import waypoint.mvp.sharelink.domain.ShareLink.ShareLinkType;
 @Configuration
 public class AuthorizerConfig {
 
+	public record AuthorizerErrorCodes(
+		ErrorCode notOwner,
+		ErrorCode notMember,
+		ErrorCode alreadyExists,
+		ErrorCode notGuest
+	) {
+		public AuthorizerErrorCodes { // 파라미터 힌트를 위햇 사용
+		}
+	}
+
 	@Bean
 	public ResourceAuthorizer collectionAuthorizer(CollectionMemberRepository repository) {
 		return new ResourceAuthorizer(
@@ -24,9 +34,12 @@ public class AuthorizerConfig {
 			repository::existsActive,
 			(user, resourceId) -> verifyGuest(user, resourceId, ShareLinkType.COLLECTION,
 				CollectionError.FORBIDDEN_NOT_GUEST),
-			CollectionError.FORBIDDEN_NOT_OWNER,
-			CollectionError.FORBIDDEN_NOT_MEMBER,
-			CollectionError.MEMBER_ALREADY_EXISTS
+			new AuthorizerErrorCodes(
+				CollectionError.FORBIDDEN_NOT_OWNER,
+				CollectionError.FORBIDDEN_NOT_MEMBER,
+				CollectionError.MEMBER_ALREADY_EXISTS,
+				CollectionError.FORBIDDEN_NOT_GUEST
+			)
 
 		);
 	}
@@ -38,9 +51,13 @@ public class AuthorizerConfig {
 			repository::existsActive,
 			(user, resourceId) -> verifyGuest(user, resourceId, ShareLinkType.PLAN,
 				PlanError.FORBIDDEN_NOT_GUEST),
-			PlanError.FORBIDDEN_NOT_OWNER,
-			PlanError.FORBIDDEN_NOT_MEMBER,
-			PlanError.MEMBER_ALREADY_EXISTS
+			new AuthorizerErrorCodes(
+				PlanError.FORBIDDEN_NOT_OWNER,
+				PlanError.FORBIDDEN_NOT_MEMBER,
+				PlanError.MEMBER_ALREADY_EXISTS,
+				PlanError.FORBIDDEN_NOT_GUEST
+
+			)
 		);
 	}
 

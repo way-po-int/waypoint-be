@@ -23,6 +23,7 @@ import waypoint.mvp.collection.domain.CollectionRole;
 import waypoint.mvp.collection.error.CollectionError;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionMemberRepository;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
+import waypoint.mvp.global.config.AuthorizerConfig.AuthorizerErrorCodes;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.sharelink.domain.ShareLink.ShareLinkType;
 import waypoint.mvp.user.domain.User;
@@ -60,9 +61,12 @@ class CollectionAuthorizerTest {
 					.filter(id -> id.equals(resId))
 					.orElseThrow(() -> new BusinessException(CollectionError.FORBIDDEN_NOT_GUEST));
 			},
-			CollectionError.FORBIDDEN_NOT_OWNER,
-			CollectionError.FORBIDDEN_NOT_MEMBER,
-			CollectionError.MEMBER_ALREADY_EXISTS
+			new AuthorizerErrorCodes(
+				CollectionError.FORBIDDEN_NOT_OWNER,
+				CollectionError.FORBIDDEN_NOT_MEMBER,
+				CollectionError.MEMBER_ALREADY_EXISTS,
+				CollectionError.FORBIDDEN_NOT_GUEST
+			)
 		);
 
 		loggedInUser = new UserPrincipal(userId);

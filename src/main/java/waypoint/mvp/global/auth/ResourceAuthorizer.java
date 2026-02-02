@@ -9,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.global.common.Membership;
 import waypoint.mvp.global.config.AuthorizerConfig;
-import waypoint.mvp.global.error.ErrorCode;
+import waypoint.mvp.global.config.AuthorizerConfig.AuthorizerErrorCodes;
 import waypoint.mvp.global.error.exception.BusinessException;
 
 /**
@@ -26,9 +26,7 @@ public final class ResourceAuthorizer {
 	private final BiFunction<Long, Long, Optional<? extends Membership>> membershipFinder;
 	private final BiPredicate<Long, Long> membershipExistsChecker;
 	private final BiConsumer<AuthPrincipal, Long> guestVerifier;
-	private final ErrorCode notOwnerError;
-	private final ErrorCode notMemberError;
-	private final ErrorCode alreadyExistsError;
+	private final AuthorizerErrorCodes authorizerErrorCodes;
 
 	public void verifyAccess(AuthPrincipal user, Long resourceId) {
 		if (user.isGuest()) {
@@ -40,7 +38,7 @@ public final class ResourceAuthorizer {
 
 	public void verifyOwner(AuthPrincipal user, Long resourceId) {
 		if (user.isGuest()) {
-			throw new BusinessException(notOwnerError);
+			throw new BusinessException(authorizerErrorCodes.notOwner());
 		}
 		doVerifyOwner(resourceId, user.getId());
 	}
@@ -51,7 +49,7 @@ public final class ResourceAuthorizer {
 
 	public void checkIfMemberExists(Long resourceId, Long userId) {
 		if (membershipExistsChecker.test(resourceId, userId)) {
-			throw new BusinessException(alreadyExistsError);
+			throw new BusinessException(authorizerErrorCodes.alreadyExists());
 		}
 	}
 
@@ -61,13 +59,13 @@ public final class ResourceAuthorizer {
 			.orElse(false);
 
 		if (!isOwner) {
-			throw new BusinessException(notOwnerError);
+			throw new BusinessException(authorizerErrorCodes.notOwner());
 		}
 	}
 
 	private void doVerifyMember(Long resourceId, Long userId) {
 		if (!membershipExistsChecker.test(resourceId, userId)) {
-			throw new BusinessException(notMemberError);
+			throw new BusinessException(authorizerErrorCodes.notMember());
 		}
 	}
 }
