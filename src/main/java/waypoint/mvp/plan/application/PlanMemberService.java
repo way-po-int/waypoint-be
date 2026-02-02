@@ -14,7 +14,6 @@ import waypoint.mvp.plan.domain.PlanMember;
 import waypoint.mvp.plan.domain.PlanRole;
 import waypoint.mvp.plan.error.PlanError;
 import waypoint.mvp.plan.infrastructure.persistence.PlanMemberRepository;
-import waypoint.mvp.plan.infrastructure.persistence.PlanRepository;
 import waypoint.mvp.user.domain.User;
 
 @Service
@@ -24,7 +23,6 @@ public class PlanMemberService {
 
 	private final PlanMemberRepository planMemberRepository;
 	private final ResourceAuthorizer planAuthorizer;
-	private final PlanRepository planRepository;
 
 	@Transactional
 	public void createInitialOwner(Plan plan, User user) {
@@ -61,14 +59,14 @@ public class PlanMemberService {
 	}
 
 	public PlanMember getMemberByUserId(Long planId, Long userId) {
-		return planMemberRepository.findActiveByUserId(userId, planId)
+		return planMemberRepository.findActiveByUserId(planId, userId)
 			.orElseThrow(() -> new BusinessException(PlanMemberError.MEMBER_NOT_FOUND));
 	}
 
 	@Transactional
 	public void withdraw(Long planId, UserPrincipal user) {
 		PlanMember member = getMemberByUserId(planId, user.getId());
-		remove(planId, member);
+		remove(member);
 
 	}
 
@@ -76,12 +74,11 @@ public class PlanMemberService {
 	public void expel(Long planId, String memberId, UserPrincipal user) {
 		planAuthorizer.verifyOwner(user, planId);
 		PlanMember member = getMember(planId, memberId);
-		remove(planId, member);
+		remove(member);
 	}
 
-	private void remove(Long planId, PlanMember member) {
-		Plan plan = planRepository.findById(planId)
-			.orElseThrow(() -> new BusinessException(PlanError.PLAN_NOT_FOUND));
+	private void remove(PlanMember member) {
+		Plan plan = member.getPlan();
 		if (member.isOwner()) {
 			throw new BusinessException(PlanError.NEED_TO_DELEGATE_OWNERSHIP);
 		} else {
