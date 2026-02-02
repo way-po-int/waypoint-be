@@ -121,7 +121,7 @@ public class PlanService {
 
 	@Transactional
 	public Long addMemberFromShareLink(ShareLink shareLink, Long inviteeUserId) {
-		if (shareLink.getTargetType() != ShareLink.ShareLinkType.COLLECTION) {
+		if (shareLink.getTargetType() != ShareLink.ShareLinkType.PLAN) {
 			throw new BusinessException(ShareLinkError.INVALID_INVITATION_LINK);
 		}
 
