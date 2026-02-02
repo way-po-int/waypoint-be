@@ -37,7 +37,7 @@ public class AuthorizerConfig {
 			repository::findActiveByUserId,
 			repository::existsActive,
 			(user, resourceId) -> verifyGuest(user, resourceId, ShareLinkType.PLAN,
-				PlanError.FORBIDDEN_NOT_MEMBER),
+				PlanError.FORBIDDEN_NOT_GUEST),
 			PlanError.FORBIDDEN_NOT_OWNER,
 			PlanError.FORBIDDEN_NOT_MEMBER,
 			PlanError.MEMBER_ALREADY_EXISTS
