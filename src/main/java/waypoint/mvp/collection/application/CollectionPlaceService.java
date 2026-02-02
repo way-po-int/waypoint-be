@@ -31,13 +31,13 @@ import waypoint.mvp.collection.domain.CollectionMember;
 import waypoint.mvp.collection.domain.CollectionPlace;
 import waypoint.mvp.collection.domain.CollectionPlaceDraft;
 import waypoint.mvp.collection.domain.CollectionPlacePreference;
-import waypoint.mvp.collection.domain.service.CollectionAuthorizer;
 import waypoint.mvp.collection.error.CollectionError;
 import waypoint.mvp.collection.error.CollectionPlaceError;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionPlaceDraftRepository;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionPlacePreferenceRepository;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionPlaceRepository;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionRepository;
+import waypoint.mvp.global.auth.ResourceAuthorizer;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.place.application.SocialMediaService;
 import waypoint.mvp.place.application.dto.PlaceResponse;
@@ -52,7 +52,7 @@ import waypoint.mvp.place.infrastructure.persistence.PlaceRepository;
 @Transactional(readOnly = true)
 public class CollectionPlaceService {
 
-	private final CollectionAuthorizer collectionAuthorizer;
+	private final ResourceAuthorizer collectionAuthorizer;
 	private final CollectionRepository collectionRepository;
 	private final CollectionMemberService collectionMemberService;
 
@@ -129,7 +129,8 @@ public class CollectionPlaceService {
 		int safePage = Math.max(page, 1);
 		int safeSize = Math.max(size, 1);
 
-		Sort jpaSort = Sort.by(sort == CollectionPlaceSort.LATEST ? Sort.Direction.DESC : Sort.Direction.ASC, "createdAt")
+		Sort jpaSort = Sort.by(sort == CollectionPlaceSort.LATEST ? Sort.Direction.DESC : Sort.Direction.ASC,
+				"createdAt")
 			.and(Sort.by(Sort.Direction.DESC, "id"));
 
 		PageRequest pageable = PageRequest.of(safePage - 1, safeSize, jpaSort);
