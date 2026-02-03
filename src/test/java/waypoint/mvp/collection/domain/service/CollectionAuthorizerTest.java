@@ -54,13 +54,7 @@ class CollectionAuthorizerTest {
 		collectionAuthorizer = new ResourceAuthorizer(
 			memberRepository::findActiveByUserId,
 			memberRepository::existsActive,
-			(user, resId) -> { // 게스트 검증 람다 (실제 로직과 동일하게)
-				if (!(user instanceof GuestPrincipal guest))
-					throw new BusinessException(CollectionError.FORBIDDEN_NOT_GUEST);
-				guest.getTargetIdFor(ShareLinkType.COLLECTION)
-					.filter(id -> id.equals(resId))
-					.orElseThrow(() -> new BusinessException(CollectionError.FORBIDDEN_NOT_GUEST));
-			},
+			ShareLinkType.COLLECTION,
 			new AuthorizerErrorCodes(
 				CollectionError.FORBIDDEN_NOT_OWNER,
 				CollectionError.FORBIDDEN_NOT_MEMBER,
