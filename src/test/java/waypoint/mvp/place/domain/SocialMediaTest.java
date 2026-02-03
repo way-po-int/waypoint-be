@@ -2,8 +2,6 @@ package waypoint.mvp.place.domain;
 
 import static org.assertj.core.api.Assertions.*;
 
-import java.util.List;
-
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -23,11 +21,10 @@ class SocialMediaTest {
 		SocialMedia socialMedia = SocialMedia.create(YOUTUBE_URL);
 
 		// then
-		assertThat(socialMedia.getStatus()).isEqualTo(ExtractStatus.PENDING);
+		assertThat(socialMedia.getStatus()).isEqualTo(SocialMediaStatus.PENDING);
 		assertThat(socialMedia.getUrl()).isEqualTo(YOUTUBE_URL);
 		assertThat(socialMedia.getType()).isNotNull();
 		assertThat(socialMedia.getSummary()).isNull();
-		assertThat(socialMedia.getSearchQueries()).isNull();
 		assertThat(socialMedia.getSnapshot()).isNull();
 	}
 
@@ -45,69 +42,66 @@ class SocialMediaTest {
 	}
 
 	@Test
-	@DisplayName("작업을 시작하면 상태가 PROCESSING으로 변경된다.")
-	void process_success() {
+	@DisplayName("추출 작업을 시작하면 상태가 EXTRACTING으로 변경된다.")
+	void startExtraction_success() {
 		// given
 		SocialMedia socialMedia = SocialMedia.create(YOUTUBE_URL);
 
 		// when
-		socialMedia.process();
+		socialMedia.startExtraction();
 
 		// then
-		assertThat(socialMedia.getStatus()).isEqualTo(ExtractStatus.PROCESSING);
+		assertThat(socialMedia.getStatus()).isEqualTo(SocialMediaStatus.EXTRACTING);
 	}
 
 	@Test
-	@DisplayName("PENDING 상태가 아닐 때 작업을 시작하면 예외가 발생한다.")
-	void process_fail_invalid_status() {
+	@DisplayName("PENDING 상태가 아닐 때 추출 작업을 시작하면 예외가 발생한다.")
+	void startExtraction_fail_invalid_status() {
 		// given
 		SocialMedia socialMedia = SocialMedia.create(YOUTUBE_URL);
-		socialMedia.process();
+		socialMedia.startExtraction();
 
 		// when & then
-		assertThatThrownBy(socialMedia::process)
+		assertThatThrownBy(socialMedia::startExtraction)
 			.isInstanceOf(BusinessException.class)
 			.extracting(e -> ((BusinessException)e).getBody().getProperties().get("code"))
 			.isEqualTo(SocialMediaError.SOCIAL_MEDIA_INVALID_STATUS.name());
 	}
 
 	@Test
-	@DisplayName("작업 완료 시 결과와 함께 상태가 COMPLETED로 변경된다.")
-	void complete_success() {
+	@DisplayName("추출 작업 완료 시 결과가 저장되고 상태가 SEARCHING으로 변경된다.")
+	void startSearching_success() {
 		// given
 		SocialMedia socialMedia = SocialMedia.create(YOUTUBE_URL);
-		socialMedia.process();
+		socialMedia.startExtraction();
 
 		String summary = "요약 내용";
-		List<String> searchQueries = List.of("부산 맛집", "카페");
 		ContentSnapshot snapshot = YouTubeContentSnapshot.builder()
 			.contentId("videoId")
 			.build();
 
 		// when
-		socialMedia.complete(summary, searchQueries, snapshot);
+		socialMedia.completeExtraction(summary, snapshot);
 
 		// then
-		assertThat(socialMedia.getStatus()).isEqualTo(ExtractStatus.COMPLETED);
+		assertThat(socialMedia.getStatus()).isEqualTo(SocialMediaStatus.SEARCHING);
 		assertThat(socialMedia.getSummary()).isEqualTo(summary);
-		assertThat(socialMedia.getSearchQueries()).isEqualTo(searchQueries);
 		assertThat(socialMedia.getSnapshot()).isEqualTo(snapshot);
 	}
 
 	@Test
-	@DisplayName("PROCESSING 상태가 아닐 때 작업을 완료하면 예외가 발생한다.")
-	void complete_fail_invalid_status() {
+	@DisplayName("EXTRACTING 상태가 아닐 때 추출 작업을 완료하면 예외가 발생한다.")
+	void startSearching_fail_invalid_status() {
 		// given
 		SocialMedia socialMedia = SocialMedia.create(YOUTUBE_URL);
 
 		String summary = "요약 내용";
-		List<String> searchQueries = List.of("부산 맛집", "카페");
 		ContentSnapshot snapshot = YouTubeContentSnapshot.builder()
 			.contentId("videoId")
 			.build();
 
 		// when & then
-		assertThatThrownBy(() -> socialMedia.complete(summary, searchQueries, snapshot))
+		assertThatThrownBy(() -> socialMedia.completeExtraction(summary, snapshot))
 			.isInstanceOf(BusinessException.class)
 			.extracting(e -> ((BusinessException)e).getBody().getProperties().get("code"))
 			.isEqualTo(SocialMediaError.SOCIAL_MEDIA_INVALID_STATUS.name());
@@ -118,18 +112,18 @@ class SocialMediaTest {
 	void fail_success() {
 		// given
 		SocialMedia socialMedia = SocialMedia.create(YOUTUBE_URL);
-		socialMedia.process();
+		socialMedia.startExtraction();
 
 		// when
 		socialMedia.fail(ExtractFailureCode.CONTENT_NOT_FOUND);
 
 		// then
-		assertThat(socialMedia.getStatus()).isEqualTo(ExtractStatus.FAILED);
+		assertThat(socialMedia.getStatus()).isEqualTo(SocialMediaStatus.FAILED);
 		assertThat(socialMedia.getFailureCode()).isEqualTo(ExtractFailureCode.CONTENT_NOT_FOUND);
 	}
 
 	@Test
-	@DisplayName("PROCESSING 상태가 아닐 때 작업 실패 처리를 하면 예외가 발생한다.")
+	@DisplayName("EXTRACTING 상태가 아닐 때 작업 실패 처리를 하면 예외가 발생한다.")
 	void fail_fail_invalid_status() {
 		// given
 		SocialMedia socialMedia = SocialMedia.create(YOUTUBE_URL);

@@ -36,31 +36,43 @@ public class SocialMediaService {
 	}
 
 	/**
-	 * 소셜 미디어의 상태를 '처리 중'으로 변경합니다.
+	 * 소셜 미디어의 상태를 '추출 중'으로 변경합니다.
 	 *
-	 * @param socialMediaId 처리할 소셜 미디어의 ID
+	 * @param socialMediaId 소셜 미디어 ID
 	 */
 	@Transactional
-	public void process(Long socialMediaId) {
+	public void startExtraction(Long socialMediaId) {
 		SocialMedia socialMedia = getSocialMedia(socialMediaId);
-		socialMedia.process();
+		socialMedia.startExtraction();
 	}
 
 	/**
-	 * 장소 추출이 완료된 후 소셜 미디어의 상태를 '완료'로 변경하고, LLM 분석 결과와 검색 쿼리를 저장합니다.
-	 * 이 메서드가 호출될 때, LLM으로부터 받은 장소 분석 결과(요약, 검색 쿼리)가 SocialMedia 엔티티에 저장됩니다.
+	 * 장소 추출이 완료되면 소셜 미디어의 상태를 '검색 중'으로 변경하고, LLM 분석 결과와 콘텐츠 스냅샷을 저장합니다.
+	 * 그리고 검색 쿼리를 SocialMediaPlace에 저장하고 검색 이벤트를 발행합니다.
 	 *
-	 * @param socialMediaId 완료할 소셜 미디어의 ID
+	 * @param socialMediaId 소셜 미디어 ID
 	 * @param result 장소 추출 결과
 	 */
 	@Transactional
-	public void complete(Long socialMediaId, PlaceExtractionResult result) {
+	public void completeExtraction(Long socialMediaId, PlaceExtractionResult result) {
 		SocialMedia socialMedia = getSocialMedia(socialMediaId);
 
 		PlaceAnalysis analysis = result.placeAnalysis();
 		ContentSnapshot snapshot = result.rawContent().toSnapshot();
 
-		socialMedia.complete(analysis.summary(), analysis.searchQueries(), snapshot);
+		socialMedia.completeExtraction(analysis.summary(), snapshot);
+	}
+
+	/**
+	 * 장소 추출과 장소 검색이 모두 완료되면 소셜 미디어의 상태를 '완료'로 변경합니다.
+	 *
+	 * @param socialMediaId 소셜 미디어 ID
+	 */
+	@Transactional
+	public void complete(Long socialMediaId) {
+		SocialMedia socialMedia = getSocialMedia(socialMediaId);
+
+		socialMedia.complete();
 	}
 
 	/**

@@ -1,7 +1,5 @@
 package waypoint.mvp.place.domain;
 
-import java.util.List;
-
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -44,10 +42,6 @@ public class SocialMedia extends ExternalIdEntity {
 
 	@JdbcTypeCode(SqlTypes.JSON)
 	@Column
-	private List<String> searchQueries;
-
-	@JdbcTypeCode(SqlTypes.JSON)
-	@Column
 	private ContentSnapshot snapshot;
 
 	@Enumerated(EnumType.STRING)
@@ -72,23 +66,28 @@ public class SocialMedia extends ExternalIdEntity {
 			.build();
 	}
 
-	public void process() {
+	public void startExtraction() {
 		validateStatus(SocialMediaStatus.PENDING);
 
-		this.status = SocialMediaStatus.PROCESSING;
+		this.status = SocialMediaStatus.EXTRACTING;
 	}
 
-	public void complete(String summary, List<String> searchQueries, ContentSnapshot snapshot) {
-		validateStatus(SocialMediaStatus.PROCESSING);
+	public void completeExtraction(String summary, ContentSnapshot snapshot) {
+		validateStatus(SocialMediaStatus.EXTRACTING);
 
 		this.summary = summary;
-		this.searchQueries = searchQueries;
 		this.snapshot = snapshot;
+		this.status = SocialMediaStatus.SEARCHING;
+	}
+
+	public void complete() {
+		validateStatus(SocialMediaStatus.SEARCHING);
+
 		this.status = SocialMediaStatus.COMPLETED;
 	}
 
 	public void fail(ExtractFailureCode failureCode) {
-		validateStatus(SocialMediaStatus.PROCESSING);
+		validateStatus(SocialMediaStatus.EXTRACTING);
 
 		this.status = SocialMediaStatus.FAILED;
 		this.failureCode = failureCode;

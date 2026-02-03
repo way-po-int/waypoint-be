@@ -2,7 +2,8 @@ package waypoint.mvp.place.domain;
 
 public enum SocialMediaStatus {
 	PENDING,
-	PROCESSING,
+	EXTRACTING,
+	SEARCHING,
 	COMPLETED,
 	FAILED
 }
