@@ -52,7 +52,7 @@ public class SocialMedia extends ExternalIdEntity {
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
-	private ExtractStatus status;
+	private SocialMediaStatus status;
 
 	@Enumerated(EnumType.STRING)
 	@Column
@@ -62,7 +62,7 @@ public class SocialMedia extends ExternalIdEntity {
 	private SocialMedia(SocialMediaType type, String url) {
 		this.type = type;
 		this.url = url;
-		this.status = ExtractStatus.PENDING;
+		this.status = SocialMediaStatus.PENDING;
 	}
 
 	public static SocialMedia create(String url) {
@@ -73,28 +73,28 @@ public class SocialMedia extends ExternalIdEntity {
 	}
 
 	public void process() {
-		validateStatus(ExtractStatus.PENDING);
+		validateStatus(SocialMediaStatus.PENDING);
 
-		this.status = ExtractStatus.PROCESSING;
+		this.status = SocialMediaStatus.PROCESSING;
 	}
 
 	public void complete(String summary, List<String> searchQueries, ContentSnapshot snapshot) {
-		validateStatus(ExtractStatus.PROCESSING);
+		validateStatus(SocialMediaStatus.PROCESSING);
 
 		this.summary = summary;
 		this.searchQueries = searchQueries;
 		this.snapshot = snapshot;
-		this.status = ExtractStatus.COMPLETED;
+		this.status = SocialMediaStatus.COMPLETED;
 	}
 
 	public void fail(ExtractFailureCode failureCode) {
-		validateStatus(ExtractStatus.PROCESSING);
+		validateStatus(SocialMediaStatus.PROCESSING);
 
-		this.status = ExtractStatus.FAILED;
+		this.status = SocialMediaStatus.FAILED;
 		this.failureCode = failureCode;
 	}
 
-	private void validateStatus(ExtractStatus status) {
+	private void validateStatus(SocialMediaStatus status) {
 		if (this.status != status) {
 			throw new BusinessException(SocialMediaError.SOCIAL_MEDIA_INVALID_STATUS, this.status, status);
 		}

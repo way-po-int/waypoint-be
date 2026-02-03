@@ -1,9 +1,9 @@
 package waypoint.mvp.collection.application.dto.response;
 
-import waypoint.mvp.place.domain.ExtractStatus;
+import waypoint.mvp.place.domain.SocialMediaStatus;
 
 public record ExtractionJobResponse(
 	String jobId,
-	ExtractStatus status
+	SocialMediaStatus status
 ) {
 }
