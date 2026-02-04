@@ -93,15 +93,15 @@ public class PlanService {
 		planAuthorizer.verifyOwner(user, planId);
 
 		PlanMember currentOwner = planMemberService.getMemberByUserId(planId, user.id());
-		PlanMember newOnwer = planMemberService.getMember(planId, memberExternalId);
+		PlanMember newOwner = planMemberService.getMember(planId, memberExternalId);
 
-		if (planMemberService.isSameMember(currentOwner, newOnwer)) {
-			throw new BusinessException(PlanError.CANNOT_DELEGATE_OWNERSHIP_TO_SELF, newOnwer.getNickname());
+		if (planMemberService.isSameMember(currentOwner, newOwner)) {
+			throw new BusinessException(PlanError.CANNOT_DELEGATE_OWNERSHIP_TO_SELF, newOwner.getNickname());
 
 		}
 
 		currentOwner.updateRole(PlanRole.MEMBER);
-		newOnwer.updateRole(PlanRole.OWNER);
+		newOwner.updateRole(PlanRole.OWNER);
 	}
 
 	@Transactional
