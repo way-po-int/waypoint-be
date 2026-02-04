@@ -14,6 +14,12 @@ public interface CollectionMemberRepository extends JpaRepository<CollectionMemb
 	@Query("SELECT cm FROM CollectionMember cm WHERE cm.id = :memberId AND cm.collection.id = :collectionId AND cm.deletedAt IS NULL")
 	Optional<CollectionMember> findActive(@Param("memberId") Long memberId, @Param("collectionId") Long collectionId);
 
+	@Query("SELECT cm FROM CollectionMember  cm WHERE cm.externalId = :memberExternalId AND cm.collection.id = :collectionId AND cm.deletedAt IS NULL")
+	Optional<CollectionMember> findActiveByMemberExternalId(
+		@Param("collectionId") Long collectionId,
+		@Param("memberExternalId") String memberExternalId
+	);
+
 	@Query("SELECT cm FROM CollectionMember cm WHERE cm.collection.id = :collectionId AND cm.user.id = :userId AND cm.deletedAt IS NULL")
 	Optional<CollectionMember> findActiveByUserId(@Param("collectionId") Long collectionId,
 		@Param("userId") Long userId);

@@ -66,6 +66,13 @@ public class CollectionMemberService {
 		);
 	}
 
+	public CollectionMember getMember(Long collectionId, String memberExternalId) {
+
+		return collectionMemberRepository.findActiveByMemberExternalId(collectionId, memberExternalId).orElseThrow(
+			() -> new BusinessException(CollectionMemberError.MEMBER_NOT_FOUND)
+		);
+	}
+
 	public CollectionMember getMemberByUserId(Long collectionId, Long userId) {
 
 		return collectionMemberRepository.findActiveByUserId(collectionId, userId).orElseThrow(
