@@ -3,7 +3,6 @@ package waypoint.mvp.collection.presentation;
 import java.net.URI;
 import java.util.List;
 
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -29,6 +28,7 @@ import waypoint.mvp.collection.application.dto.response.CollectionMemberResponse
 import waypoint.mvp.collection.application.dto.response.CollectionResponse;
 import waypoint.mvp.global.auth.annotations.AuthLevel;
 import waypoint.mvp.global.auth.annotations.Authorize;
+import waypoint.mvp.global.common.SliceResponse;
 import waypoint.mvp.sharelink.application.dto.response.ShareLinkResponse;
 
 @RestController
@@ -40,18 +40,24 @@ public class CollectionController {
 
 	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@PostMapping
-	public ResponseEntity<CollectionResponse> createCollection(@RequestBody @Valid CollectionCreateRequest request,
-		@AuthenticationPrincipal UserPrincipal user) {
+	public ResponseEntity<CollectionResponse> createCollection(
+		@RequestBody @Valid CollectionCreateRequest request,
+		@AuthenticationPrincipal UserPrincipal user
+	) {
 		CollectionResponse response = collectionService.createCollection(request, user);
+
 		return ResponseEntity.created(URI.create("/collections/" + response.id()))
 			.body(response);
 	}
 
 	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@GetMapping
-	public ResponseEntity<Page<CollectionResponse>> findCollections(@AuthenticationPrincipal UserPrincipal user,
-		Pageable pageable) {
-		Page<CollectionResponse> collections = collectionService.findCollections(user, pageable);
+	public ResponseEntity<SliceResponse<CollectionResponse>> findCollections(
+		@AuthenticationPrincipal UserPrincipal user,
+		Pageable pageable
+	) {
+		SliceResponse<CollectionResponse> collections = collectionService.findCollections(user, pageable);
+
 		return ResponseEntity.ok(collections);
 	}
 
