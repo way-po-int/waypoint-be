@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -22,6 +23,7 @@ import waypoint.mvp.global.auth.annotations.AuthLevel;
 import waypoint.mvp.global.auth.annotations.Authorize;
 import waypoint.mvp.global.common.SliceResponse;
 import waypoint.mvp.plan.application.PlanService;
+import waypoint.mvp.plan.application.dto.request.ChangePlanOwnerRequest;
 import waypoint.mvp.plan.application.dto.request.PlanCreateRequest;
 import waypoint.mvp.plan.application.dto.request.PlanUpdateRequest;
 import waypoint.mvp.plan.application.dto.response.PlanResponse;
@@ -74,6 +76,18 @@ public class PlanController {
 		PlanResponse response = planService.updatePlan(planId, request, user);
 
 		return ResponseEntity.ok(response);
+	}
+
+	@Authorize(level = AuthLevel.AUTHENTICATED)
+	@PatchMapping("/{planId}/owner")
+	public ResponseEntity<Void> changeOwner(
+		@PathVariable String planId,
+		@RequestBody @Valid ChangePlanOwnerRequest request,
+		@AuthenticationPrincipal UserPrincipal user
+	) {
+		planService.changeOwner(planId, request.planMemberId(), user);
+
+		return ResponseEntity.noContent().build();
 	}
 
 	@Authorize(level = AuthLevel.AUTHENTICATED)
