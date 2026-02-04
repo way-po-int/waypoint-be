@@ -23,13 +23,13 @@ import waypoint.mvp.collection.application.dto.request.CollectionPlaceCreateRequ
 import waypoint.mvp.collection.application.dto.request.CollectionPlaceFromUrlRequest;
 import waypoint.mvp.collection.application.dto.request.CollectionPlaceUpdateRequest;
 import waypoint.mvp.collection.application.dto.response.CollectionPlaceDetailResponse;
-import waypoint.mvp.collection.application.dto.response.CollectionPlaceListResponse;
 import waypoint.mvp.collection.application.dto.response.CollectionPlaceResponse;
 import waypoint.mvp.collection.application.dto.response.ExtractionJobResponse;
 import waypoint.mvp.collection.application.dto.response.PickPassResponse;
 import waypoint.mvp.collection.domain.CollectionPlacePreference;
 import waypoint.mvp.global.auth.annotations.AuthLevel;
 import waypoint.mvp.global.auth.annotations.Authorize;
+import waypoint.mvp.global.common.SliceResponse;
 
 @RestController
 @RequiredArgsConstructor
@@ -41,7 +41,7 @@ public class CollectionPlaceController {
 	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@PostMapping
 	public ResponseEntity<CollectionPlaceResponse> addPlace(
-		@PathVariable Long collectionId,
+		@PathVariable String collectionId,
 		@RequestBody @Valid CollectionPlaceCreateRequest request,
 		@AuthenticationPrincipal AuthPrincipal principal
 	) {
@@ -54,7 +54,7 @@ public class CollectionPlaceController {
 	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@PostMapping("/from-url")
 	public ResponseEntity<ExtractionJobResponse> fromUrl(
-		@PathVariable Long collectionId,
+		@PathVariable String collectionId,
 		@Valid @RequestBody CollectionPlaceFromUrlRequest request,
 		@AuthenticationPrincipal AuthPrincipal principal
 	) {
@@ -64,15 +64,15 @@ public class CollectionPlaceController {
 
 	@Authorize(level = AuthLevel.GUEST_OR_MEMBER)
 	@GetMapping
-	public ResponseEntity<CollectionPlaceListResponse> getPlaces(
-		@PathVariable Long collectionId,
+	public ResponseEntity<SliceResponse<CollectionPlaceResponse>> getPlaces(
+		@PathVariable String collectionId,
 		@RequestParam(defaultValue = "1") int page,
 		@RequestParam(defaultValue = "10") int size,
 		@RequestParam(defaultValue = "LATEST") CollectionPlaceSort sort,
-		@RequestParam(required = false) Long addedByMemberId,
+		@RequestParam(required = false) String addedByMemberId,
 		@AuthenticationPrincipal AuthPrincipal principal
 	) {
-		CollectionPlaceListResponse response =
+		SliceResponse<CollectionPlaceResponse> response =
 			collectionPlaceService.getPlaces(collectionId, page, size, sort, addedByMemberId, principal);
 
 		return ResponseEntity.ok(response);
@@ -81,8 +81,8 @@ public class CollectionPlaceController {
 	@Authorize(level = AuthLevel.GUEST_OR_MEMBER)
 	@GetMapping("/{collectionPlaceId}")
 	public ResponseEntity<CollectionPlaceDetailResponse> getPlaceDetail(
-		@PathVariable Long collectionId,
-		@PathVariable Long collectionPlaceId,
+		@PathVariable String collectionId,
+		@PathVariable String collectionPlaceId,
 		@AuthenticationPrincipal AuthPrincipal principal
 	) {
 		CollectionPlaceDetailResponse response =
@@ -94,8 +94,8 @@ public class CollectionPlaceController {
 	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@PatchMapping("/{collectionPlaceId}/memo")
 	public ResponseEntity<Void> updateMemo(
-		@PathVariable Long collectionId,
-		@PathVariable Long collectionPlaceId,
+		@PathVariable String collectionId,
+		@PathVariable String collectionPlaceId,
 		@RequestBody @Valid CollectionPlaceUpdateRequest request,
 		@AuthenticationPrincipal AuthPrincipal principal
 	) {
@@ -106,8 +106,8 @@ public class CollectionPlaceController {
 	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@DeleteMapping("/{collectionPlaceId}")
 	public ResponseEntity<Void> deletePlace(
-		@PathVariable Long collectionId,
-		@PathVariable Long collectionPlaceId,
+		@PathVariable String collectionId,
+		@PathVariable String collectionPlaceId,
 		@AuthenticationPrincipal AuthPrincipal principal
 	) {
 		collectionPlaceService.deletePlace(collectionId, collectionPlaceId, principal);
@@ -117,8 +117,8 @@ public class CollectionPlaceController {
 	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@PostMapping("/{collectionPlaceId}/preference")
 	public ResponseEntity<PickPassResponse> pickOrPass(
-		@PathVariable Long collectionId,
-		@PathVariable Long collectionPlaceId,
+		@PathVariable String collectionId,
+		@PathVariable String collectionPlaceId,
 		@RequestParam CollectionPlacePreference.Type type,
 		@AuthenticationPrincipal AuthPrincipal principal
 	) {
