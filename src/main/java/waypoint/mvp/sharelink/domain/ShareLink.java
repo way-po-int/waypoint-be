@@ -2,7 +2,8 @@ package waypoint.mvp.sharelink.domain;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.UUID;
+
+import com.aventrix.jnanoid.jnanoid.NanoIdUtils;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -65,7 +66,7 @@ public class ShareLink extends BaseTimeEntity {
 
 	public static ShareLink create(ShareLinkType targetType, String targetExternalId, Long targetId, Long hostUserId,
 		long expirationHours) {
-		String code = UUID.randomUUID().toString();
+		String code = NanoIdUtils.randomNanoId();
 		Instant expiresAt = Instant.now().plus(expirationHours, ChronoUnit.HOURS);
 
 		return builder()
