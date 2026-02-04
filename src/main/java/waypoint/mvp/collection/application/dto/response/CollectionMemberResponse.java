@@ -9,7 +9,7 @@ public record CollectionMemberResponse(
 	String role
 ) {
 	public static CollectionMemberResponse from(CollectionMember member) {
-		return new CollectionMemberResponse(member.getId().toString(), member.getNickname(),
+		return new CollectionMemberResponse(member.getExternalId(), member.getNickname(),
 			member.getPicture(), member.getRole().toString());
 	}
 }
