@@ -82,4 +82,8 @@ public class PlanMember extends LogicalDeleteEntity implements Membership {
 		this.nickname = nickname;
 		this.picture = picture;
 	}
+
+	public void updateRole(PlanRole role) {
+		this.role = role;
+	}
 }

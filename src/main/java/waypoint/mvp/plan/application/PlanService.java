@@ -17,6 +17,8 @@ import waypoint.mvp.plan.application.dto.request.PlanCreateRequest;
 import waypoint.mvp.plan.application.dto.request.PlanUpdateRequest;
 import waypoint.mvp.plan.application.dto.response.PlanResponse;
 import waypoint.mvp.plan.domain.Plan;
+import waypoint.mvp.plan.domain.PlanMember;
+import waypoint.mvp.plan.domain.PlanRole;
 import waypoint.mvp.plan.domain.event.PlanCreateEvent;
 import waypoint.mvp.plan.error.PlanError;
 import waypoint.mvp.plan.infrastructure.persistence.PlanRepository;
@@ -82,6 +84,24 @@ public class PlanService {
 		plan.update(request.title(), request.startDate(), request.endDate());
 
 		return PlanResponse.from(plan);
+	}
+
+	@Transactional
+	public void changeOwner(String externalId, String memberExternalId, UserPrincipal user) {
+		Plan plan = getPlan(externalId);
+		Long planId = plan.getId();
+		planAuthorizer.verifyOwner(user, planId);
+
+		PlanMember currentOwner = planMemberService.getMemberByUserId(planId, user.id());
+		PlanMember newOnwer = planMemberService.getMember(planId, memberExternalId);
+
+		if (planMemberService.isSameMember(currentOwner, newOnwer)) {
+			throw new BusinessException(PlanError.CANNOT_DELEGATE_OWNERSHIP_TO_SELF, newOnwer.getNickname());
+
+		}
+
+		currentOwner.updateRole(PlanRole.MEMBER);
+		newOnwer.updateRole(PlanRole.OWNER);
 	}
 
 	@Transactional
