@@ -1,5 +1,6 @@
 package waypoint.mvp.plan.application;
 
+import java.util.Objects;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
@@ -23,6 +24,13 @@ public class PlanMemberService {
 
 	private final PlanMemberRepository planMemberRepository;
 	private final ResourceAuthorizer planAuthorizer;
+
+	public boolean isSameMember(PlanMember member, PlanMember other) {
+		if (member == null || other == null) {
+			return false;
+		}
+		return Objects.equals(member.getId(), other.getId());
+	}
 
 	@Transactional
 	public void createInitialOwner(Plan plan, User user) {
