@@ -70,6 +70,7 @@ public class CollectionPlaceService {
 		AuthPrincipal principal
 	) {
 		Collection collection = getCollection(collectionId);
+		collectionAuthorizer.verifyMember(principal, collection.getId());
 		CollectionMember me = getActiveMember(collection.getId(), principal.getId());
 
 		Place place = getPlace(request.placeId());
@@ -83,6 +84,11 @@ public class CollectionPlaceService {
 		return CollectionPlaceResponse.of(saved, placeResponse, List.of(), List.of());
 	}
 
+	private Place getPlace(String placeId) {
+		return placeRepository.findByExternalId(placeId)
+			.orElseThrow(() -> new BusinessException(PlaceError.PLACE_NOT_FOUND));
+	}
+
 	@Transactional
 	public ExtractionJobResponse addPlacesFromUrl(
 		String collectionId,
@@ -90,6 +96,7 @@ public class CollectionPlaceService {
 		AuthPrincipal principal
 	) {
 		Collection collection = getCollection(collectionId);
+		collectionAuthorizer.verifyMember(principal, collection.getId());
 		CollectionMember member = collectionMemberService.getMemberByUserId(collection.getId(), principal.getId());
 
 		// 장소 추출 이벤트 요청
@@ -102,6 +109,14 @@ public class CollectionPlaceService {
 			draft.getExternalId(),
 			socialMediaInfo.status()
 		);
+	}
+
+	private CollectionMember getActiveMember(Long collectionId, Long userId) {
+		try {
+			return collectionMemberService.getMemberByUserId(collectionId, userId);
+		} catch (BusinessException e) {
+			throw new BusinessException(CollectionError.FORBIDDEN_NOT_MEMBER, e);
+		}
 	}
 
 	public SliceResponse<CollectionPlaceResponse> getPlaces(
@@ -126,6 +141,7 @@ public class CollectionPlaceService {
 
 		Slice<CollectionPlace> result;
 		if (addedByMemberId != null) {
+			collectionMemberService.getMember(collection.getId(), addedByMemberId);
 			result = collectionPlaceRepository.findAllByCollectionIdAndAddedByExternalId(
 				collection.getId(),
 				addedByMemberId,
@@ -183,6 +199,7 @@ public class CollectionPlaceService {
 		AuthPrincipal principal
 	) {
 		Collection collection = getCollection(collectionId);
+		collectionAuthorizer.verifyMember(principal, collection.getId());
 		getActiveMember(collection.getId(), principal.getId());
 
 		CollectionPlace collectionPlace = getCollectionPlace(collection, collectionPlaceId);
@@ -196,6 +213,7 @@ public class CollectionPlaceService {
 		AuthPrincipal principal
 	) {
 		Collection collection = getCollection(collectionId);
+		collectionAuthorizer.verifyMember(principal, collection.getId());
 		getActiveMember(collection.getId(), principal.getId());
 
 		CollectionPlace collectionPlace = getCollectionPlace(collection, collectionPlaceId);
@@ -210,6 +228,7 @@ public class CollectionPlaceService {
 		AuthPrincipal principal
 	) {
 		Collection collection = getCollection(collectionId);
+		collectionAuthorizer.verifyMember(principal, collection.getId());
 
 		CollectionMember me = getActiveMember(collection.getId(), principal.getId());
 		CollectionPlace place = getCollectionPlace(collection, collectionPlaceId);
@@ -261,22 +280,9 @@ public class CollectionPlaceService {
 			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
 	}
 
-	private Place getPlace(String placeId) {
-		return placeRepository.findByExternalId(placeId)
-			.orElseThrow(() -> new BusinessException(PlaceError.PLACE_NOT_FOUND));
-	}
-
 	private CollectionPlace getCollectionPlace(Collection collection, String collectionPlaceId) {
 		return collectionPlaceRepository.findByExternalIdAndCollectionId(collectionPlaceId, collection.getId())
 			.orElseThrow(() -> new BusinessException(CollectionPlaceError.COLLECTION_PLACE_NOT_FOUND));
-	}
-
-	private CollectionMember getActiveMember(Long collectionId, Long userId) {
-		try {
-			return collectionMemberService.getMemberByUserId(collectionId, userId);
-		} catch (BusinessException e) {
-			throw new BusinessException(CollectionError.FORBIDDEN_NOT_MEMBER, e);
-		}
 	}
 
 	private List<String> extractPhotos(Place place) {
