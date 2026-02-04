@@ -6,7 +6,6 @@ import waypoint.mvp.sharelink.domain.ShareLink.ShareLinkType;
 public record ShareLinkResponse(
 	ShareLinkType type,
 	String referenceId,
-	Long hostId,
 	String code,
 	String ttl
 ) {
@@ -14,7 +13,6 @@ public record ShareLinkResponse(
 		return new ShareLinkResponse(
 			shareLink.getTargetType(),
 			shareLink.getTargetExternalId(),
-			shareLink.getHostUserId(),
 			shareLink.getCode(),
 			shareLink.getExpiresAt().toString()
 		);
