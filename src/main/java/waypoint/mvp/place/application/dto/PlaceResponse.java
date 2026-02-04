@@ -25,7 +25,7 @@ public record PlaceResponse(
 		Double longitude = (location != null) ? location.getX() : null;
 
 		return new PlaceResponse(
-			place.getId().toString(),
+			place.getExternalId(),
 			(detail != null) ? detail.getPlaceId() : null,
 			place.getName(),
 			place.getAddress(),

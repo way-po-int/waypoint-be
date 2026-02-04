@@ -21,7 +21,6 @@ import waypoint.mvp.collection.application.dto.request.CollectionPlaceFromUrlReq
 import waypoint.mvp.collection.application.dto.request.CollectionPlaceUpdateRequest;
 import waypoint.mvp.collection.application.dto.response.CollectionMemberResponse;
 import waypoint.mvp.collection.application.dto.response.CollectionPlaceDetailResponse;
-import waypoint.mvp.collection.application.dto.response.CollectionPlaceListResponse;
 import waypoint.mvp.collection.application.dto.response.CollectionPlaceResponse;
 import waypoint.mvp.collection.application.dto.response.ExtractionJobResponse;
 import waypoint.mvp.collection.application.dto.response.PickPassResponse;
@@ -38,6 +37,7 @@ import waypoint.mvp.collection.infrastructure.persistence.CollectionPlacePrefere
 import waypoint.mvp.collection.infrastructure.persistence.CollectionPlaceRepository;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionRepository;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
+import waypoint.mvp.global.common.SliceResponse;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.place.application.SocialMediaService;
 import waypoint.mvp.place.application.dto.PlaceResponse;
@@ -65,35 +65,39 @@ public class CollectionPlaceService {
 
 	@Transactional
 	public CollectionPlaceResponse addPlace(
-		Long collectionId,
+		String collectionId,
 		CollectionPlaceCreateRequest request,
 		AuthPrincipal principal
 	) {
 		Collection collection = getCollection(collectionId);
-		CollectionMember me = getActiveMember(collectionId, principal.getId());
+		collectionAuthorizer.verifyMember(principal, collection.getId());
+		CollectionMember me = getActiveMember(collection.getId(), principal.getId());
 
-		Long placeId = parsePlaceId(request.placeId());
-		Place place = placeRepository.findById(placeId)
-			.orElseThrow(() -> new BusinessException(PlaceError.PLACE_NOT_FOUND));
+		Place place = getPlace(request.placeId());
 
-		if (collectionPlaceRepository.existsByCollectionIdAndPlaceId(collectionId, placeId)) {
+		if (collectionPlaceRepository.existsByCollectionIdAndPlaceId(collection.getId(), place.getId())) {
 			throw new BusinessException(CollectionPlaceError.COLLECTION_PLACE_ALREADY_EXISTS);
 		}
 
-		CollectionPlace collectionPlace = CollectionPlace.create(collection, place, me);
-		CollectionPlace saved = collectionPlaceRepository.save(collectionPlace);
-
+		CollectionPlace saved = collectionPlaceRepository.save(CollectionPlace.create(collection, place, me));
 		PlaceResponse placeResponse = PlaceResponse.from(place, extractPhotos(place));
 		return CollectionPlaceResponse.of(saved, placeResponse, List.of(), List.of());
 	}
 
+	private Place getPlace(String placeId) {
+		return placeRepository.findByExternalId(placeId)
+			.orElseThrow(() -> new BusinessException(PlaceError.PLACE_NOT_FOUND));
+	}
+
 	@Transactional
 	public ExtractionJobResponse addPlacesFromUrl(
-		Long collectionId,
+		String collectionId,
 		CollectionPlaceFromUrlRequest request,
 		AuthPrincipal principal
 	) {
-		CollectionMember member = collectionMemberService.getMemberByUserId(collectionId, principal.getId());
+		Collection collection = getCollection(collectionId);
+		collectionAuthorizer.verifyMember(principal, collection.getId());
+		CollectionMember member = collectionMemberService.getMemberByUserId(collection.getId(), principal.getId());
 
 		// 장소 추출 이벤트 요청
 		SocialMediaInfo socialMediaInfo = socialMediaService.addJob(request.url());
@@ -102,29 +106,29 @@ public class CollectionPlaceService {
 		CollectionPlaceDraft draft = createOrGetDraft(member, socialMediaInfo.id());
 
 		return new ExtractionJobResponse(
-			draft.getId().toString(),
+			draft.getExternalId(),
 			socialMediaInfo.status()
 		);
 	}
 
-	private CollectionPlaceDraft createOrGetDraft(CollectionMember member, Long socialMediaId) {
-		return jobRepository.findByMemberIdAndSocialMediaId(member.getId(), socialMediaId)
-			.orElseGet(() -> {
-				SocialMedia media = socialMediaService.getSocialMedia(socialMediaId);
-				CollectionPlaceDraft draft = CollectionPlaceDraft.create(member, media);
-				return jobRepository.save(draft);
-			});
+	private CollectionMember getActiveMember(Long collectionId, Long userId) {
+		try {
+			return collectionMemberService.getMemberByUserId(collectionId, userId);
+		} catch (BusinessException e) {
+			throw new BusinessException(CollectionError.FORBIDDEN_NOT_MEMBER, e);
+		}
 	}
 
-	public CollectionPlaceListResponse getPlaces(
-		Long collectionId,
+	public SliceResponse<CollectionPlaceResponse> getPlaces(
+		String collectionId,
 		int page,
 		int size,
 		CollectionPlaceSort sort,
-		Long addedByMemberId,
+		String addedByMemberId,
 		AuthPrincipal principal
 	) {
-		collectionAuthorizer.verifyAccess(principal, collectionId);
+		Collection collection = getCollection(collectionId);
+		collectionAuthorizer.verifyAccess(principal, collection.getId());
 
 		int safePage = Math.max(page, 1);
 		int safeSize = Math.max(size, 1);
@@ -137,15 +141,14 @@ public class CollectionPlaceService {
 
 		Slice<CollectionPlace> result;
 		if (addedByMemberId != null) {
-			collectionMemberService.getMember(collectionId, addedByMemberId);
-
-			result = collectionPlaceRepository.findAllByCollectionIdAndAddedById(
-				collectionId,
+			collectionMemberService.getMember(collection.getId(), addedByMemberId);
+			result = collectionPlaceRepository.findAllByCollectionIdAndAddedByExternalId(
+				collection.getId(),
 				addedByMemberId,
 				pageable
 			);
 		} else {
-			result = collectionPlaceRepository.findAllByCollectionId(collectionId, pageable);
+			result = collectionPlaceRepository.findAllByCollectionId(collection.getId(), pageable);
 		}
 
 		List<CollectionPlace> places = result.getContent();
@@ -166,22 +169,18 @@ public class CollectionPlaceService {
 			return CollectionPlaceResponse.of(cp, placeResponse, picked, passed);
 		}).toList();
 
-		return CollectionPlaceListResponse.of(
-			content,
-			result.hasNext(),
-			safeSize,
-			safePage
-		);
+		return new SliceResponse<>(content, result.hasNext(), safePage, safeSize);
 	}
 
 	public CollectionPlaceDetailResponse getPlaceDetail(
-		Long collectionId,
-		Long collectionPlaceId,
+		String collectionId,
+		String collectionPlaceId,
 		AuthPrincipal principal
 	) {
-		collectionAuthorizer.verifyAccess(principal, collectionId);
+		Collection collection = getCollection(collectionId);
+		collectionAuthorizer.verifyAccess(principal, collection.getId());
 
-		CollectionPlace collectionPlace = getCollectionPlace(collectionId, collectionPlaceId);
+		CollectionPlace collectionPlace = getCollectionPlace(collection, collectionPlaceId);
 
 		PlaceResponse placeResponse = PlaceResponse.from(
 			collectionPlace.getPlace(),
@@ -194,41 +193,50 @@ public class CollectionPlaceService {
 
 	@Transactional
 	public void updateMemo(
-		Long collectionId,
-		Long collectionPlaceId,
+		String collectionId,
+		String collectionPlaceId,
 		CollectionPlaceUpdateRequest request,
 		AuthPrincipal principal
 	) {
-		getActiveMember(collectionId, principal.getId());
+		Collection collection = getCollection(collectionId);
+		collectionAuthorizer.verifyMember(principal, collection.getId());
+		getActiveMember(collection.getId(), principal.getId());
 
-		CollectionPlace collectionPlace = getCollectionPlace(collectionId, collectionPlaceId);
+		CollectionPlace collectionPlace = getCollectionPlace(collection, collectionPlaceId);
 		collectionPlace.updateMemo(request.memo());
 	}
 
 	@Transactional
 	public void deletePlace(
-		Long collectionId,
-		Long collectionPlaceId,
+		String collectionId,
+		String collectionPlaceId,
 		AuthPrincipal principal
 	) {
-		getActiveMember(collectionId, principal.getId());
+		Collection collection = getCollection(collectionId);
+		collectionAuthorizer.verifyMember(principal, collection.getId());
+		getActiveMember(collection.getId(), principal.getId());
 
-		CollectionPlace collectionPlace = getCollectionPlace(collectionId, collectionPlaceId);
+		CollectionPlace collectionPlace = getCollectionPlace(collection, collectionPlaceId);
 		collectionPlaceRepository.delete(collectionPlace);
 	}
 
 	@Transactional
 	public PickPassResponse pickOrPass(
-		Long collectionId,
-		Long collectionPlaceId,
+		String collectionId,
+		String collectionPlaceId,
 		CollectionPlacePreference.Type type,
 		AuthPrincipal principal
 	) {
-		CollectionMember me = getActiveMember(collectionId, principal.getId());
-		CollectionPlace place = getCollectionPlace(collectionId, collectionPlaceId);
+		Collection collection = getCollection(collectionId);
+		collectionAuthorizer.verifyMember(principal, collection.getId());
+
+		CollectionMember me = getActiveMember(collection.getId(), principal.getId());
+		CollectionPlace place = getCollectionPlace(collection, collectionPlaceId);
+
+		Long collectionPlacePk = place.getId();
 
 		Optional<CollectionPlacePreference> existingOpt =
-			preferenceRepository.findByPlaceIdAndMemberId(collectionPlaceId, me.getId());
+			preferenceRepository.findByPlaceIdAndMemberId(collectionPlacePk, me.getId());
 
 		if (existingOpt.isPresent()) {
 			CollectionPlacePreference existing = existingOpt.get();
@@ -243,7 +251,7 @@ public class CollectionPlaceService {
 		}
 
 		Map<CollectionPlacePreference.Type, List<CollectionMemberResponse>> preferenceByType =
-			preferenceRepository.findAllByPlaceIdIn(List.of(collectionPlaceId))
+			preferenceRepository.findAllByPlaceIdIn(List.of(collectionPlacePk))
 				.stream()
 				.collect(groupingBy(
 					CollectionPlacePreference::getType,
@@ -258,30 +266,23 @@ public class CollectionPlaceService {
 		return PickPassResponse.of(picked, passed);
 	}
 
-	private Collection getCollection(Long collectionId) {
-		return collectionRepository.findById(collectionId)
+	private CollectionPlaceDraft createOrGetDraft(CollectionMember member, Long socialMediaId) {
+		return jobRepository.findByMemberIdAndSocialMediaId(member.getId(), socialMediaId)
+			.orElseGet(() -> {
+				SocialMedia media = socialMediaService.getSocialMedia(socialMediaId);
+				CollectionPlaceDraft draft = CollectionPlaceDraft.create(member, media);
+				return jobRepository.save(draft);
+			});
+	}
+
+	private Collection getCollection(String collectionId) {
+		return collectionRepository.findByExternalId(collectionId)
 			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
 	}
 
-	private CollectionMember getActiveMember(Long collectionId, Long userId) {
-		try {
-			return collectionMemberService.getMemberByUserId(collectionId, userId);
-		} catch (BusinessException e) {
-			throw new BusinessException(CollectionError.FORBIDDEN_NOT_MEMBER, e);
-		}
-	}
-
-	private CollectionPlace getCollectionPlace(Long collectionId, Long collectionPlaceId) {
-		return collectionPlaceRepository.findByIdAndCollectionId(collectionPlaceId, collectionId)
+	private CollectionPlace getCollectionPlace(Collection collection, String collectionPlaceId) {
+		return collectionPlaceRepository.findByExternalIdAndCollectionId(collectionPlaceId, collection.getId())
 			.orElseThrow(() -> new BusinessException(CollectionPlaceError.COLLECTION_PLACE_NOT_FOUND));
-	}
-
-	private Long parsePlaceId(String raw) {
-		try {
-			return Long.parseLong(raw);
-		} catch (NumberFormatException e) {
-			throw new BusinessException(CollectionPlaceError.INVALID_PLACE_ID, e);
-		}
 	}
 
 	private List<String> extractPhotos(Place place) {

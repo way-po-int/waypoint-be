@@ -19,7 +19,7 @@ public record CollectionPlaceResponse(
 		List<CollectionMemberResponse> passedMember
 	) {
 		return new CollectionPlaceResponse(
-			collectionPlace.getId().toString(),
+			collectionPlace.getExternalId(),
 			collectionPlace.getMemo(),
 			place,
 			pickedMember,

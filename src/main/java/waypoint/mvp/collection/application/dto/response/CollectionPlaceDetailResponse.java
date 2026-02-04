@@ -15,7 +15,7 @@ public record CollectionPlaceDetailResponse(
 		SocialMediaResponse socialMedia
 	) {
 		return new CollectionPlaceDetailResponse(
-			collectionPlace.getId().toString(),
+			collectionPlace.getExternalId(),
 			collectionPlace.getMemo(),
 			place,
 			socialMedia

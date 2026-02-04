@@ -13,7 +13,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import waypoint.mvp.global.common.BaseTimeEntity;
+import waypoint.mvp.global.common.ExternalIdEntity;
 import waypoint.mvp.place.domain.Place;
 import waypoint.mvp.place.domain.SocialMedia;
 
@@ -21,7 +21,7 @@ import waypoint.mvp.place.domain.SocialMedia;
 @Table(name = "collection_places")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class CollectionPlace extends BaseTimeEntity {
+public class CollectionPlace extends ExternalIdEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
