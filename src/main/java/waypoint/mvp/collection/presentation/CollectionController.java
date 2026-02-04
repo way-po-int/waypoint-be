@@ -22,7 +22,7 @@ import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.collection.application.CollectionService;
-import waypoint.mvp.collection.application.dto.request.ChangeOwnerRequest;
+import waypoint.mvp.collection.application.dto.request.ChangeCollectionOwnerRequest;
 import waypoint.mvp.collection.application.dto.request.CollectionCreateRequest;
 import waypoint.mvp.collection.application.dto.request.CollectionUpdateRequest;
 import waypoint.mvp.collection.application.dto.response.CollectionMemberResponse;
@@ -90,11 +90,10 @@ public class CollectionController {
 	@PatchMapping("/{collectionId}/owner")
 	public ResponseEntity<Void> changeOwner(
 		@PathVariable String collectionId,
-		@RequestBody @Valid ChangeOwnerRequest request,
+		@RequestBody @Valid ChangeCollectionOwnerRequest request,
 		@AuthenticationPrincipal UserPrincipal user
 	) {
-		Long memberId = Long.parseLong(request.collectionMemberId());
-		collectionService.changeOwner(collectionId, memberId, user);
+		collectionService.changeOwner(collectionId, request.collectionMemberId(), user);
 
 		return ResponseEntity.noContent().build();
 	}

@@ -87,13 +87,13 @@ public class CollectionService {
 	}
 
 	@Transactional
-	public void changeOwner(String externalId, Long memberId, UserPrincipal user) {
+	public void changeOwner(String externalId, String memberExternalId, UserPrincipal user) {
 		Collection collection = getCollection(externalId);
 		Long collectionId = collection.getId();
 		collectionAuthorizer.verifyOwner(user, collectionId);
 
 		CollectionMember currentOwner = collectionMemberService.getMemberByUserId(collectionId, user.id());
-		CollectionMember newOwner = collectionMemberService.getMember(collectionId, memberId);
+		CollectionMember newOwner = collectionMemberService.getMember(collectionId, memberExternalId);
 
 		if (collectionMemberService.isSameMember(currentOwner, newOwner)) {
 			throw new BusinessException(CollectionError.CANNOT_DELEGATE_OWNERSHIP_TO_SELF, newOwner.getNickname());
