@@ -25,6 +25,7 @@ import waypoint.mvp.plan.application.PlanService;
 import waypoint.mvp.plan.application.dto.request.PlanCreateRequest;
 import waypoint.mvp.plan.application.dto.request.PlanUpdateRequest;
 import waypoint.mvp.plan.application.dto.response.PlanResponse;
+import waypoint.mvp.sharelink.application.dto.response.ShareLinkResponse;
 
 @RestController
 @RequiredArgsConstructor
@@ -83,6 +84,40 @@ public class PlanController {
 	) {
 		planService.deletePlan(planId, user);
 		return ResponseEntity.noContent().build();
+	}
+
+	@Authorize(level = AuthLevel.AUTHENTICATED)
+	@DeleteMapping("/{planId}/member/me")
+	public ResponseEntity<Void> withdrawMember(
+		@PathVariable String planId,
+		@AuthenticationPrincipal UserPrincipal user
+	) {
+		planService.withdrawPlanMember(planId, user);
+
+		return ResponseEntity.noContent().build();
+	}
+
+	@Authorize(level = AuthLevel.AUTHENTICATED)
+	@DeleteMapping("/{planId}/member/{memberId}")
+	public ResponseEntity<Void> expelMember(
+		@PathVariable String planId,
+		@PathVariable String memberId,
+		@AuthenticationPrincipal UserPrincipal user
+	) {
+		planService.expelPlanMember(planId, memberId, user);
+
+		return ResponseEntity.noContent().build();
+	}
+
+	@Authorize(level = AuthLevel.AUTHENTICATED)
+	@PostMapping("/{planId}/invitations")
+	public ResponseEntity<ShareLinkResponse> createInvitation(
+		@PathVariable String planId,
+		@AuthenticationPrincipal UserPrincipal user
+	) {
+		ShareLinkResponse response = planService.createInvitation(planId, user);
+
+		return ResponseEntity.ok(response);
 	}
 }
 

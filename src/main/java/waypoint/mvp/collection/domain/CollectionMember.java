@@ -16,13 +16,14 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import waypoint.mvp.global.common.LogicalDeleteEntity;
+import waypoint.mvp.global.common.Membership;
 import waypoint.mvp.user.domain.User;
 
 @Entity
 @Table(name = "collection_members")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class CollectionMember extends LogicalDeleteEntity {
+public class CollectionMember extends LogicalDeleteEntity implements Membership {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -96,13 +96,15 @@ class CollectionServiceTest {
 
 		// when & then
 		// Case 1: 소유자가 생성
-		ShareLinkResponse ownerResponse = collectionService.createInvitation(collection.getId(), ownerPrincipal);
+		ShareLinkResponse ownerResponse = collectionService.createInvitation(collection.getExternalId(),
+			ownerPrincipal);
 		Optional<ShareLink> ownerLink = shareLinkRepository.findByCode(ownerResponse.code());
 		assertThat(ownerLink).isPresent();
 		assertThat(ownerLink.get().getHostUserId()).isEqualTo(ownerPrincipal.getId());
 
 		// Case 2: 일반 멤버가 생성
-		ShareLinkResponse memberResponse = collectionService.createInvitation(collection.getId(), anotherPrincipal);
+		ShareLinkResponse memberResponse = collectionService.createInvitation(collection.getExternalId(),
+			anotherPrincipal);
 		Optional<ShareLink> memberLink = shareLinkRepository.findByCode(memberResponse.code());
 		assertThat(memberLink).isPresent();
 		assertThat(memberLink.get().getHostUserId()).isEqualTo(anotherUser.getId());
@@ -121,7 +123,7 @@ class CollectionServiceTest {
 
 		// when & then
 		assertThatThrownBy(
-			() -> collectionService.createInvitation(collection.getId(), anotherPrinical))
+			() -> collectionService.createInvitation(collection.getExternalId(), anotherPrinical))
 			.isInstanceOf(BusinessException.class)
 			.extracting(ex -> ((BusinessException)ex).getBody().getProperties().get("code"))
 			.isEqualTo(CollectionError.FORBIDDEN_NOT_MEMBER.name());
@@ -224,7 +226,7 @@ class CollectionServiceTest {
 
 		// when 재초대
 		ShareLink shareLink = shareLinkRepository.findByCode(
-			collectionService.createInvitation(collection.getId(), host).code()).get();
+			collectionService.createInvitation(collection.getExternalId(), host).code()).get();
 		collectionService.addMemberFromShareLink(shareLink, member.getId());
 
 		// then
@@ -239,7 +241,7 @@ class CollectionServiceTest {
 		Collection collection = createCollection(title, owner);
 
 		ShareLink shareLink = shareLinkRepository.findByCode(
-			collectionService.createInvitation(collection.getId(), owner).code()).orElseThrow();
+			collectionService.createInvitation(collection.getExternalId(), owner).code()).orElseThrow();
 		collectionService.addMemberFromShareLink(shareLink, member.getId());
 
 		return findCollectionById(collection.getId()); // 멤버 추가 후 최신 상태의 컬렉션을 반환
@@ -256,7 +258,7 @@ class CollectionServiceTest {
 		CollectionMember newOwnerMember = findActiveMember(collection.getId(), newOwner.getId());
 
 		// when
-		collectionService.changeOwner(collection.getId(), newOwnerMember.getId(), owner);
+		collectionService.changeOwner(collection.getExternalId(), newOwnerMember.getId(), owner);
 
 		// then
 		CollectionMember formerOwnerMember = findActiveMember(collection.getId(), owner.getId());
@@ -276,7 +278,7 @@ class CollectionServiceTest {
 		CollectionMember ownerMember = findActiveMember(collection.getId(), owner.getId());
 
 		// when & then
-		assertThatThrownBy(() -> collectionService.changeOwner(collection.getId(), ownerMember.getId(), member))
+		assertThatThrownBy(() -> collectionService.changeOwner(collection.getExternalId(), ownerMember.getId(), member))
 			.isInstanceOf(BusinessException.class)
 			.extracting(ex -> ((BusinessException)ex).getBody().getProperties().get("code"))
 			.isEqualTo(CollectionError.FORBIDDEN_NOT_OWNER.name());

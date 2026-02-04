@@ -20,9 +20,9 @@ import waypoint.mvp.collection.domain.Collection;
 import waypoint.mvp.collection.domain.CollectionMember;
 import waypoint.mvp.collection.domain.CollectionRole;
 import waypoint.mvp.collection.domain.event.CollectionCreatedEvent;
-import waypoint.mvp.collection.domain.service.CollectionAuthorizer;
 import waypoint.mvp.collection.error.CollectionError;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionRepository;
+import waypoint.mvp.global.auth.ResourceAuthorizer;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.sharelink.application.dto.response.ShareLinkResponse;
 import waypoint.mvp.sharelink.domain.ShareLink;
@@ -41,7 +41,7 @@ public class CollectionService {
 	private final ApplicationEventPublisher eventPublisher;
 	private final ShareLinkRepository shareLinkRepository;
 	private final UserFinder userFinder;
-	private final CollectionAuthorizer collectionAuthorizer;
+	private final ResourceAuthorizer collectionAuthorizer;
 
 	@Value("${waypoint.invitation.expiration-hours}")
 	private long invitationExpirationHours;
@@ -70,18 +70,26 @@ public class CollectionService {
 		return CollectionResponse.from(collection);
 	}
 
-	@Transactional
-	public CollectionResponse updateCollection(Long collectionId, CollectionUpdateRequest request, UserPrincipal user) {
-		collectionAuthorizer.verifyMember(user, collectionId);
-		Collection collection = getCollection(collectionId);
+	public CollectionResponse findCollectionByExternalId(String externalId, AuthPrincipal user) {
+		Collection collection = getCollection(externalId);
+		collectionAuthorizer.verifyAccess(user, collection.getId());
 
+		return CollectionResponse.from(collection);
+	}
+
+	@Transactional
+	public CollectionResponse updateCollection(String externalId, CollectionUpdateRequest request, UserPrincipal user) {
+		Collection collection = getCollection(externalId);
+		collectionAuthorizer.verifyMember(user, collection.getId());
 		collection.update(request.title());
 
 		return CollectionResponse.from(collection);
 	}
 
 	@Transactional
-	public void changeOwner(Long collectionId, Long memberId, UserPrincipal user) {
+	public void changeOwner(String externalId, Long memberId, UserPrincipal user) {
+		Collection collection = getCollection(externalId);
+		Long collectionId = collection.getId();
 		collectionAuthorizer.verifyOwner(user, collectionId);
 
 		CollectionMember currentOwner = collectionMemberService.getMemberByUserId(collectionId, user.id());
@@ -95,7 +103,9 @@ public class CollectionService {
 		newOwner.updateRole(CollectionRole.OWNER);
 	}
 
-	public List<CollectionMemberResponse> getCollectionMembers(Long collectionId, AuthPrincipal user) {
+	public List<CollectionMemberResponse> getCollectionMembers(String externalId, AuthPrincipal user) {
+		Collection collection = getCollection(externalId);
+		Long collectionId = collection.getId();
 		collectionAuthorizer.verifyAccess(user, collectionId);
 
 		return collectionMemberService.getMembers(collectionId)
@@ -115,18 +125,21 @@ public class CollectionService {
 	}
 
 	@Transactional
-	public void deleteCollection(Long collectionId, UserPrincipal user) {
+	public void deleteCollection(String externalId, UserPrincipal user) {
+		Collection collection = getCollection(externalId);
+		Long collectionId = collection.getId();
 		collectionAuthorizer.verifyOwner(user, collectionId);
-		Collection collection = getCollection(collectionId);
 
 		collectionRepository.delete(collection);
 	}
 
 	@Transactional
-	public ShareLinkResponse createInvitation(Long collectionId, UserPrincipal user) {
-		collectionAuthorizer.verifyMember(user, collectionId);
+	public ShareLinkResponse createInvitation(String collectionId, UserPrincipal user) {
+		Collection collection = getCollection(collectionId);
+		collectionAuthorizer.verifyMember(user, collection.getId());
 
-		ShareLink shareLink = ShareLink.create(ShareLink.ShareLinkType.COLLECTION, collectionId, user.getId(),
+		ShareLink shareLink = ShareLink.create(ShareLink.ShareLinkType.COLLECTION, collection.getExternalId(),
+			collection.getId(), user.getId(),
 			invitationExpirationHours);
 
 		shareLinkRepository.save(shareLink);
@@ -151,6 +164,11 @@ public class CollectionService {
 
 	private Collection getCollection(Long collectionId) {
 		return collectionRepository.findById(collectionId)
+			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
+	}
+
+	private Collection getCollection(String externalId) {
+		return collectionRepository.findByExternalId(externalId)
 			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
 	}
 
