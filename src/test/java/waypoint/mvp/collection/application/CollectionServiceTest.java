@@ -72,12 +72,12 @@ class CollectionServiceTest {
 		assertThat(response.memberCount()).isEqualTo(1);
 
 		// 2. DB 데이터 검증 (Side Effect 검증)
-		Optional<Collection> foundCollection = collectionRepository.findById(response.id());
+		Optional<Collection> foundCollection = collectionRepository.findByExternalId(response.id());
 		assertThat(foundCollection).isPresent();
 		assertThat(foundCollection.get().getTitle()).isEqualTo(title);
 		assertThat(foundCollection.get().getMemberCount()).isEqualTo(1);
 
-		CollectionMember foundMember = findActiveMember(response.id(), baseUser.getId());
+		CollectionMember foundMember = findActiveMember(foundCollection.get().getId(), baseUser.getId());
 		assertThat(foundMember.getRole()).isEqualTo(CollectionRole.OWNER);
 		assertThat(foundMember.getUser().getId()).isEqualTo(baseUser.getId());
 	}
@@ -147,6 +147,10 @@ class CollectionServiceTest {
 		return collectionRepository.findById(collectionId).orElseThrow();
 	}
 
+	private Collection findCollectionById(String collectionExternalId) {
+		return collectionRepository.findByExternalId(collectionExternalId).orElseThrow();
+	}
+
 	private CollectionMember findActiveMember(long collectionId, long userId) {
 		return collectionMemberRepository.findActiveByUserId(collectionId, userId).orElseThrow();
 	}
@@ -160,7 +164,7 @@ class CollectionServiceTest {
 		Collection collection = createCollectionAndInvitedMember("Test Collection", owner, member);
 
 		// when
-		collectionService.withdrawCollectionMember(collection.getId(), member);
+		collectionService.withdrawCollectionMember(collection.getExternalId(), member);
 
 		// then
 		Optional<CollectionMember> withdrawnMember = collectionMemberRepository.findWithdrawnMember(collection.getId(),
@@ -184,7 +188,7 @@ class CollectionServiceTest {
 		Collection collection = createCollectionAndInvitedMember("Test Collection", owner, member);
 
 		// when & then
-		assertThatThrownBy(() -> collectionService.withdrawCollectionMember(collection.getId(), owner))
+		assertThatThrownBy(() -> collectionService.withdrawCollectionMember(collection.getExternalId(), owner))
 			.isInstanceOf(BusinessException.class)
 			.extracting(ex -> ((BusinessException)ex).getBody().getProperties().get("code"))
 			.isEqualTo(CollectionError.NEED_TO_DELEGATE_OWNERSHIP.name());
@@ -194,16 +198,17 @@ class CollectionServiceTest {
 	@DisplayName("Owner가 다른 멤버를 강제로 탈퇴시킬 수 있다.")
 	void expelCollectionMember_byOwner_success() {
 		// given
-		UserPrincipal owner = new UserPrincipal(baseUser.getId());
-		UserPrincipal member = new UserPrincipal(createUser("member1").getId());
-		Collection collection = createCollectionAndInvitedMember("Test Collection", owner, member);
+		UserPrincipal ownerUser = new UserPrincipal(baseUser.getId());
+		UserPrincipal memberUser = new UserPrincipal(createUser("member1").getId());
+		Collection collection = createCollectionAndInvitedMember("Test Collection", ownerUser, memberUser);
 
 		// when
-		collectionService.expelCollectionMember(collection.getId(), member.getId(), owner);
+		CollectionMember member = findActiveMember(collection.getId(), memberUser.getId());
+		collectionService.expelCollectionMember(collection.getExternalId(), member.getExternalId(), ownerUser);
 
 		// then
 		Optional<CollectionMember> expelledMember = collectionMemberRepository.findWithdrawnMember(collection.getId(),
-			member.getId());
+			memberUser.getId());
 		assertThat(expelledMember).isPresent();
 		assertThat(expelledMember.get().getDeletedAt()).isNotNull();
 
@@ -211,7 +216,8 @@ class CollectionServiceTest {
 		assertThat(updatedCollection.getMemberCount()).isEqualTo(1);
 
 		// 활성 멤버 조회 시, 추방된 멤버가 조회되지 않는지 추가 검증
-		assertThat(collectionMemberRepository.findActiveByUserId(collection.getId(), member.getId())).isNotPresent();
+		assertThat(
+			collectionMemberRepository.findActiveByUserId(collection.getId(), memberUser.getId())).isNotPresent();
 	}
 
 	@Test
@@ -222,7 +228,7 @@ class CollectionServiceTest {
 		UserPrincipal member = new UserPrincipal(createUser("member1").getId());
 
 		Collection collection = createCollectionAndInvitedMember("Test Collection", host, member);
-		collectionService.withdrawCollectionMember(collection.getId(), member); // 멤버 탈퇴
+		collectionService.withdrawCollectionMember(collection.getExternalId(), member); // 멤버 탈퇴
 
 		// when 재초대
 		ShareLink shareLink = shareLinkRepository.findByCode(
