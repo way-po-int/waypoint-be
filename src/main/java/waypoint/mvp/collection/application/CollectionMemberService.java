@@ -73,7 +73,7 @@ public class CollectionMemberService {
 		);
 	}
 
-	public CollectionMember getMemberByUserId(Long collectionId, Long userId) {
+	public CollectionMember findMemberByUserId(Long collectionId, Long userId) {
 
 		return collectionMemberRepository.findActiveByUserId(collectionId, userId).orElseThrow(
 			() -> new BusinessException(CollectionMemberError.MEMBER_NOT_FOUND)
@@ -86,7 +86,7 @@ public class CollectionMemberService {
 
 	@Transactional
 	public void withdraw(Long collectionId, UserPrincipal user) {
-		CollectionMember member = getMemberByUserId(collectionId, user.id());
+		CollectionMember member = findMemberByUserId(collectionId, user.id());
 		remove(member);
 	}
 

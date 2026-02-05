@@ -97,7 +97,7 @@ public class CollectionPlaceService {
 	) {
 		Collection collection = getCollection(collectionId);
 		collectionAuthorizer.verifyMember(principal, collection.getId());
-		CollectionMember member = collectionMemberService.getMemberByUserId(collection.getId(), principal.getId());
+		CollectionMember member = collectionMemberService.findMemberByUserId(collection.getId(), principal.getId());
 
 		// 장소 추출 이벤트 요청
 		SocialMediaInfo socialMediaInfo = socialMediaService.addJob(request.url());
@@ -113,7 +113,7 @@ public class CollectionPlaceService {
 
 	private CollectionMember getActiveMember(Long collectionId, Long userId) {
 		try {
-			return collectionMemberService.getMemberByUserId(collectionId, userId);
+			return collectionMemberService.findMemberByUserId(collectionId, userId);
 		} catch (BusinessException e) {
 			throw new BusinessException(CollectionError.FORBIDDEN_NOT_MEMBER, e);
 		}

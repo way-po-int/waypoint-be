@@ -95,7 +95,7 @@ public class CollectionService {
 		Long collectionId = collection.getId();
 		collectionAuthorizer.verifyOwner(user, collectionId);
 
-		CollectionMember currentOwner = collectionMemberService.getMemberByUserId(collectionId, user.id());
+		CollectionMember currentOwner = collectionMemberService.findMemberByUserId(collectionId, user.id());
 		CollectionMember newOwner = collectionMemberService.getEntity(collectionId, memberExternalId);
 
 		if (collectionMemberService.isSameMember(currentOwner, newOwner)) {
