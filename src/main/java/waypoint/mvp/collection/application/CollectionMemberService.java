@@ -80,7 +80,7 @@ public class CollectionMemberService {
 		);
 	}
 
-	public List<CollectionMember> getMembers(Long collectionId) {
+	public List<CollectionMember> findMembers(Long collectionId) {
 		return collectionMemberRepository.findActiveAll(collectionId);
 	}
 

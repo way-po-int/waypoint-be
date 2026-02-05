@@ -111,7 +111,7 @@ public class CollectionService {
 		Long collectionId = collection.getId();
 		collectionAuthorizer.verifyAccess(user, collectionId);
 
-		return collectionMemberService.getMembers(collectionId)
+		return collectionMemberService.findMembers(collectionId)
 			.stream()
 			.map(CollectionMemberResponse::from)
 			.toList();
