@@ -19,9 +19,9 @@ import waypoint.mvp.plan.infrastructure.persistence.PlanCollectionRepository;
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class PlanCollectionService {
-	private final CollectionService collectionQueryService;
-	private final PlanMemberService planMemberQueryService;
-	private final PlanService planQueryService;
+	private final CollectionService collectionService;
+	private final PlanMemberService planMemberService;
+	private final PlanService planService;
 	private final PlanCollectionRepository planCollectionRepository;
 	private final ResourceAuthorizer planAuthorizer;
 	private final ResourceAuthorizer collectionAuthorizer;
@@ -32,13 +32,13 @@ public class PlanCollectionService {
 		CreatePlanCollectionRequest request,
 		UserPrincipal user
 	) {
-		Collection collection = collectionQueryService.getEntity(planExternalId);
-		Plan plan = planQueryService.getEntity(request.collectionId());
+		Collection collection = collectionService.getEntity(planExternalId);
+		Plan plan = planService.getEntity(request.collectionId());
 
 		planAuthorizer.verifyMember(user, plan.getId());
 		collectionAuthorizer.verifyMember(user, collection.getId());
 
-		PlanMember member = planMemberQueryService.getMemberByUserId(plan.getId(), user.getId());
+		PlanMember member = planMemberService.getMemberByUserId(plan.getId(), user.getId());
 		PlanCollection planCollection = PlanCollection.create(plan, collection, member);
 		PlanCollection savedPlanCollection = planCollectionRepository.save(planCollection);
 
