@@ -118,13 +118,16 @@ public class CollectionService {
 	}
 
 	@Transactional
-	public void withdrawCollectionMember(Long collectionId, UserPrincipal user) {
-		collectionMemberService.withdraw(collectionId, user);
+	public void withdrawCollectionMember(String externalId, UserPrincipal user) {
+		Collection collection = getCollection(externalId);
+		collectionMemberService.withdraw(collection.getId(), user);
 	}
 
 	@Transactional
-	public void expelCollectionMember(Long collectionId, Long memberId, UserPrincipal user) {
-		collectionMemberService.expel(collectionId, memberId, user);
+	public void expelCollectionMember(String externalId, String memberExternalId, UserPrincipal user) {
+		Collection collection = getCollection(externalId);
+
+		collectionMemberService.expel(collection.getId(), memberExternalId, user);
 	}
 
 	@Transactional

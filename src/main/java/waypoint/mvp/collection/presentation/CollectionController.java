@@ -64,10 +64,11 @@ public class CollectionController {
 	@Authorize(level = AuthLevel.GUEST_OR_MEMBER)
 	@GetMapping("/{collectionId}")
 	public ResponseEntity<CollectionResponse> findCollectionById(
-		@PathVariable Long collectionId,
+		@PathVariable String collectionId,
 		@AuthenticationPrincipal AuthPrincipal user
 	) {
-		CollectionResponse collection = collectionService.findCollectionById(collectionId, user);
+		CollectionResponse collection = collectionService.findCollectionByExternalId(collectionId, user);
+
 		return ResponseEntity.ok(collection);
 	}
 
@@ -87,8 +88,10 @@ public class CollectionController {
 	public ResponseEntity<CollectionResponse> updateCollection(
 		@PathVariable String collectionId,
 		@RequestBody @Valid CollectionUpdateRequest request,
-		@AuthenticationPrincipal UserPrincipal user) {
+		@AuthenticationPrincipal UserPrincipal user
+	) {
 		CollectionResponse response = collectionService.updateCollection(collectionId, request, user);
+
 		return ResponseEntity.ok(response);
 	}
 
@@ -108,33 +111,44 @@ public class CollectionController {
 	@DeleteMapping("/{collectionId}")
 	public ResponseEntity<Void> deleteCollection(
 		@PathVariable String collectionId,
-		@AuthenticationPrincipal UserPrincipal user) {
+		@AuthenticationPrincipal UserPrincipal user
+	) {
 		collectionService.deleteCollection(collectionId, user);
+
 		return ResponseEntity.noContent().build();
 	}
 
 	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@DeleteMapping("/{collectionId}/members/me")
-	public ResponseEntity<Void> withdrawMember(@PathVariable Long collectionId,
-		@AuthenticationPrincipal UserPrincipal user) {
+	public ResponseEntity<Void> withdrawMember(
+		@PathVariable String collectionId,
+		@AuthenticationPrincipal UserPrincipal user
+	) {
 		collectionService.withdrawCollectionMember(collectionId, user);
+
 		return ResponseEntity.noContent().build();
 	}
 
 	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@DeleteMapping("/{collectionId}/members/{memberId}")
-	public ResponseEntity<Void> expelMember(@PathVariable Long collectionId,
-		@PathVariable Long memberId,
-		@AuthenticationPrincipal UserPrincipal user) {
+	public ResponseEntity<Void> expelMember(
+		@PathVariable String collectionId,
+		@PathVariable String memberId,
+		@AuthenticationPrincipal UserPrincipal user
+	) {
 		collectionService.expelCollectionMember(collectionId, memberId, user);
+
 		return ResponseEntity.noContent().build();
 	}
 
 	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@PostMapping("/{collectionId}/invitations")
-	public ResponseEntity<ShareLinkResponse> createInvitation(@PathVariable String collectionId,
-		@AuthenticationPrincipal UserPrincipal user) {
+	public ResponseEntity<ShareLinkResponse> createInvitation(
+		@PathVariable String collectionId,
+		@AuthenticationPrincipal UserPrincipal user
+	) {
 		ShareLinkResponse response = collectionService.createInvitation(collectionId, user);
+
 		return ResponseEntity.ok(response);
 	}
 
