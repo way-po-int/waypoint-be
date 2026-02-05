@@ -56,6 +56,16 @@ public class PlanService {
 		return PlanResponse.from(savedPlan);
 	}
 
+	public Plan getEntity(Long planId) {
+		return planRepository.findById(planId)
+			.orElseThrow(() -> new BusinessException(PlanError.PLAN_NOT_FOUND));
+	}
+
+	public Plan getEntity(String externalId) {
+		return planRepository.findByExternalId(externalId)
+			.orElseThrow(() -> new BusinessException(PlanError.PLAN_NOT_FOUND));
+	}
+
 	public SliceResponse<PlanResponse> findPlans(UserPrincipal user, Pageable pageable) {
 		Slice<PlanResponse> plans = planRepository.findAllByUserId(user.id(), pageable)
 			.map(PlanResponse::from);
@@ -64,14 +74,14 @@ public class PlanService {
 	}
 
 	public PlanResponse findPlanById(Long planId, AuthPrincipal user) {
-		Plan plan = getPlan(planId);
+		Plan plan = getEntity(planId);
 		planAuthorizer.verifyAccess(user, plan.getId());
 
 		return PlanResponse.from(plan);
 	}
 
 	public PlanResponse findPlanByExternalId(String externalId, AuthPrincipal user) {
-		Plan plan = getPlan(externalId);
+		Plan plan = getEntity(externalId);
 		planAuthorizer.verifyAccess(user, plan.getId());
 
 		return PlanResponse.from(plan);
@@ -79,7 +89,7 @@ public class PlanService {
 
 	@Transactional
 	public PlanResponse updatePlan(String planExternalId, PlanUpdateRequest request, UserPrincipal user) {
-		Plan plan = getPlan(planExternalId);
+		Plan plan = getEntity(planExternalId);
 		planAuthorizer.verifyMember(user, plan.getId());
 		plan.update(request.title(), request.startDate(), request.endDate());
 
@@ -88,7 +98,7 @@ public class PlanService {
 
 	@Transactional
 	public void changeOwner(String externalId, String memberExternalId, UserPrincipal user) {
-		Plan plan = getPlan(externalId);
+		Plan plan = getEntity(externalId);
 		Long planId = plan.getId();
 		planAuthorizer.verifyOwner(user, planId);
 
@@ -106,21 +116,21 @@ public class PlanService {
 
 	@Transactional
 	public void withdrawPlanMember(String planExternalId, UserPrincipal user) {
-		Plan plan = getPlan(planExternalId);
+		Plan plan = getEntity(planExternalId);
 
 		planMemberService.withdraw(plan.getId(), user);
 	}
 
 	@Transactional
 	public void expelPlanMember(String planExternalId, String memberExternalId, UserPrincipal user) {
-		Plan plan = getPlan(planExternalId);
+		Plan plan = getEntity(planExternalId);
 
 		planMemberService.expel(plan.getId(), memberExternalId, user);
 	}
 
 	@Transactional
 	public void deletePlan(String planExternalId, UserPrincipal user) {
-		Plan plan = getPlan(planExternalId);
+		Plan plan = getEntity(planExternalId);
 		planAuthorizer.verifyOwner(user, plan.getId());
 
 		planRepository.delete(plan);
@@ -128,7 +138,7 @@ public class PlanService {
 
 	@Transactional
 	public ShareLinkResponse createInvitation(String planExternalId, UserPrincipal user) {
-		Plan plan = getPlan(planExternalId);
+		Plan plan = getEntity(planExternalId);
 		planAuthorizer.verifyMember(user, plan.getId());
 		ShareLink shareLink = ShareLink.create(ShareLink.ShareLinkType.PLAN, plan.getExternalId(), plan.getId(),
 			user.getId(),
@@ -146,7 +156,7 @@ public class PlanService {
 		}
 
 		User inviteeUser = userFinder.findById(inviteeUserId);
-		Plan plan = getPlan(shareLink.getTargetId());
+		Plan plan = getEntity(shareLink.getTargetId());
 		planMemberService.addMember(plan, inviteeUser);
 
 		shareLink.increaseUseCount();
@@ -154,13 +164,4 @@ public class PlanService {
 		return plan.getId();
 	}
 
-	private Plan getPlan(Long planId) {
-		return planRepository.findById(planId)
-			.orElseThrow(() -> new BusinessException(PlanError.PLAN_NOT_FOUND));
-	}
-
-	private Plan getPlan(String externalId) {
-		return planRepository.findByExternalId(externalId)
-			.orElseThrow(() -> new BusinessException(PlanError.PLAN_NOT_FOUND));
-	}
 }
