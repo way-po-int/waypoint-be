@@ -8,11 +8,13 @@ import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.collection.application.CollectionService;
 import waypoint.mvp.collection.domain.Collection;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
+import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.plan.application.dto.request.CreatePlanCollectionRequest;
 import waypoint.mvp.plan.application.dto.response.PlanCollectionResponse;
 import waypoint.mvp.plan.domain.Plan;
 import waypoint.mvp.plan.domain.PlanCollection;
 import waypoint.mvp.plan.domain.PlanMember;
+import waypoint.mvp.plan.error.PlanCollectionError;
 import waypoint.mvp.plan.infrastructure.persistence.PlanCollectionRepository;
 
 @Service
@@ -32,17 +34,21 @@ public class PlanCollectionService {
 		CreatePlanCollectionRequest request,
 		UserPrincipal user
 	) {
-		Collection collection = collectionService.getEntity(planExternalId);
-		Plan plan = planService.getEntity(request.collectionId());
+
+		if (planCollectionRepository.existsByPlanIdAndCollectionId(planExternalId, request.collectionId())) {
+			throw new BusinessException(PlanCollectionError.PLANCOLLECTION_ALREADY_EXISTS);
+		}
+
+		Plan plan = planService.getEntity(planExternalId);
+		Collection collection = collectionService.getEntity(request.collectionId());
 
 		planAuthorizer.verifyMember(user, plan.getId());
 		collectionAuthorizer.verifyMember(user, collection.getId());
 
 		PlanMember member = planMemberService.getMemberByUserId(plan.getId(), user.getId());
 		PlanCollection planCollection = PlanCollection.create(plan, collection, member);
-		PlanCollection savedPlanCollection = planCollectionRepository.save(planCollection);
 
-		return PlanCollectionResponse.from(savedPlanCollection);
+		return PlanCollectionResponse.from(planCollectionRepository.save(planCollection));
 	}
 
 }
