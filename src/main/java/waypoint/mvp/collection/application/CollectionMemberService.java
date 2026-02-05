@@ -59,14 +59,14 @@ public class CollectionMemberService {
 		collection.increaseMemberCount();
 	}
 
-	public CollectionMember getMember(Long collectionId, Long memberId) {
+	public CollectionMember getEntity(Long collectionId, Long memberId) {
 
 		return collectionMemberRepository.findActive(collectionId, memberId).orElseThrow(
 			() -> new BusinessException(CollectionMemberError.MEMBER_NOT_FOUND)
 		);
 	}
 
-	public CollectionMember getMember(Long collectionId, String memberExternalId) {
+	public CollectionMember getEntity(Long collectionId, String memberExternalId) {
 
 		return collectionMemberRepository.findActiveByMemberExternalId(collectionId, memberExternalId).orElseThrow(
 			() -> new BusinessException(CollectionMemberError.MEMBER_NOT_FOUND)
@@ -93,7 +93,7 @@ public class CollectionMemberService {
 	@Transactional
 	public void expel(Long collectionId, String memberId, UserPrincipal user) {
 		collectionAuthorizer.verifyOwner(user, collectionId);
-		CollectionMember member = getMember(collectionId, memberId);
+		CollectionMember member = getEntity(collectionId, memberId);
 		remove(member);
 	}
 

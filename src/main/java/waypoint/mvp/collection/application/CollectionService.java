@@ -96,7 +96,7 @@ public class CollectionService {
 		collectionAuthorizer.verifyOwner(user, collectionId);
 
 		CollectionMember currentOwner = collectionMemberService.getMemberByUserId(collectionId, user.id());
-		CollectionMember newOwner = collectionMemberService.getMember(collectionId, memberExternalId);
+		CollectionMember newOwner = collectionMemberService.getEntity(collectionId, memberExternalId);
 
 		if (collectionMemberService.isSameMember(currentOwner, newOwner)) {
 			throw new BusinessException(CollectionError.CANNOT_DELEGATE_OWNERSHIP_TO_SELF, newOwner.getNickname());
