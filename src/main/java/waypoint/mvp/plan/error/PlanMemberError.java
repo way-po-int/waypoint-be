@@ -1,4 +1,4 @@
-package waypoint.mvp.plan.application;
+package waypoint.mvp.plan.error;
 
 import org.springframework.http.HttpStatus;
 
