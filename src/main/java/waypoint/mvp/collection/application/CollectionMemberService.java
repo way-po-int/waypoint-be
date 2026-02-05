@@ -87,20 +87,18 @@ public class CollectionMemberService {
 	@Transactional
 	public void withdraw(Long collectionId, UserPrincipal user) {
 		CollectionMember member = getMemberByUserId(collectionId, user.id());
-		remove(collectionId, member);
+		remove(member);
 	}
 
 	@Transactional
-	public void expel(Long collectionId, Long memberId, UserPrincipal user) {
+	public void expel(Long collectionId, String memberId, UserPrincipal user) {
 		collectionAuthorizer.verifyOwner(user, collectionId);
 		CollectionMember member = getMember(collectionId, memberId);
-		remove(collectionId, member);
+		remove(member);
 	}
 
-	private void remove(Long collectionId, CollectionMember member) {
-		Collection collection = collectionRepository.findById(collectionId)
-			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
-
+	private void remove(CollectionMember member) {
+		Collection collection = member.getCollection();
 		if (member.isOwner()) {
 			throw new BusinessException(CollectionError.NEED_TO_DELEGATE_OWNERSHIP);
 		} else {
