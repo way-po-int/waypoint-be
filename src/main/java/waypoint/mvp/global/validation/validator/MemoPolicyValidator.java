@@ -2,6 +2,7 @@ package waypoint.mvp.global.validation.validator;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import waypoint.mvp.global.util.ValidationPatterns;
 import waypoint.mvp.global.validation.annotation.MemoPolicy;
 
 public class MemoPolicyValidator implements ConstraintValidator<MemoPolicy, String> {
@@ -19,7 +20,6 @@ public class MemoPolicyValidator implements ConstraintValidator<MemoPolicy, Stri
 			return allowNullable;
 		}
 
-		String pattern = "^[\\p{L}\\p{N}\\r\\n!@#$%^&*()\\-\\_=\\+\\[\\]\\{\\} ,\\.\\?/\\p{So}\\p{Sk}\\p{Sm}\\p{Sc}\\p{Cs}]*$";
-		return value.matches(pattern);
+		return ValidationPatterns.ALPHANUMERIC_WITH_EMOJI_EXTENDED.matcher(value).matches();
 	}
 }
