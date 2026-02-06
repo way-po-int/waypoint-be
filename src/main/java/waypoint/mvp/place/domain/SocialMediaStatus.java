@@ -7,10 +7,11 @@ public enum SocialMediaStatus {
 	EXTRACTING,
 	SEARCHING,
 	COMPLETED,
-	FAILED;
+	FAILED,
+	RETRY_WAITING;
 
 	public static final List<SocialMediaStatus> IN_PROGRESS = List.of(
-		PENDING, EXTRACTING, SEARCHING);
+		PENDING, EXTRACTING, SEARCHING, RETRY_WAITING);
 
 	public boolean isFinished() {
 		return !IN_PROGRESS.contains(this);

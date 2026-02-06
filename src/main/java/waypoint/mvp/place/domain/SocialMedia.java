@@ -90,7 +90,11 @@ public class SocialMedia extends ExternalIdEntity {
 	public void fail(ExtractFailureCode failureCode) {
 		validateStatus(SocialMediaStatus.EXTRACTING);
 
-		this.status = SocialMediaStatus.FAILED;
+		if (failureCode.isRetryable()) {
+			this.status = SocialMediaStatus.RETRY_WAITING;
+		} else {
+			this.status = SocialMediaStatus.FAILED;
+		}
 		this.failureCode = failureCode;
 	}
 
