@@ -10,10 +10,10 @@ import lombok.extern.slf4j.Slf4j;
 import waypoint.mvp.place.application.PlaceExtractService;
 import waypoint.mvp.place.application.SocialMediaService;
 import waypoint.mvp.place.application.dto.llm.PlaceExtractionResult;
-import waypoint.mvp.place.domain.ExtractFailureCode;
 import waypoint.mvp.place.domain.SocialMedia;
 import waypoint.mvp.place.domain.event.PlaceExtractionRequestedEvent;
-import waypoint.mvp.place.error.exception.ExtractionException;
+import waypoint.mvp.place.error.ExtractFailureCode;
+import waypoint.mvp.place.error.exception.PlaceExtractionException;
 
 @Component
 @RequiredArgsConstructor
@@ -39,7 +39,7 @@ public class PlaceExtractionEventListener {
 
 			// 장소를 찾지 못했다면 예외 발생
 			if (result.placeAnalysis().searchQueries().isEmpty()) {
-				throw new ExtractionException(ExtractFailureCode.NO_PLACE_EXTRACTED);
+				throw new PlaceExtractionException(ExtractFailureCode.NO_PLACE_EXTRACTED);
 			}
 
 			// 상태 변경 EXTRACTING → SEARCHING
@@ -47,7 +47,7 @@ public class PlaceExtractionEventListener {
 
 			log.info("장소 추출 이벤트 성공: socialMediaId={}", socialMediaId);
 
-		} catch (ExtractionException e) {
+		} catch (PlaceExtractionException e) {
 			log.atError()
 				.setMessage("장소 추출 이벤트 실패: socialMediaId={}, failureCode={}")
 				.addArgument(socialMediaId)

@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.place.domain.content.ContentSnapshot;
 import waypoint.mvp.place.domain.content.YouTubeContentSnapshot;
+import waypoint.mvp.place.error.ExtractFailureCode;
 import waypoint.mvp.place.error.SocialMediaError;
 
 class SocialMediaTest {

@@ -1,11 +1,12 @@
-package waypoint.mvp.place.domain;
+package waypoint.mvp.place.error;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import waypoint.mvp.global.error.JobFailureCode;
 
 @Getter
 @RequiredArgsConstructor
-public enum ExtractFailureCode {
+public enum ExtractFailureCode implements JobFailureCode {
 	// 사용자 에러
 	CONTENT_NOT_FOUND("콘텐츠를 찾을 수 없습니다.", false),
 	NO_PLACE_EXTRACTED("콘텐츠를 분석했으나 장소를 찾을 수 없습니다.", false),

@@ -24,8 +24,8 @@ import com.google.api.services.youtube.model.VideoListResponse;
 import com.google.api.services.youtube.model.VideoSnippet;
 
 import waypoint.mvp.place.application.dto.content.YouTubeRawContent;
-import waypoint.mvp.place.domain.ExtractFailureCode;
-import waypoint.mvp.place.error.exception.ExtractionException;
+import waypoint.mvp.place.error.ExtractFailureCode;
+import waypoint.mvp.place.error.exception.PlaceExtractionException;
 import waypoint.mvp.place.util.TextUtils;
 
 @Component
@@ -60,7 +60,7 @@ public class YouTubeApiClient {
 			VideoListResponse response = request.execute();
 			List<Video> items = response.getItems();
 			if (items.isEmpty()) {
-				throw new ExtractionException(ExtractFailureCode.CONTENT_NOT_FOUND);
+				throw new PlaceExtractionException(ExtractFailureCode.CONTENT_NOT_FOUND);
 			}
 
 			VideoSnippet snippet = items.getFirst().getSnippet();
@@ -83,7 +83,7 @@ public class YouTubeApiClient {
 				contentDetails.getDuration()
 			);
 		} catch (IOException e) {
-			throw new ExtractionException(ExtractFailureCode.YOUTUBE_API_ERROR, e);
+			throw new PlaceExtractionException(ExtractFailureCode.YOUTUBE_API_ERROR, e);
 		}
 	}
 
@@ -124,6 +124,6 @@ public class YouTubeApiClient {
 			return matcher.group(1);
 		}
 
-		throw new ExtractionException(ExtractFailureCode.CONTENT_NOT_FOUND);
+		throw new PlaceExtractionException(ExtractFailureCode.CONTENT_NOT_FOUND);
 	}
 }

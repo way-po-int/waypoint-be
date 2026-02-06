@@ -16,9 +16,9 @@ import org.springframework.util.StringUtils;
 
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.place.application.dto.content.YouTubeRawContent;
-import waypoint.mvp.place.domain.ExtractFailureCode;
 import waypoint.mvp.place.domain.SocialMediaType;
-import waypoint.mvp.place.error.exception.ExtractionException;
+import waypoint.mvp.place.error.ExtractFailureCode;
+import waypoint.mvp.place.error.exception.PlaceExtractionException;
 import waypoint.mvp.place.infrastructure.youtube.YouTubeApiClient;
 
 @Component
@@ -50,10 +50,10 @@ public class YouTubeContentStrategy implements ContentStrategy<YouTubeRawContent
 		// 분석 가능한 영상 길이인지 검증
 		Duration duration = content.getDuration();
 		if (duration.isZero()) {
-			throw new ExtractionException(ExtractFailureCode.VIDEO_TOO_SHORT);
+			throw new PlaceExtractionException(ExtractFailureCode.VIDEO_TOO_SHORT);
 		}
 		if (duration.compareTo(maxDuration) > 0) {
-			throw new ExtractionException(ExtractFailureCode.VIDEO_TOO_LONG);
+			throw new PlaceExtractionException(ExtractFailureCode.VIDEO_TOO_LONG);
 		}
 
 		return content;

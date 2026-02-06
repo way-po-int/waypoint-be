@@ -13,10 +13,10 @@ import waypoint.mvp.place.application.dto.content.RawContent;
 import waypoint.mvp.place.application.dto.llm.PlaceAnalysis;
 import waypoint.mvp.place.application.dto.llm.PlaceExtractionResult;
 import waypoint.mvp.place.application.strategy.ContentStrategy;
-import waypoint.mvp.place.domain.ExtractFailureCode;
 import waypoint.mvp.place.domain.SocialMediaType;
+import waypoint.mvp.place.error.ExtractFailureCode;
 import waypoint.mvp.place.error.SocialMediaError;
-import waypoint.mvp.place.error.exception.ExtractionException;
+import waypoint.mvp.place.error.exception.PlaceExtractionException;
 
 @Service
 @RequiredArgsConstructor
@@ -48,7 +48,7 @@ public class PlaceExtractService {
 			return new PlaceExtractionResult(rawContent, analysis);
 		} catch (ClientException e) {
 			// 429 Too Many Requests 등
-			throw new ExtractionException(ExtractFailureCode.GENAI_ERROR, e);
+			throw new PlaceExtractionException(ExtractFailureCode.GENAI_ERROR, e);
 		}
 	}
 }
