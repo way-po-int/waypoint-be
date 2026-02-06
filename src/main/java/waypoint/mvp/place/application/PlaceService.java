@@ -1,6 +1,6 @@
 package waypoint.mvp.place.application;
 
-import java.util.Set;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,7 +23,7 @@ public class PlaceService {
 			.orElseThrow(() -> new BusinessException(PlaceError.PLACE_NOT_FOUND));
 	}
 
-	public Set<String> findExistingPlaceIds(Set<String> placeIds) {
-		return placeRepository.findExistingPlaceIds(placeIds);
+	public Optional<Place> getPlace(String googlePlaceId) {
+		return placeRepository.findByDetailPlaceId(googlePlaceId);
 	}
 }
