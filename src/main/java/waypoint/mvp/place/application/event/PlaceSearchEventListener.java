@@ -72,7 +72,7 @@ public class PlaceSearchEventListener {
 
 		// 이미 DB에 있는 장소라면 연결하고 즉시 종료
 		Optional<Place> existingPlace = placeService.getPlace(placeId.get());
-		if ((existingPlace.isPresent())) {
+		if (existingPlace.isPresent()) {
 
 			// 상태 변경 PROCESSING → COMPLETED
 			socialMediaPlaceService.completeProcessing(socialMediaPlaceId, existingPlace.get());
