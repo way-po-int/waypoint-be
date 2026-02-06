@@ -18,6 +18,7 @@ import lombok.NoArgsConstructor;
 import waypoint.mvp.global.common.ExternalIdEntity;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.place.domain.content.ContentSnapshot;
+import waypoint.mvp.place.error.ExtractFailureCode;
 import waypoint.mvp.place.error.SocialMediaError;
 
 @Entity
@@ -91,6 +92,10 @@ public class SocialMedia extends ExternalIdEntity {
 
 		this.status = SocialMediaStatus.FAILED;
 		this.failureCode = failureCode;
+	}
+
+	public boolean isFinished() {
+		return this.status == SocialMediaStatus.COMPLETED;
 	}
 
 	private void validateStatus(SocialMediaStatus status) {

@@ -5,5 +5,6 @@ public enum PlaceSearchStatus {
 	PROCESSING,
 	COMPLETED,
 	NOT_FOUND,
-	FAILED
+	FAILED,
+	RETRY_WAITING
 }

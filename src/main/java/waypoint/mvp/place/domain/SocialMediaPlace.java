@@ -16,6 +16,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import waypoint.mvp.global.error.exception.BusinessException;
+import waypoint.mvp.place.error.SearchFailureCode;
 import waypoint.mvp.place.error.SocialMediaError;
 
 @Entity
@@ -43,6 +44,10 @@ public class SocialMediaPlace {
 	@Column(nullable = false)
 	private PlaceSearchStatus status;
 
+	@Enumerated(EnumType.STRING)
+	@Column
+	private SearchFailureCode failureCode;
+
 	@Builder(access = AccessLevel.PRIVATE)
 	private SocialMediaPlace(SocialMedia socialMedia, String searchQuery) {
 		this.socialMedia = socialMedia;
@@ -69,10 +74,21 @@ public class SocialMediaPlace {
 		this.status = PlaceSearchStatus.NOT_FOUND;
 	}
 
-	public void fail() {
+	public void fail(SearchFailureCode failureCode) {
 		validateStatus(PlaceSearchStatus.PROCESSING);
 
-		this.status = PlaceSearchStatus.FAILED;
+		if (failureCode.isRetryable()) {
+			this.status = PlaceSearchStatus.RETRY_WAITING;
+		} else {
+			this.status = PlaceSearchStatus.FAILED;
+		}
+		this.failureCode = failureCode;
+	}
+
+	public boolean isFinished() {
+		return this.status == PlaceSearchStatus.COMPLETED
+			|| this.status == PlaceSearchStatus.NOT_FOUND
+			|| this.status == PlaceSearchStatus.FAILED;
 	}
 
 	public static SocialMediaPlace create(SocialMedia socialMedia, String searchQuery) {
