@@ -27,7 +27,7 @@ public class Collection extends LogicalDeleteEntity {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(nullable = false)
+	@Column(columnDefinition = "VARCHAR(120) CHARACTER SET utf8mb4")
 	private String title;
 
 	@Column(nullable = false)
