@@ -43,6 +43,7 @@ import waypoint.mvp.place.application.SocialMediaService;
 import waypoint.mvp.place.application.dto.PlaceResponse;
 import waypoint.mvp.place.application.dto.SocialMediaInfo;
 import waypoint.mvp.place.domain.Place;
+import waypoint.mvp.place.domain.PlaceDetail;
 import waypoint.mvp.place.domain.SocialMedia;
 import waypoint.mvp.place.error.PlaceError;
 import waypoint.mvp.place.infrastructure.persistence.PlaceRepository;
@@ -80,6 +81,12 @@ public class CollectionPlaceService {
 		}
 
 		CollectionPlace saved = collectionPlaceRepository.save(CollectionPlace.create(collection, place, me));
+
+		// 첫 번째 장소 추가 시 썸네일 자동 설정
+		if (collection.getThumbnail().isBlank()) {
+			updateCollectionThumbnail(collection, place);
+		}
+
 		PlaceResponse placeResponse = PlaceResponse.from(place, extractPhotos(place));
 		return CollectionPlaceResponse.of(saved, placeResponse, List.of(), List.of());
 	}
@@ -87,6 +94,20 @@ public class CollectionPlaceService {
 	private Place getPlace(String placeId) {
 		return placeRepository.findByExternalId(placeId)
 			.orElseThrow(() -> new BusinessException(PlaceError.PLACE_NOT_FOUND));
+	}
+
+	private void updateCollectionThumbnail(Collection collection, Place place) {
+		String thumbnailUrl = Optional.ofNullable(place.getDetail())
+			.map(PlaceDetail::getPhotoName)
+			.orElse(null);
+
+		if (thumbnailUrl != null) {
+			int updatedCount = collectionRepository.updateThumbnailIfBlank(collection.getId(), thumbnailUrl);
+
+			if (updatedCount > 0) {
+				collection.updateThumbnail(thumbnailUrl);
+			}
+		}
 	}
 
 	@Transactional
