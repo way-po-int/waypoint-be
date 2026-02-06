@@ -95,7 +95,7 @@ public class SocialMedia extends ExternalIdEntity {
 	}
 
 	public boolean isFinished() {
-		return this.status == SocialMediaStatus.COMPLETED;
+		return this.status.isFinished();
 	}
 
 	private void validateStatus(SocialMediaStatus status) {

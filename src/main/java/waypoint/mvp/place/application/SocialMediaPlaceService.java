@@ -24,12 +24,6 @@ import waypoint.mvp.place.infrastructure.persistence.SocialMediaRepository;
 @RequiredArgsConstructor
 public class SocialMediaPlaceService {
 
-	private static final List<PlaceSearchStatus> IN_PROGRESS_STATUSES = List.of(
-		PlaceSearchStatus.PENDING,
-		PlaceSearchStatus.PROCESSING,
-		PlaceSearchStatus.RETRY_WAITING
-	);
-
 	private final PlaceRepository placeRepository;
 	private final SocialMediaRepository socialMediaRepository;
 	private final SocialMediaPlaceRepository socialMediaPlaceRepository;
@@ -144,7 +138,8 @@ public class SocialMediaPlaceService {
 	}
 
 	private boolean existsInProgressPlaces(Long socialMediaId) {
-		return socialMediaPlaceRepository.existsBySocialMediaIdAndStatusIn(socialMediaId, IN_PROGRESS_STATUSES);
+		return socialMediaPlaceRepository.existsBySocialMediaIdAndStatusIn(socialMediaId,
+			PlaceSearchStatus.IN_PROGRESS);
 	}
 
 	private SocialMedia getSocialMediaWithLock(Long socialMediaId) {

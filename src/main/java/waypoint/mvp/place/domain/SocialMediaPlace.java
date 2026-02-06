@@ -86,9 +86,7 @@ public class SocialMediaPlace {
 	}
 
 	public boolean isFinished() {
-		return this.status == PlaceSearchStatus.COMPLETED
-			|| this.status == PlaceSearchStatus.NOT_FOUND
-			|| this.status == PlaceSearchStatus.FAILED;
+		return this.status.isFinished();
 	}
 
 	public static SocialMediaPlace create(SocialMedia socialMedia, String searchQuery) {
