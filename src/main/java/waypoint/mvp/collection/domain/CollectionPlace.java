@@ -43,7 +43,7 @@ public class CollectionPlace extends ExternalIdEntity {
 	@JoinColumn
 	private SocialMedia socialMedia;
 
-	@Column(length = 300)
+	@Column(columnDefinition = "VARCHAR(2000) CHARACTER SET utf8mb4")
 	private String memo;
 
 	@Builder(access = AccessLevel.PRIVATE)
