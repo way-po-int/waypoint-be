@@ -2,6 +2,7 @@ package waypoint.mvp.place.application;
 
 import java.util.Optional;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,5 +26,15 @@ public class PlaceService {
 
 	public Optional<Place> getPlace(String googlePlaceId) {
 		return placeRepository.findByDetailPlaceId(googlePlaceId);
+	}
+
+	@Transactional
+	public Place createOrGetPlace(Place place) {
+		try {
+			return placeRepository.save(place);
+		} catch (DataIntegrityViolationException e) {
+			return placeRepository.findByDetailPlaceId(place.getDetail().getPlaceId())
+				.orElseThrow(() -> new BusinessException(PlaceError.PLACE_NOT_FOUND));
+		}
 	}
 }

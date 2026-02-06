@@ -15,7 +15,6 @@ import waypoint.mvp.place.domain.SocialMediaPlace;
 import waypoint.mvp.place.domain.event.PlaceSearchRequestedEvent;
 import waypoint.mvp.place.error.SearchFailureCode;
 import waypoint.mvp.place.error.SocialMediaError;
-import waypoint.mvp.place.infrastructure.persistence.PlaceRepository;
 import waypoint.mvp.place.infrastructure.persistence.SocialMediaPlaceRepository;
 import waypoint.mvp.place.infrastructure.persistence.SocialMediaRepository;
 
@@ -24,7 +23,7 @@ import waypoint.mvp.place.infrastructure.persistence.SocialMediaRepository;
 @RequiredArgsConstructor
 public class SocialMediaPlaceService {
 
-	private final PlaceRepository placeRepository;
+	private final PlaceService placeService;
 	private final SocialMediaRepository socialMediaRepository;
 	private final SocialMediaPlaceRepository socialMediaPlaceRepository;
 	private final ApplicationEventPublisher eventPublisher;
@@ -74,9 +73,9 @@ public class SocialMediaPlaceService {
 	@Transactional
 	public void completeProcessing(Long socialMediaPlaceId, Place place) {
 		SocialMediaPlace socialMediaPlace = getSocialMediaPlace(socialMediaPlaceId);
-		placeRepository.save(place);
+		Place savedPlace = placeService.createOrGetPlace(place);
 
-		socialMediaPlace.complete(place);
+		socialMediaPlace.complete(savedPlace);
 
 		Long socialMediaId = socialMediaPlace.getSocialMedia().getId();
 		completeSocialMediaIfFinished(socialMediaId);
