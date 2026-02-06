@@ -29,7 +29,7 @@ public record PlaceResponse(
 			(detail != null) ? detail.getPlaceId() : null,
 			place.getName(),
 			place.getAddress(),
-			(detail != null) ? detail.getPrimaryTypeDisplayName() : null,
+			(detail != null) ? detail.getPrimaryType() : null,
 			(detail != null) ? detail.getGoogleMapsUri() : null,
 			photos,
 			PointResponse.of(latitude, longitude)

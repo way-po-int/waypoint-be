@@ -20,9 +20,6 @@ public class PlaceDetail {
 	@Column(length = 100)
 	private String primaryType;
 
-	@Column(length = 100)
-	private String primaryTypeDisplayName;
-
 	@Column(length = 2048)
 	private String googleMapsUri;
 
@@ -33,13 +30,11 @@ public class PlaceDetail {
 	private PlaceDetail(
 		String placeId,
 		String primaryType,
-		String primaryTypeDisplayName,
 		String googleMapsUri,
 		String photoName
 	) {
 		this.placeId = placeId;
 		this.primaryType = primaryType;
-		this.primaryTypeDisplayName = primaryTypeDisplayName;
 		this.googleMapsUri = googleMapsUri;
 		this.photoName = photoName;
 	}
@@ -53,14 +48,12 @@ public class PlaceDetail {
 	public static PlaceDetail create(
 		String placeId,
 		String primaryType,
-		String primaryTypeDisplayName,
 		String googleMapsUri,
 		String photoName
 	) {
 		return builder()
 			.placeId(placeId)
 			.primaryType(primaryType)
-			.primaryTypeDisplayName(primaryTypeDisplayName)
 			.googleMapsUri(googleMapsUri)
 			.photoName(photoName)
 			.build();
