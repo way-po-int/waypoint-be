@@ -21,20 +21,20 @@ import waypoint.mvp.plan.application.dto.response.PlanCollectionResponse;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/plans/{placeId}/collections")
+@RequestMapping("/plans/{planId}/collections")
 public class PlanCollectionController {
 	private final PlanCollectionService planCollectionService;
 
 	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@PostMapping
 	public ResponseEntity<PlanCollectionResponse> connectCollection(
-		@PathVariable String placeId,
+		@PathVariable String planId,
 		@RequestBody @Valid CreatePlanCollectionRequest request,
 		@AuthenticationPrincipal UserPrincipal user
 	) {
-		PlanCollectionResponse response = planCollectionService.createPlanCollection(placeId, request, user);
+		PlanCollectionResponse response = planCollectionService.createPlanCollection(planId, request, user);
 
-		URI location = URI.create("/plans/" + placeId + "/collections/");
+		URI location = URI.create("/plans/" + planId + "/collections");
 		return ResponseEntity.created(location).body(response);
 	}
 }
