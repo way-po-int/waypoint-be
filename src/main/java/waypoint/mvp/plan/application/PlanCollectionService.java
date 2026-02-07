@@ -45,7 +45,7 @@ public class PlanCollectionService {
 		planAuthorizer.verifyMember(user, plan.getId());
 		collectionAuthorizer.verifyMember(user, collection.getId());
 
-		PlanMember member = planMemberService.getMemberByUserId(plan.getId(), user.getId());
+		PlanMember member = planMemberService.findMemberByUserId(plan.getId(), user.getId());
 		PlanCollection planCollection = PlanCollection.create(plan, collection, member);
 
 		return PlanCollectionResponse.from(planCollectionRepository.save(planCollection));

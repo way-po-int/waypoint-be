@@ -102,8 +102,8 @@ public class PlanService {
 		Long planId = plan.getId();
 		planAuthorizer.verifyOwner(user, planId);
 
-		PlanMember currentOwner = planMemberService.getMemberByUserId(planId, user.id());
-		PlanMember newOwner = planMemberService.getMember(planId, memberExternalId);
+		PlanMember currentOwner = planMemberService.findMemberByUserId(planId, user.id());
+		PlanMember newOwner = planMemberService.findMember(planId, memberExternalId);
 
 		if (planMemberService.isSameMember(currentOwner, newOwner)) {
 			throw new BusinessException(PlanError.CANNOT_DELEGATE_OWNERSHIP_TO_SELF, newOwner.getNickname());
