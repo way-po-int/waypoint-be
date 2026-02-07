@@ -58,13 +58,15 @@ public class Collection extends LogicalDeleteEntity {
 		this.thumbnail = thumbnail;
 	}
 
-
-
 	public void increaseMemberCount() {
 		this.memberCount++;
 	}
 
 	public void decreaseMemberCount() {
 		this.memberCount--;
+	}
+
+	public boolean isThumbnailEmpty() {
+		return thumbnail == null || thumbnail.isBlank();
 	}
 }

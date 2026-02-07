@@ -83,7 +83,7 @@ public class CollectionPlaceService {
 		CollectionPlace saved = collectionPlaceRepository.save(CollectionPlace.create(collection, place, me));
 
 		// 첫 번째 장소 추가 시 썸네일 자동 설정
-		if (collection.getThumbnail().isBlank()) {
+		if (collection.isThumbnailEmpty()) {
 			updateCollectionThumbnail(collection, place);
 		}
 
