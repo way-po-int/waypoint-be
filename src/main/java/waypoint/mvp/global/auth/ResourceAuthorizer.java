@@ -19,6 +19,7 @@ import waypoint.mvp.sharelink.domain.ShareLink.ShareLinkType;
  * <ul>
  * <li>동일한 타입의 빈이 여러 개 존재하므로, 주입 시 필드명을({@code collectionAuthorizer}, {@code planAuthorizer})과
  * 일치시키거나 {@code @Qualifier} 어노테이션을 사용해야 합니다.</li>
+ * </ul>
  */
 public final class ResourceAuthorizer {
 
@@ -55,6 +56,9 @@ public final class ResourceAuthorizer {
 	}
 
 	public void verifyMember(AuthPrincipal user, Long resourceId) {
+		if (user.isGuest()) {
+			throw new BusinessException(authorizerErrorCodes.notMember());
+		}
 		doVerifyMember(resourceId, user.getId());
 	}
 
