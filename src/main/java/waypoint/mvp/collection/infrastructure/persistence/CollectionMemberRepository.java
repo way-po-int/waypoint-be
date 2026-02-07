@@ -12,7 +12,7 @@ import waypoint.mvp.collection.domain.CollectionMember;
 public interface CollectionMemberRepository extends JpaRepository<CollectionMember, Long> {
 
 	@Query("SELECT cm FROM CollectionMember cm WHERE cm.id = :memberId AND cm.collection.id = :collectionId AND cm.deletedAt IS NULL")
-	Optional<CollectionMember> findActive(@Param("memberId") Long memberId, @Param("collectionId") Long collectionId);
+	Optional<CollectionMember> findActive(@Param("collectionId") Long collectionId, @Param("memberId") Long memberId);
 
 	@Query("SELECT cm FROM CollectionMember  cm WHERE cm.externalId = :memberExternalId AND cm.collection.id = :collectionId AND cm.deletedAt IS NULL")
 	Optional<CollectionMember> findActiveByMemberExternalId(

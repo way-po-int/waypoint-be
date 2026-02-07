@@ -14,6 +14,7 @@ import waypoint.mvp.plan.domain.Plan;
 import waypoint.mvp.plan.domain.PlanMember;
 import waypoint.mvp.plan.domain.PlanRole;
 import waypoint.mvp.plan.error.PlanError;
+import waypoint.mvp.plan.error.PlanMemberError;
 import waypoint.mvp.plan.infrastructure.persistence.PlanMemberRepository;
 import waypoint.mvp.user.domain.User;
 

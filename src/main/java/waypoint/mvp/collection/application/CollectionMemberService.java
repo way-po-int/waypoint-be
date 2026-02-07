@@ -61,7 +61,7 @@ public class CollectionMemberService {
 
 	public CollectionMember getMember(Long collectionId, Long memberId) {
 
-		return collectionMemberRepository.findActive(memberId, collectionId).orElseThrow(
+		return collectionMemberRepository.findActive(collectionId, memberId).orElseThrow(
 			() -> new BusinessException(CollectionMemberError.MEMBER_NOT_FOUND)
 		);
 	}
