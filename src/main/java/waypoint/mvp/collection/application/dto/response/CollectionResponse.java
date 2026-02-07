@@ -3,7 +3,7 @@ package waypoint.mvp.collection.application.dto.response;
 import waypoint.mvp.collection.domain.Collection;
 
 public record CollectionResponse(
-	String id,
+	String collectionId,
 	String title,
 	String thumbnail,
 	int memberCount

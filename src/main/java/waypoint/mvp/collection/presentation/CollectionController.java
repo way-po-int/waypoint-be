@@ -46,7 +46,7 @@ public class CollectionController {
 	) {
 		CollectionResponse response = collectionService.createCollection(request, user);
 
-		return ResponseEntity.created(URI.create("/collections/" + response.id()))
+		return ResponseEntity.created(URI.create("/collections/" + response.collectionId()))
 			.body(response);
 	}
 

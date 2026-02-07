@@ -72,7 +72,7 @@ class CollectionServiceTest {
 		assertThat(response.memberCount()).isEqualTo(1);
 
 		// 2. DB 데이터 검증 (Side Effect 검증)
-		Optional<Collection> foundCollection = collectionRepository.findByExternalId(response.id());
+		Optional<Collection> foundCollection = collectionRepository.findByExternalId(response.collectionId());
 		assertThat(foundCollection).isPresent();
 		assertThat(foundCollection.get().getTitle()).isEqualTo(title);
 		assertThat(foundCollection.get().getMemberCount()).isEqualTo(1);
@@ -139,7 +139,7 @@ class CollectionServiceTest {
 		CollectionCreateRequest createRequest = new CollectionCreateRequest(title);
 		CollectionResponse collectionResponse = collectionService.createCollection(createRequest, ownerUser);
 
-		return findCollectionById(collectionResponse.id());
+		return findCollectionById(collectionResponse.collectionId());
 
 	}
 
