@@ -57,7 +57,7 @@ public class PlaceSearchEventListener {
 
 	private void executePlaceSearch(Long socialMediaPlaceId) {
 		// 상태 변경 PENDING → PROCESSING 및 쿼리 조회
-		String query = socialMediaPlaceService.startProcessing(socialMediaPlaceId);
+		String query = socialMediaPlaceService.startSearch(socialMediaPlaceId);
 		log.info("장소 검색 이벤트 시작: socialMediaPlaceId={}, query={}", socialMediaPlaceId, query);
 
 		// 검색 쿼리에 대한 placeId 조회
@@ -65,7 +65,7 @@ public class PlaceSearchEventListener {
 		if (placeId.isEmpty()) {
 
 			// 상태 변경 PROCESSING → NOT_FOUND
-			socialMediaPlaceService.notFound(socialMediaPlaceId);
+			socialMediaPlaceService.completeAsNotFound(socialMediaPlaceId);
 			log.info("장소 검색 결과 없음(placeId): socialMediaPlaceId={}, query={}", socialMediaPlaceId, query);
 			return;
 		}
@@ -75,7 +75,7 @@ public class PlaceSearchEventListener {
 		if (existingPlace.isPresent()) {
 
 			// 상태 변경 PROCESSING → COMPLETED
-			socialMediaPlaceService.completeProcessing(socialMediaPlaceId, existingPlace.get());
+			socialMediaPlaceService.completeSearch(socialMediaPlaceId, existingPlace.get());
 			log.info("장소 검색 이벤트 성공(이미 있는 장소): socialMediaPlaceId={}, placeId={}",
 				socialMediaPlaceId, placeId.get());
 			return;
@@ -86,12 +86,12 @@ public class PlaceSearchEventListener {
 		if (place.isEmpty()) {
 
 			// 상태 변경 PROCESSING → NOT_FOUND
-			socialMediaPlaceService.notFound(socialMediaPlaceId);
+			socialMediaPlaceService.completeAsNotFound(socialMediaPlaceId);
 			log.info("장소 검색 결과 없음(detail): socialMediaPlaceId={}, placeId={}", socialMediaPlaceId, placeId);
 			return;
 		}
 
 		// 상태 변경 PROCESSING → COMPLETED
-		socialMediaPlaceService.completeProcessing(socialMediaPlaceId, place.get());
+		socialMediaPlaceService.completeSearch(socialMediaPlaceId, place.get());
 	}
 }

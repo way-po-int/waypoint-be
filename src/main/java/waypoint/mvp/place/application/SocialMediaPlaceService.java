@@ -56,7 +56,7 @@ public class SocialMediaPlaceService {
 	 * @return 검색 쿼리
 	 */
 	@Transactional
-	public String startProcessing(Long socialMediaPlaceId) {
+	public String startSearch(Long socialMediaPlaceId) {
 		SocialMediaPlace socialMediaPlace = getSocialMediaPlace(socialMediaPlaceId);
 		socialMediaPlace.process();
 
@@ -71,7 +71,7 @@ public class SocialMediaPlaceService {
 	 * @param place 장소
 	 */
 	@Transactional
-	public void completeProcessing(Long socialMediaPlaceId, Place place) {
+	public void completeSearch(Long socialMediaPlaceId, Place place) {
 		SocialMediaPlace socialMediaPlace = getSocialMediaPlace(socialMediaPlaceId);
 		Place savedPlace = placeService.createOrGetPlace(place);
 
@@ -88,7 +88,7 @@ public class SocialMediaPlaceService {
 	 * @param socialMediaPlaceId 소셜 미디어 장소 ID
 	 */
 	@Transactional
-	public void notFound(Long socialMediaPlaceId) {
+	public void completeAsNotFound(Long socialMediaPlaceId) {
 		SocialMediaPlace socialMediaPlace = getSocialMediaPlace(socialMediaPlaceId);
 		socialMediaPlace.notFound();
 
