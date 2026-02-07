@@ -39,7 +39,7 @@ public class PlanCollectionService {
 			throw new BusinessException(PlanCollectionError.PLANCOLLECTION_ALREADY_EXISTS);
 		}
 
-		Plan plan = planService.getEntity(planExternalId);
+		Plan plan = planService.getPlan(planExternalId);
 		Collection collection = collectionService.getCollection(request.collectionId());
 
 		planAuthorizer.verifyMember(user, plan.getId());
