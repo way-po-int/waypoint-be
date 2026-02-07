@@ -162,7 +162,7 @@ public class CollectionPlaceService {
 
 		Slice<CollectionPlace> result;
 		if (addedByMemberId != null) {
-			collectionMemberService.getEntity(collection.getId(), addedByMemberId);
+			collectionMemberService.findMember(collection.getId(), addedByMemberId);
 			result = collectionPlaceRepository.findAllByCollectionIdAndAddedByExternalId(
 				collection.getId(),
 				addedByMemberId,
