@@ -13,12 +13,12 @@ public record PlanCollectionResponse(
 	public static PlanCollectionResponse from(PlanCollection planCollection) {
 		Collection collection = planCollection.getCollection();
 		PlanMember member = planCollection.getMember();
-		AddedBy addedBy = new AddedBy(member.getPicture(), member.getPicture());
+		AddedBy addedBy = new AddedBy(member.getExternalId(), member.getPicture(), member.getNickname());
 
 		return new PlanCollectionResponse(collection.getExternalId(), collection.getTitle(), addedBy);
 	}
 
-	record AddedBy(String picture, String nickname) {
+	record AddedBy(String planMemberId, String picture, String nickname) {
 
 	}
 }
