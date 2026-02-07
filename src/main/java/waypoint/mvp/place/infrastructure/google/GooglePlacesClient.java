@@ -2,21 +2,24 @@ package waypoint.mvp.place.infrastructure.google;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
+import org.springframework.util.ObjectUtils;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 
-import waypoint.mvp.global.error.exception.BusinessException;
-import waypoint.mvp.place.error.PlaceExternalError;
+import waypoint.mvp.place.application.dto.GooglePlaceDetailsDto;
+import waypoint.mvp.place.error.SearchFailureCode;
+import waypoint.mvp.place.error.exception.PlaceSearchException;
 
 @Component
 public class GooglePlacesClient {
 
 	private static final String TEXT_SEARCH_FIELD_MASK = "places.id";
-	private static final String DETAILS_FIELD_MASK = "id,displayName,formattedAddress,location,primaryType,primaryTypeDisplayName,googleMapsUri,photos.name";
+	private static final String DETAILS_FIELD_MASK = "id,displayName,formattedAddress,location,primaryType,googleMapsUri,photos.name";
 
 	private final RestClient restClient;
 	private final String textSearchPath;
@@ -37,48 +40,50 @@ public class GooglePlacesClient {
 		this.detailsPath = detailsPath;
 	}
 
-	/** textQuery로 Top1 placeId만 조회 */
-	public String searchTop1PlaceId(String textQuery) {
-		Map<String, Object> raw = restClient.post()
+	public Optional<String> searchTop1PlaceId(String textQuery) {
+		if (!StringUtils.hasText(textQuery)) {
+			return Optional.empty();
+		}
+
+		var response = restClient.post()
 			.uri(textSearchPath)
 			.header("X-Goog-FieldMask", TEXT_SEARCH_FIELD_MASK)
 			.body(Map.of("textQuery", textQuery, "pageSize", 1))
 			.retrieve()
 			.onStatus(HttpStatusCode::isError, (req, res) -> {
-				throw new BusinessException(PlaceExternalError.PLACE_EXTERNAL_HTTP_ERROR);
+				throw new PlaceSearchException(SearchFailureCode.PLACES_API_ERROR);
 			})
-			.body(new ParameterizedTypeReference<Map<String, Object>>() {
-			});
+			.body(GooglePlaceIdResponse.class);
 
-		return extractTop1PlaceId(raw);
+		if (ObjectUtils.isEmpty(response) || ObjectUtils.isEmpty(response.places())) {
+			return Optional.empty();
+		}
+
+		var placeItem = response.places().getFirst();
+		return Optional.of(placeItem.id());
 	}
 
-	/** placeId로 장소 상세 조회 (raw Map) */
-	public Map<String, Object> getPlaceDetails(String placeId) {
-		return restClient.get()
+	public Optional<GooglePlaceDetailsDto> getPlaceDetails(String placeId) {
+		var response = restClient.get()
 			.uri(detailsPath, placeId)
 			.header("X-Goog-FieldMask", DETAILS_FIELD_MASK)
 			.retrieve()
 			.onStatus(HttpStatusCode::isError, (req, res) -> {
-				throw new BusinessException(PlaceExternalError.PLACE_EXTERNAL_HTTP_ERROR);
-			})
-			.body(new ParameterizedTypeReference<Map<String, Object>>() {
-			});
+				throw new PlaceSearchException(SearchFailureCode.PLACES_API_ERROR);
+			}).body(GooglePlaceDetailsDto.class);
+
+		if (ObjectUtils.isEmpty(response)) {
+			return Optional.empty();
+		}
+
+		return Optional.of(response);
 	}
 
-	private String extractTop1PlaceId(Map<String, Object> raw) {
-		if (raw == null)
-			return null;
+	private record GooglePlaceIdResponse(
+		List<PlaceItem> places
+	) {
 
-		Object placesObj = raw.get("places");
-		if (!(placesObj instanceof List<?> places) || places.isEmpty())
-			return null;
-
-		Object firstObj = places.get(0);
-		if (!(firstObj instanceof Map<?, ?> first))
-			return null;
-
-		Object idObj = first.get("id");
-		return (idObj instanceof String id) ? id : null;
+		private record PlaceItem(String id) {
+		}
 	}
 }

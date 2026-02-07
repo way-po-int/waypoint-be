@@ -1,7 +1,5 @@
 package waypoint.mvp.place.domain;
 
-import java.util.List;
-
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -20,6 +18,7 @@ import lombok.NoArgsConstructor;
 import waypoint.mvp.global.common.ExternalIdEntity;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.place.domain.content.ContentSnapshot;
+import waypoint.mvp.place.error.ExtractFailureCode;
 import waypoint.mvp.place.error.SocialMediaError;
 
 @Entity
@@ -44,15 +43,11 @@ public class SocialMedia extends ExternalIdEntity {
 
 	@JdbcTypeCode(SqlTypes.JSON)
 	@Column
-	private List<String> searchQueries;
-
-	@JdbcTypeCode(SqlTypes.JSON)
-	@Column
 	private ContentSnapshot snapshot;
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
-	private ExtractStatus status;
+	private SocialMediaStatus status;
 
 	@Enumerated(EnumType.STRING)
 	@Column
@@ -62,7 +57,7 @@ public class SocialMedia extends ExternalIdEntity {
 	private SocialMedia(SocialMediaType type, String url) {
 		this.type = type;
 		this.url = url;
-		this.status = ExtractStatus.PENDING;
+		this.status = SocialMediaStatus.PENDING;
 	}
 
 	public static SocialMedia create(String url) {
@@ -72,29 +67,42 @@ public class SocialMedia extends ExternalIdEntity {
 			.build();
 	}
 
-	public void process() {
-		validateStatus(ExtractStatus.PENDING);
+	public void startExtraction() {
+		validateStatus(SocialMediaStatus.PENDING);
 
-		this.status = ExtractStatus.PROCESSING;
+		this.status = SocialMediaStatus.EXTRACTING;
 	}
 
-	public void complete(String summary, List<String> searchQueries, ContentSnapshot snapshot) {
-		validateStatus(ExtractStatus.PROCESSING);
+	public void completeExtraction(String summary, ContentSnapshot snapshot) {
+		validateStatus(SocialMediaStatus.EXTRACTING);
 
 		this.summary = summary;
-		this.searchQueries = searchQueries;
 		this.snapshot = snapshot;
-		this.status = ExtractStatus.COMPLETED;
+		this.status = SocialMediaStatus.SEARCHING;
+	}
+
+	public void complete() {
+		validateStatus(SocialMediaStatus.SEARCHING);
+
+		this.status = SocialMediaStatus.COMPLETED;
 	}
 
 	public void fail(ExtractFailureCode failureCode) {
-		validateStatus(ExtractStatus.PROCESSING);
+		validateStatus(SocialMediaStatus.EXTRACTING);
 
-		this.status = ExtractStatus.FAILED;
+		if (failureCode.isRetryable()) {
+			this.status = SocialMediaStatus.RETRY_WAITING;
+		} else {
+			this.status = SocialMediaStatus.FAILED;
+		}
 		this.failureCode = failureCode;
 	}
 
-	private void validateStatus(ExtractStatus status) {
+	public boolean isFinished() {
+		return this.status.isFinished();
+	}
+
+	private void validateStatus(SocialMediaStatus status) {
 		if (this.status != status) {
 			throw new BusinessException(SocialMediaError.SOCIAL_MEDIA_INVALID_STATUS, this.status, status);
 		}

@@ -1,6 +1,5 @@
 package waypoint.mvp.place.application.event;
 
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
@@ -11,11 +10,10 @@ import lombok.extern.slf4j.Slf4j;
 import waypoint.mvp.place.application.PlaceExtractService;
 import waypoint.mvp.place.application.SocialMediaService;
 import waypoint.mvp.place.application.dto.llm.PlaceExtractionResult;
-import waypoint.mvp.place.domain.ExtractFailureCode;
 import waypoint.mvp.place.domain.SocialMedia;
 import waypoint.mvp.place.domain.event.PlaceExtractionRequestedEvent;
-import waypoint.mvp.place.domain.event.PlaceSearchRequestedEvent;
-import waypoint.mvp.place.error.exception.ExtractionException;
+import waypoint.mvp.place.error.ExtractFailureCode;
+import waypoint.mvp.place.error.exception.PlaceExtractionException;
 
 @Component
 @RequiredArgsConstructor
@@ -24,7 +22,6 @@ public class PlaceExtractionEventListener {
 
 	private final SocialMediaService socialMediaService;
 	private final PlaceExtractService placeExtractService;
-	private final ApplicationEventPublisher eventPublisher;
 
 	@Async("placeExtractionTaskExecutor")
 	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -34,26 +31,23 @@ public class PlaceExtractionEventListener {
 		try {
 			log.info("장소 추출 이벤트 수신: socialMediaId={}", socialMediaId);
 
-			// 상태 변경 PENDING → PROCESSING
-			socialMediaService.process(socialMediaId);
+			// 상태 변경 PENDING → EXTRACTING
+			socialMediaService.startExtraction(socialMediaId);
 
 			SocialMedia socialMedia = socialMediaService.getSocialMedia(socialMediaId);
 			PlaceExtractionResult result = placeExtractService.extract(socialMedia.getType(), socialMedia.getUrl());
 
 			// 장소를 찾지 못했다면 예외 발생
 			if (result.placeAnalysis().searchQueries().isEmpty()) {
-				throw new ExtractionException(ExtractFailureCode.NO_PLACE_EXTRACTED);
+				throw new PlaceExtractionException(ExtractFailureCode.NO_PLACE_EXTRACTED);
 			}
 
-			// 상태 변경 PROCESSING → COMPLETED
-			socialMediaService.complete(socialMediaId, result);
+			// 상태 변경 EXTRACTING → SEARCHING
+			socialMediaService.completeExtraction(socialMediaId, result);
 
 			log.info("장소 추출 이벤트 성공: socialMediaId={}", socialMediaId);
 
-			// 장소 검색 이벤트 발행
-			eventPublisher.publishEvent(new PlaceSearchRequestedEvent(socialMediaId));
-
-		} catch (ExtractionException e) {
+		} catch (PlaceExtractionException e) {
 			log.atError()
 				.setMessage("장소 추출 이벤트 실패: socialMediaId={}, failureCode={}")
 				.addArgument(socialMediaId)
@@ -61,7 +55,7 @@ public class PlaceExtractionEventListener {
 				.setCause(e.isRetryable() ? e : null)
 				.log();
 
-			// 상태 변경 PROCESSING → FAILED
+			// 상태 변경 EXTRACTING → FAILED
 			socialMediaService.fail(socialMediaId, e.getFailureCode());
 		} catch (Exception e) {
 			ExtractFailureCode code = ExtractFailureCode.UNEXPECTED_ERROR;
@@ -69,7 +63,7 @@ public class PlaceExtractionEventListener {
 			log.error("장소 추출 이벤트 실패(예기치 못한 오류): socialMediaId={}, failureCode={}",
 				socialMediaId, code, e);
 
-			// 상태 변경 PROCESSING → FAILED
+			// 상태 변경 EXTRACTING → FAILED
 			socialMediaService.fail(socialMediaId, code);
 		}
 	}
