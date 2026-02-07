@@ -43,6 +43,7 @@ import waypoint.mvp.place.application.SocialMediaService;
 import waypoint.mvp.place.application.dto.PlaceResponse;
 import waypoint.mvp.place.application.dto.SocialMediaInfo;
 import waypoint.mvp.place.domain.Place;
+import waypoint.mvp.place.domain.PlaceDetail;
 import waypoint.mvp.place.domain.SocialMedia;
 import waypoint.mvp.place.error.PlaceError;
 import waypoint.mvp.place.infrastructure.persistence.PlaceRepository;
@@ -80,6 +81,12 @@ public class CollectionPlaceService {
 		}
 
 		CollectionPlace saved = collectionPlaceRepository.save(CollectionPlace.create(collection, place, me));
+
+		// 첫 번째 장소 추가 시 썸네일 자동 설정
+		if (collection.isThumbnailEmpty()) {
+			updateCollectionThumbnail(collection, place);
+		}
+
 		PlaceResponse placeResponse = PlaceResponse.from(place, extractPhotos(place));
 		return CollectionPlaceResponse.of(saved, placeResponse, List.of(), List.of());
 	}
@@ -87,6 +94,20 @@ public class CollectionPlaceService {
 	private Place getPlace(String placeId) {
 		return placeRepository.findByExternalId(placeId)
 			.orElseThrow(() -> new BusinessException(PlaceError.PLACE_NOT_FOUND));
+	}
+
+	private void updateCollectionThumbnail(Collection collection, Place place) {
+		String thumbnailUrl = Optional.ofNullable(place.getDetail())
+			.map(PlaceDetail::getPhotoName)
+			.orElse(null);
+
+		if (thumbnailUrl != null) {
+			int updatedCount = collectionRepository.updateThumbnailIfBlank(collection.getId(), thumbnailUrl);
+
+			if (updatedCount > 0) {
+				collection.updateThumbnail(thumbnailUrl);
+			}
+		}
 	}
 
 	@Transactional
@@ -97,7 +118,7 @@ public class CollectionPlaceService {
 	) {
 		Collection collection = getCollection(collectionId);
 		collectionAuthorizer.verifyMember(principal, collection.getId());
-		CollectionMember member = collectionMemberService.getMemberByUserId(collection.getId(), principal.getId());
+		CollectionMember member = collectionMemberService.findMemberByUserId(collection.getId(), principal.getId());
 
 		// 장소 추출 이벤트 요청
 		SocialMediaInfo socialMediaInfo = socialMediaService.addJob(request.url());
@@ -113,7 +134,7 @@ public class CollectionPlaceService {
 
 	private CollectionMember getActiveMember(Long collectionId, Long userId) {
 		try {
-			return collectionMemberService.getMemberByUserId(collectionId, userId);
+			return collectionMemberService.findMemberByUserId(collectionId, userId);
 		} catch (BusinessException e) {
 			throw new BusinessException(CollectionError.FORBIDDEN_NOT_MEMBER, e);
 		}
@@ -141,7 +162,7 @@ public class CollectionPlaceService {
 
 		Slice<CollectionPlace> result;
 		if (addedByMemberId != null) {
-			collectionMemberService.getMember(collection.getId(), addedByMemberId);
+			collectionMemberService.findMember(collection.getId(), addedByMemberId);
 			result = collectionPlaceRepository.findAllByCollectionIdAndAddedByExternalId(
 				collection.getId(),
 				addedByMemberId,

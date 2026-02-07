@@ -9,7 +9,7 @@ import org.springframework.data.domain.Slice;
 public record SliceResponse<T>(
 	List<T> contents,
 	boolean hasNext,
-	int currentPage,
+	int page,
 	int size
 ) {
 

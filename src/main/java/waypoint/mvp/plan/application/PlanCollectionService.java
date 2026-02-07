@@ -39,13 +39,13 @@ public class PlanCollectionService {
 			throw new BusinessException(PlanCollectionError.PLANCOLLECTION_ALREADY_EXISTS);
 		}
 
-		Plan plan = planService.getEntity(planExternalId);
-		Collection collection = collectionService.getEntity(request.collectionId());
+		Plan plan = planService.getPlan(planExternalId);
+		Collection collection = collectionService.getCollection(request.collectionId());
 
 		planAuthorizer.verifyMember(user, plan.getId());
 		collectionAuthorizer.verifyMember(user, collection.getId());
 
-		PlanMember member = planMemberService.getMemberByUserId(plan.getId(), user.getId());
+		PlanMember member = planMemberService.findMemberByUserId(plan.getId(), user.getId());
 		PlanCollection planCollection = PlanCollection.create(plan, collection, member);
 
 		return PlanCollectionResponse.from(planCollectionRepository.save(planCollection));

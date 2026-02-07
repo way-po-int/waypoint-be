@@ -57,24 +57,24 @@ public class PlanMemberService {
 
 	}
 
-	public PlanMember getMember(Long planId, Long memberId) {
+	public PlanMember findMember(Long planId, Long memberId) {
 		return planMemberRepository.findActive(planId, memberId)
 			.orElseThrow(() -> new BusinessException(PlanMemberError.MEMBER_NOT_FOUND));
 	}
 
-	public PlanMember getMember(Long planId, String memberExternalId) {
+	public PlanMember findMember(Long planId, String memberExternalId) {
 		return planMemberRepository.findActiveByMemberExternalId(planId, memberExternalId)
 			.orElseThrow(() -> new BusinessException(PlanMemberError.MEMBER_NOT_FOUND));
 	}
 
-	public PlanMember getMemberByUserId(Long planId, Long userId) {
+	public PlanMember findMemberByUserId(Long planId, Long userId) {
 		return planMemberRepository.findActiveByUserId(planId, userId)
 			.orElseThrow(() -> new BusinessException(PlanMemberError.MEMBER_NOT_FOUND));
 	}
 
 	@Transactional
 	public void withdraw(Long planId, UserPrincipal user) {
-		PlanMember member = getMemberByUserId(planId, user.getId());
+		PlanMember member = findMemberByUserId(planId, user.getId());
 		remove(member);
 
 	}
@@ -82,7 +82,7 @@ public class PlanMemberService {
 	@Transactional
 	public void expel(Long planId, String memberId, UserPrincipal user) {
 		planAuthorizer.verifyOwner(user, planId);
-		PlanMember member = getMember(planId, memberId);
+		PlanMember member = findMember(planId, memberId);
 		remove(member);
 	}
 

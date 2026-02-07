@@ -4,8 +4,8 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +23,7 @@ import waypoint.mvp.collection.domain.event.CollectionCreatedEvent;
 import waypoint.mvp.collection.error.CollectionError;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionRepository;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
+import waypoint.mvp.global.common.SliceResponse;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.sharelink.application.dto.response.ShareLinkResponse;
 import waypoint.mvp.sharelink.domain.ShareLink;
@@ -57,31 +58,33 @@ public class CollectionService {
 		return CollectionResponse.from(savedCollection);
 	}
 
-	public Collection getEntity(Long collectionId) {
+	public Collection getCollection(Long collectionId) {
 		return collectionRepository.findById(collectionId)
 			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
 	}
 
-	public Collection getEntity(String externalId) {
+	public Collection getCollection(String externalId) {
 		return collectionRepository.findByExternalId(externalId)
 			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
 	}
 
-	public Page<CollectionResponse> findCollections(UserPrincipal user, Pageable pageable) {
-		return collectionRepository.findAllByUserId(user.id(), pageable)
+	public SliceResponse<CollectionResponse> findCollections(UserPrincipal user, Pageable pageable) {
+		Slice<CollectionResponse> collections = collectionRepository.findAllByUserId(user.id(), pageable)
 			.map(CollectionResponse::from);
+
+		return SliceResponse.from(collections);
 	}
 
 	/** Guest or Member 사용 가능한 메서드 */
 	public CollectionResponse findCollectionById(Long collectionId, AuthPrincipal user) {
 		collectionAuthorizer.verifyAccess(user, collectionId);
-		Collection collection = getEntity(collectionId);
+		Collection collection = getCollection(collectionId);
 
 		return CollectionResponse.from(collection);
 	}
 
 	public CollectionResponse findCollectionByExternalId(String externalId, AuthPrincipal user) {
-		Collection collection = getEntity(externalId);
+		Collection collection = getCollection(externalId);
 		collectionAuthorizer.verifyAccess(user, collection.getId());
 
 		return CollectionResponse.from(collection);
@@ -89,7 +92,7 @@ public class CollectionService {
 
 	@Transactional
 	public CollectionResponse updateCollection(String externalId, CollectionUpdateRequest request, UserPrincipal user) {
-		Collection collection = getEntity(externalId);
+		Collection collection = getCollection(externalId);
 		collectionAuthorizer.verifyMember(user, collection.getId());
 		collection.update(request.title());
 
@@ -98,12 +101,12 @@ public class CollectionService {
 
 	@Transactional
 	public void changeOwner(String externalId, String memberExternalId, UserPrincipal user) {
-		Collection collection = getEntity(externalId);
+		Collection collection = getCollection(externalId);
 		Long collectionId = collection.getId();
 		collectionAuthorizer.verifyOwner(user, collectionId);
 
-		CollectionMember currentOwner = collectionMemberService.getMemberByUserId(collectionId, user.id());
-		CollectionMember newOwner = collectionMemberService.getMember(collectionId, memberExternalId);
+		CollectionMember currentOwner = collectionMemberService.findMemberByUserId(collectionId, user.id());
+		CollectionMember newOwner = collectionMemberService.findMember(collectionId, memberExternalId);
 
 		if (collectionMemberService.isSameMember(currentOwner, newOwner)) {
 			throw new BusinessException(CollectionError.CANNOT_DELEGATE_OWNERSHIP_TO_SELF, newOwner.getNickname());
@@ -114,29 +117,32 @@ public class CollectionService {
 	}
 
 	public List<CollectionMemberResponse> getCollectionMembers(String externalId, AuthPrincipal user) {
-		Collection collection = getEntity(externalId);
+		Collection collection = getCollection(externalId);
 		Long collectionId = collection.getId();
 		collectionAuthorizer.verifyAccess(user, collectionId);
 
-		return collectionMemberService.getMembers(collectionId)
+		return collectionMemberService.findMembers(collectionId)
 			.stream()
 			.map(CollectionMemberResponse::from)
 			.toList();
 	}
 
 	@Transactional
-	public void withdrawCollectionMember(Long collectionId, UserPrincipal user) {
-		collectionMemberService.withdraw(collectionId, user);
+	public void withdrawCollectionMember(String externalId, UserPrincipal user) {
+		Collection collection = getCollection(externalId);
+		collectionMemberService.withdraw(collection.getId(), user);
 	}
 
 	@Transactional
-	public void expelCollectionMember(Long collectionId, Long memberId, UserPrincipal user) {
-		collectionMemberService.expel(collectionId, memberId, user);
+	public void expelCollectionMember(String externalId, String memberExternalId, UserPrincipal user) {
+		Collection collection = getCollection(externalId);
+
+		collectionMemberService.expel(collection.getId(), memberExternalId, user);
 	}
 
 	@Transactional
 	public void deleteCollection(String externalId, UserPrincipal user) {
-		Collection collection = getEntity(externalId);
+		Collection collection = getCollection(externalId);
 		Long collectionId = collection.getId();
 		collectionAuthorizer.verifyOwner(user, collectionId);
 
@@ -145,7 +151,7 @@ public class CollectionService {
 
 	@Transactional
 	public ShareLinkResponse createInvitation(String collectionId, UserPrincipal user) {
-		Collection collection = getEntity(collectionId);
+		Collection collection = getCollection(collectionId);
 		collectionAuthorizer.verifyMember(user, collection.getId());
 
 		ShareLink shareLink = ShareLink.create(ShareLink.ShareLinkType.COLLECTION, collection.getExternalId(),
@@ -164,7 +170,7 @@ public class CollectionService {
 		}
 
 		User inviteeUser = userFinder.findById(inviteeUserId);
-		Collection collection = getEntity(shareLink.getTargetId());
+		Collection collection = getCollection(shareLink.getTargetId());
 		collectionMemberService.addMember(collection, inviteeUser);
 
 		shareLink.increaseUseCount();

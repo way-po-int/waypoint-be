@@ -56,12 +56,12 @@ public class PlanService {
 		return PlanResponse.from(savedPlan);
 	}
 
-	public Plan getEntity(Long planId) {
+	public Plan getPlan(Long planId) {
 		return planRepository.findById(planId)
 			.orElseThrow(() -> new BusinessException(PlanError.PLAN_NOT_FOUND));
 	}
 
-	public Plan getEntity(String externalId) {
+	public Plan getPlan(String externalId) {
 		return planRepository.findByExternalId(externalId)
 			.orElseThrow(() -> new BusinessException(PlanError.PLAN_NOT_FOUND));
 	}
@@ -74,14 +74,14 @@ public class PlanService {
 	}
 
 	public PlanResponse findPlanById(Long planId, AuthPrincipal user) {
-		Plan plan = getEntity(planId);
+		Plan plan = getPlan(planId);
 		planAuthorizer.verifyAccess(user, plan.getId());
 
 		return PlanResponse.from(plan);
 	}
 
 	public PlanResponse findPlanByExternalId(String externalId, AuthPrincipal user) {
-		Plan plan = getEntity(externalId);
+		Plan plan = getPlan(externalId);
 		planAuthorizer.verifyAccess(user, plan.getId());
 
 		return PlanResponse.from(plan);
@@ -89,7 +89,7 @@ public class PlanService {
 
 	@Transactional
 	public PlanResponse updatePlan(String planExternalId, PlanUpdateRequest request, UserPrincipal user) {
-		Plan plan = getEntity(planExternalId);
+		Plan plan = getPlan(planExternalId);
 		planAuthorizer.verifyMember(user, plan.getId());
 		plan.update(request.title(), request.startDate(), request.endDate());
 
@@ -98,12 +98,12 @@ public class PlanService {
 
 	@Transactional
 	public void changeOwner(String externalId, String memberExternalId, UserPrincipal user) {
-		Plan plan = getEntity(externalId);
+		Plan plan = getPlan(externalId);
 		Long planId = plan.getId();
 		planAuthorizer.verifyOwner(user, planId);
 
-		PlanMember currentOwner = planMemberService.getMemberByUserId(planId, user.id());
-		PlanMember newOwner = planMemberService.getMember(planId, memberExternalId);
+		PlanMember currentOwner = planMemberService.findMemberByUserId(planId, user.id());
+		PlanMember newOwner = planMemberService.findMember(planId, memberExternalId);
 
 		if (planMemberService.isSameMember(currentOwner, newOwner)) {
 			throw new BusinessException(PlanError.CANNOT_DELEGATE_OWNERSHIP_TO_SELF, newOwner.getNickname());
@@ -116,21 +116,21 @@ public class PlanService {
 
 	@Transactional
 	public void withdrawPlanMember(String planExternalId, UserPrincipal user) {
-		Plan plan = getEntity(planExternalId);
+		Plan plan = getPlan(planExternalId);
 
 		planMemberService.withdraw(plan.getId(), user);
 	}
 
 	@Transactional
 	public void expelPlanMember(String planExternalId, String memberExternalId, UserPrincipal user) {
-		Plan plan = getEntity(planExternalId);
+		Plan plan = getPlan(planExternalId);
 
 		planMemberService.expel(plan.getId(), memberExternalId, user);
 	}
 
 	@Transactional
 	public void deletePlan(String planExternalId, UserPrincipal user) {
-		Plan plan = getEntity(planExternalId);
+		Plan plan = getPlan(planExternalId);
 		planAuthorizer.verifyOwner(user, plan.getId());
 
 		planRepository.delete(plan);
@@ -138,7 +138,7 @@ public class PlanService {
 
 	@Transactional
 	public ShareLinkResponse createInvitation(String planExternalId, UserPrincipal user) {
-		Plan plan = getEntity(planExternalId);
+		Plan plan = getPlan(planExternalId);
 		planAuthorizer.verifyMember(user, plan.getId());
 		ShareLink shareLink = ShareLink.create(ShareLink.ShareLinkType.PLAN, plan.getExternalId(), plan.getId(),
 			user.getId(),
@@ -156,7 +156,7 @@ public class PlanService {
 		}
 
 		User inviteeUser = userFinder.findById(inviteeUserId);
-		Plan plan = getEntity(shareLink.getTargetId());
+		Plan plan = getPlan(shareLink.getTargetId());
 		planMemberService.addMember(plan, inviteeUser);
 
 		shareLink.increaseUseCount();

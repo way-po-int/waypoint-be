@@ -59,48 +59,46 @@ public class CollectionMemberService {
 		collection.increaseMemberCount();
 	}
 
-	public CollectionMember getMember(Long collectionId, Long memberId) {
+	public CollectionMember findMember(Long collectionId, Long memberId) {
 
 		return collectionMemberRepository.findActive(collectionId, memberId).orElseThrow(
 			() -> new BusinessException(CollectionMemberError.MEMBER_NOT_FOUND)
 		);
 	}
 
-	public CollectionMember getMember(Long collectionId, String memberExternalId) {
+	public CollectionMember findMember(Long collectionId, String memberExternalId) {
 
 		return collectionMemberRepository.findActiveByMemberExternalId(collectionId, memberExternalId).orElseThrow(
 			() -> new BusinessException(CollectionMemberError.MEMBER_NOT_FOUND)
 		);
 	}
 
-	public CollectionMember getMemberByUserId(Long collectionId, Long userId) {
+	public CollectionMember findMemberByUserId(Long collectionId, Long userId) {
 
 		return collectionMemberRepository.findActiveByUserId(collectionId, userId).orElseThrow(
 			() -> new BusinessException(CollectionMemberError.MEMBER_NOT_FOUND)
 		);
 	}
 
-	public List<CollectionMember> getMembers(Long collectionId) {
+	public List<CollectionMember> findMembers(Long collectionId) {
 		return collectionMemberRepository.findActiveAll(collectionId);
 	}
 
 	@Transactional
 	public void withdraw(Long collectionId, UserPrincipal user) {
-		CollectionMember member = getMemberByUserId(collectionId, user.id());
-		remove(collectionId, member);
+		CollectionMember member = findMemberByUserId(collectionId, user.id());
+		remove(member);
 	}
 
 	@Transactional
-	public void expel(Long collectionId, Long memberId, UserPrincipal user) {
+	public void expel(Long collectionId, String memberId, UserPrincipal user) {
 		collectionAuthorizer.verifyOwner(user, collectionId);
-		CollectionMember member = getMember(collectionId, memberId);
-		remove(collectionId, member);
+		CollectionMember member = findMember(collectionId, memberId);
+		remove(member);
 	}
 
-	private void remove(Long collectionId, CollectionMember member) {
-		Collection collection = collectionRepository.findById(collectionId)
-			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
-
+	private void remove(CollectionMember member) {
+		Collection collection = member.getCollection();
 		if (member.isOwner()) {
 			throw new BusinessException(CollectionError.NEED_TO_DELEGATE_OWNERSHIP);
 		} else {

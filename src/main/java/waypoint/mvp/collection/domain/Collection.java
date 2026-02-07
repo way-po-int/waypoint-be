@@ -1,5 +1,8 @@
 package waypoint.mvp.collection.domain;
 
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -10,8 +13,6 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
 import waypoint.mvp.global.common.LogicalDeleteEntity;
 
 @Entity
@@ -30,11 +31,15 @@ public class Collection extends LogicalDeleteEntity {
 	private String title;
 
 	@Column(nullable = false)
+	private String thumbnail;
+
+	@Column(nullable = false)
 	private int memberCount = 0;
 
 	@Builder(access = AccessLevel.PRIVATE)
 	private Collection(String title, int memberCount) {
 		this.title = title;
+		this.thumbnail = "";
 		this.memberCount = memberCount;
 	}
 
@@ -49,11 +54,19 @@ public class Collection extends LogicalDeleteEntity {
 		this.title = title;
 	}
 
+	public void updateThumbnail(String thumbnail) {
+		this.thumbnail = thumbnail;
+	}
+
 	public void increaseMemberCount() {
 		this.memberCount++;
 	}
 
 	public void decreaseMemberCount() {
 		this.memberCount--;
+	}
+
+	public boolean isThumbnailEmpty() {
+		return thumbnail == null || thumbnail.isBlank();
 	}
 }
