@@ -40,7 +40,7 @@ public class PlanCollectionService {
 		}
 
 		Plan plan = planService.getEntity(planExternalId);
-		Collection collection = collectionService.getEntity(request.collectionId());
+		Collection collection = collectionService.getCollection(request.collectionId());
 
 		planAuthorizer.verifyMember(user, plan.getId());
 		collectionAuthorizer.verifyMember(user, collection.getId());

@@ -58,6 +58,16 @@ public class CollectionService {
 		return CollectionResponse.from(savedCollection);
 	}
 
+	public Collection getCollection(Long collectionId) {
+		return collectionRepository.findById(collectionId)
+			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
+	}
+
+	public Collection getCollection(String externalId) {
+		return collectionRepository.findByExternalId(externalId)
+			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
+	}
+
 	public SliceResponse<CollectionResponse> findCollections(UserPrincipal user, Pageable pageable) {
 		Slice<CollectionResponse> collections = collectionRepository.findAllByUserId(user.id(), pageable)
 			.map(CollectionResponse::from);
@@ -166,16 +176,6 @@ public class CollectionService {
 		shareLink.increaseUseCount();
 
 		return collection.getId();
-	}
-
-	private Collection getCollection(Long collectionId) {
-		return collectionRepository.findById(collectionId)
-			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
-	}
-
-	private Collection getCollection(String externalId) {
-		return collectionRepository.findByExternalId(externalId)
-			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
 	}
 
 }
