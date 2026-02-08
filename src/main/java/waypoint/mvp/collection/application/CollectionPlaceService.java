@@ -151,6 +151,21 @@ public class CollectionPlaceService {
 		Collection collection = getCollection(collectionId);
 		collectionAuthorizer.verifyAccess(principal, collection.getId());
 
+		if (addedByMemberId != null) {
+			collectionMemberService.findMember(collection.getId(), addedByMemberId);
+		}
+
+		return getPlacesByCollectionId(collection.getId(), page, size, sort, addedByMemberId);
+	}
+
+	public SliceResponse<CollectionPlaceResponse> getPlacesByCollectionId(
+		Long collectionId,
+		int page,
+		int size,
+		CollectionPlaceSort sort,
+		String addedByMemberId
+	) {
+
 		int safePage = Math.max(page, 1);
 		int safeSize = Math.max(size, 1);
 
@@ -162,14 +177,13 @@ public class CollectionPlaceService {
 
 		Slice<CollectionPlace> result;
 		if (addedByMemberId != null) {
-			collectionMemberService.findMember(collection.getId(), addedByMemberId);
 			result = collectionPlaceRepository.findAllByCollectionIdAndAddedByExternalId(
-				collection.getId(),
+				collectionId,
 				addedByMemberId,
 				pageable
 			);
 		} else {
-			result = collectionPlaceRepository.findAllByCollectionId(collection.getId(), pageable);
+			result = collectionPlaceRepository.findAllByCollectionId(collectionId, pageable);
 		}
 
 		List<CollectionPlace> places = result.getContent();
