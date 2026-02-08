@@ -8,9 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -142,10 +141,8 @@ public class CollectionPlaceService {
 
 	public SliceResponse<CollectionPlaceResponse> getPlaces(
 		String collectionId,
-		int page,
-		int size,
-		CollectionPlaceSort sort,
 		String addedByMemberId,
+		Pageable pageable,
 		AuthPrincipal principal
 	) {
 		Collection collection = getCollection(collectionId);
@@ -155,26 +152,14 @@ public class CollectionPlaceService {
 			collectionMemberService.findMember(collection.getId(), addedByMemberId);
 		}
 
-		return getPlacesByCollectionId(collection.getId(), page, size, sort, addedByMemberId);
+		return getPlacesByCollectionId(collection.getId(), addedByMemberId, pageable);
 	}
 
 	public SliceResponse<CollectionPlaceResponse> getPlacesByCollectionId(
 		Long collectionId,
-		int page,
-		int size,
-		CollectionPlaceSort sort,
-		String addedByMemberId
+		String addedByMemberId,
+		Pageable pageable
 	) {
-
-		int safePage = Math.max(page, 1);
-		int safeSize = Math.max(size, 1);
-
-		Sort jpaSort = Sort.by(sort == CollectionPlaceSort.LATEST ? Sort.Direction.DESC : Sort.Direction.ASC,
-				"createdAt")
-			.and(Sort.by(Sort.Direction.DESC, "id"));
-
-		PageRequest pageable = PageRequest.of(safePage - 1, safeSize, jpaSort);
-
 		Slice<CollectionPlace> result;
 		if (addedByMemberId != null) {
 			result = collectionPlaceRepository.findAllByCollectionIdAndAddedByExternalId(
@@ -204,7 +189,7 @@ public class CollectionPlaceService {
 			return CollectionPlaceResponse.of(cp, placeResponse, picked, passed);
 		}).toList();
 
-		return new SliceResponse<>(content, result.hasNext(), safePage, safeSize);
+		return SliceResponse.from(result, content);
 	}
 
 	public CollectionPlaceDetailResponse getPlaceDetail(
