@@ -1,9 +1,12 @@
 package waypoint.mvp.plan.application;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
+import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.collection.application.CollectionService;
 import waypoint.mvp.collection.domain.Collection;
@@ -36,7 +39,7 @@ public class PlanCollectionService {
 	) {
 
 		if (planCollectionRepository.existsByPlanIdAndCollectionId(planExternalId, request.collectionId())) {
-			throw new BusinessException(PlanCollectionError.PLANCOLLECTION_ALREADY_EXISTS);
+			throw new BusinessException(PlanCollectionError.PLAN_COLLECTION_ALREADY_EXISTS);
 		}
 
 		Plan plan = planService.getPlan(planExternalId);
@@ -49,6 +52,14 @@ public class PlanCollectionService {
 		PlanCollection planCollection = PlanCollection.create(plan, collection, member);
 
 		return PlanCollectionResponse.from(planCollectionRepository.save(planCollection));
+	}
+
+	public List<PlanCollectionResponse> findPlanCollectionResponses(String planId, AuthPrincipal user) {
+		Plan plan = planService.getPlan(planId);
+		planAuthorizer.verifyAccess(user, plan.getId());
+
+		return planCollectionRepository.findAllByPlanId(planId)
+			.stream().map(PlanCollectionResponse::from).toList();
 	}
 
 }

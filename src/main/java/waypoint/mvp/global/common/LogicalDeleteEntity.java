@@ -15,6 +15,10 @@ public abstract class LogicalDeleteEntity extends ExternalIdEntity {
 		this.deletedAt = Instant.now();
 	}
 
+	public boolean isDeleted() {
+		return this.deletedAt != null;
+	}
+
 	public void restore() {
 		this.deletedAt = null;
 	}
