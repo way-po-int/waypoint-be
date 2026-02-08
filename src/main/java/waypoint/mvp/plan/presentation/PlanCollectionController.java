@@ -3,6 +3,7 @@ package waypoint.mvp.plan.presentation;
 import java.net.URI;
 import java.util.List;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,8 +17,10 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
+import waypoint.mvp.collection.application.dto.response.CollectionPlaceResponse;
 import waypoint.mvp.global.auth.annotations.AuthLevel;
 import waypoint.mvp.global.auth.annotations.Authorize;
+import waypoint.mvp.global.common.SliceResponse;
 import waypoint.mvp.plan.application.PlanCollectionService;
 import waypoint.mvp.plan.application.dto.request.CreatePlanCollectionRequest;
 import waypoint.mvp.plan.application.dto.response.PlanCollectionResponse;
@@ -48,6 +51,20 @@ public class PlanCollectionController {
 		@AuthenticationPrincipal AuthPrincipal user
 	) {
 		List<PlanCollectionResponse> response = planCollectionService.findPlanCollectionResponses(planId, user);
+
+		return ResponseEntity.ok(response);
+	}
+
+	@Authorize(level = AuthLevel.GUEST_OR_MEMBER)
+	@GetMapping("/{collectionId}/places")
+	public ResponseEntity<SliceResponse<CollectionPlaceResponse>> findPlanCollectionPlaces(
+		@PathVariable String planId,
+		@PathVariable String collectionId,
+		Pageable pageable,
+		@AuthenticationPrincipal AuthPrincipal user
+	) {
+		SliceResponse<CollectionPlaceResponse> response =
+			planCollectionService.findPlanCollectionPlaces(planId, collectionId, pageable, user);
 
 		return ResponseEntity.ok(response);
 	}
