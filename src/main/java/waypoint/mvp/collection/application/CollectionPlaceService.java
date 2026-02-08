@@ -38,11 +38,11 @@ import waypoint.mvp.collection.infrastructure.persistence.CollectionRepository;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
 import waypoint.mvp.global.common.SliceResponse;
 import waypoint.mvp.global.error.exception.BusinessException;
+import waypoint.mvp.place.application.PlacePhotoService;
 import waypoint.mvp.place.application.SocialMediaService;
 import waypoint.mvp.place.application.dto.PlaceResponse;
 import waypoint.mvp.place.application.dto.SocialMediaInfo;
 import waypoint.mvp.place.domain.Place;
-import waypoint.mvp.place.domain.PlaceDetail;
 import waypoint.mvp.place.domain.SocialMedia;
 import waypoint.mvp.place.error.PlaceError;
 import waypoint.mvp.place.infrastructure.persistence.PlaceRepository;
@@ -62,6 +62,7 @@ public class CollectionPlaceService {
 
 	private final SocialMediaService socialMediaService;
 	private final CollectionPlaceDraftRepository jobRepository;
+	private final PlacePhotoService placePhotoService;
 
 	@Transactional
 	public CollectionPlaceResponse addPlace(
@@ -96,16 +97,18 @@ public class CollectionPlaceService {
 	}
 
 	private void updateCollectionThumbnail(Collection collection, Place place) {
-		String thumbnailUrl = Optional.ofNullable(place.getDetail())
-			.map(PlaceDetail::getPhotoName)
+		String thumbnailUrl = placePhotoService.resolveRepresentativePhotoUris(place)
+			.stream()
+			.findFirst()
 			.orElse(null);
 
-		if (thumbnailUrl != null) {
-			int updatedCount = collectionRepository.updateThumbnailIfBlank(collection.getId(), thumbnailUrl);
+		if (thumbnailUrl == null) {
+			return;
+		}
+		int updatedCount = collectionRepository.updateThumbnailIfBlank(collection.getId(), thumbnailUrl);
 
-			if (updatedCount > 0) {
-				collection.updateThumbnail(thumbnailUrl);
-			}
+		if (updatedCount > 0) {
+			collection.updateThumbnail(thumbnailUrl);
 		}
 	}
 
@@ -302,10 +305,7 @@ public class CollectionPlaceService {
 	}
 
 	private List<String> extractPhotos(Place place) {
-		if (place.getDetail() == null || place.getDetail().getPhotoName() == null) {
-			return List.of();
-		}
-		return List.of(place.getDetail().getPhotoName());
+		return placePhotoService.resolveRepresentativePhotoUris(place);
 	}
 
 	private SocialMediaResponse toSocialMediaResponse(CollectionPlace collectionPlace) {
