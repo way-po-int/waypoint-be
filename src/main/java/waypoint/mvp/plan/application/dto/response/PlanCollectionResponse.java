@@ -13,7 +13,7 @@ public record PlanCollectionResponse(
 	public static PlanCollectionResponse from(PlanCollection planCollection) {
 		Collection collection = planCollection.getCollection();
 		PlanMember member = planCollection.getMember();
-		String planMemberId = member.getDeletedAt() != null ? member.getExternalId() : "";
+		String planMemberId = member.isDeleted() ? "" : member.getExternalId();
 		AddedBy addedBy = new AddedBy(planMemberId, member.getPicture(), member.getNickname());
 
 		return new PlanCollectionResponse(collection.getExternalId(), collection.getTitle(), addedBy);
