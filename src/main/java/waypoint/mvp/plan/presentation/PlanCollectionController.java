@@ -55,7 +55,7 @@ public class PlanCollectionController {
 		return ResponseEntity.ok(response);
 	}
 
-	@Authorize(level = AuthLevel.GUEST_OR_MEMBER)
+	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@GetMapping("/{collectionId}/places")
 	public ResponseEntity<SliceResponse<CollectionPlaceResponse>> findPlanCollectionPlaces(
 		@PathVariable String planId,

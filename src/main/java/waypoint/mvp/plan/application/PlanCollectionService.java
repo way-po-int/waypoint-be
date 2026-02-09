@@ -74,7 +74,7 @@ public class PlanCollectionService {
 		AuthPrincipal user
 	) {
 		Plan plan = planService.getPlan(planId);
-		planAuthorizer.verifyAccess(user, plan.getId());
+		planAuthorizer.verifyMember(user, plan.getId());
 
 		PlanCollection planCollection = planCollectionRepository
 			.findByPlanIdAndCollectionId(planId, collectionId)
