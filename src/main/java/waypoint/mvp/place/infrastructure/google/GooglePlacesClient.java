@@ -7,7 +7,6 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
-import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 
@@ -25,6 +24,8 @@ public class GooglePlacesClient {
 
 	private static final int PHOTO_SIZE_MIN = 1;
 	private static final int PHOTO_SIZE_MAX = 4800;
+
+	private static final int DEFAULT_TEXT_SEARCH_PAGE_SIZE = 10;
 
 	private final RestClient restClient;
 	private final String textSearchPath;
@@ -48,17 +49,28 @@ public class GooglePlacesClient {
 		this.photoMaxWidthPx = photoMaxWidthPx;
 	}
 
-	public Optional<String> searchTop1PlaceId(String textQuery) {
+	public List<String> searchPlaceIds(String textQuery) {
+		return searchPlaceIds(textQuery, DEFAULT_TEXT_SEARCH_PAGE_SIZE);
+	}
+
+	public List<String> searchPlaceIds(String textQuery, int pageSize) {
 		if (!StringUtils.hasText(textQuery)) {
-			return Optional.empty();
+			return List.of();
 		}
+
+		String q = textQuery.trim();
+		if (!StringUtils.hasText(q)) {
+			return List.of();
+		}
+
+		int size = Math.max(1, pageSize);
 
 		var response = restClient.post()
 			.uri(textSearchPath)
 			.header("X-Goog-FieldMask", TEXT_SEARCH_FIELD_MASK)
 			.body(Map.of(
-				"textQuery", textQuery,
-				"pageSize", 1,
+				"textQuery", q,
+				"pageSize", size,
 				"languageCode", "ko",
 				"regionCode", "KR"
 			))
@@ -68,12 +80,19 @@ public class GooglePlacesClient {
 			})
 			.body(GooglePlaceIdResponse.class);
 
-		if (ObjectUtils.isEmpty(response) || ObjectUtils.isEmpty(response.places())) {
-			return Optional.empty();
+		if (response == null || response.places() == null || response.places().isEmpty()) {
+			return List.of();
 		}
 
-		var placeItem = response.places().getFirst();
-		return Optional.of(placeItem.id());
+		return response.places().stream()
+			.map(GooglePlaceIdResponse.PlaceItem::id)
+			.filter(StringUtils::hasText)
+			.distinct()
+			.toList();
+	}
+
+	public Optional<String> searchTop1PlaceId(String textQuery) {
+		return searchPlaceIds(textQuery, 1).stream().findFirst();
 	}
 
 	public Optional<GooglePlaceDetailsDto> getPlaceDetails(String placeId) {
@@ -82,18 +101,19 @@ public class GooglePlacesClient {
 		}
 
 		var response = restClient.get()
-			.uri(detailsPath + "?languageCode=ko&regionCode=KR", placeId)
+			.uri(uriBuilder -> uriBuilder
+				.path(detailsPath)
+				.queryParam("languageCode", "ko")
+				.queryParam("regionCode", "KR")
+				.build(placeId))
 			.header("X-Goog-FieldMask", DETAILS_FIELD_MASK)
 			.retrieve()
 			.onStatus(HttpStatusCode::isError, (req, res) -> {
 				throw new PlaceSearchException(SearchFailureCode.PLACES_API_ERROR);
-			}).body(GooglePlaceDetailsDto.class);
+			})
+			.body(GooglePlaceDetailsDto.class);
 
-		if (ObjectUtils.isEmpty(response)) {
-			return Optional.empty();
-		}
-
-		return Optional.of(response);
+		return Optional.ofNullable(response);
 	}
 
 	public Optional<String> getPhotoUri(String photoName) {
@@ -149,22 +169,8 @@ public class GooglePlacesClient {
 		if (!StringUtils.hasText(photoName)) {
 			return null;
 		}
-		String n = photoName.trim();
 
-		if (n.endsWith("/media")) {
-			n = n.substring(0, n.length() - "/media".length());
-		}
-		if (n.startsWith("/v1/")) {
-			n = n.substring("/v1/".length());
-		}
-		if (n.startsWith("v1/")) {
-			n = n.substring("v1/".length());
-		}
-		if (n.startsWith("/")) {
-			n = n.substring(1);
-		}
-
-		return StringUtils.hasText(n) ? n : null;
+		return photoName.trim();
 	}
 
 	private Integer validatePhotoSize(int size) {
@@ -177,7 +183,6 @@ public class GooglePlacesClient {
 	private record GooglePlaceIdResponse(
 		List<PlaceItem> places
 	) {
-
 		private record PlaceItem(String id) {
 		}
 	}
