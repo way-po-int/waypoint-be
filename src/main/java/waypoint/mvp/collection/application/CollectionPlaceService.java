@@ -148,10 +148,6 @@ public class CollectionPlaceService {
 		Collection collection = getCollection(collectionId);
 		collectionAuthorizer.verifyAccess(principal, collection.getId());
 
-		if (addedByMemberId != null) {
-			collectionMemberService.findMember(collection.getId(), addedByMemberId);
-		}
-
 		return getPlacesByCollectionId(collection.getId(), addedByMemberId, pageable);
 	}
 
