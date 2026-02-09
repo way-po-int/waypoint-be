@@ -25,18 +25,23 @@ public class PlaceDetail {
 
 	@Column(length = 512)
 	private String photoName;
+	// 캐시용 필드
+	@Column(length = 2048)
+	private String photoUri;
 
 	@Builder(access = AccessLevel.PRIVATE)
 	private PlaceDetail(
 		String placeId,
 		String primaryType,
 		String googleMapsUri,
-		String photoName
+		String photoName,
+		String photoUri
 	) {
 		this.placeId = placeId;
 		this.primaryType = primaryType;
 		this.googleMapsUri = googleMapsUri;
 		this.photoName = photoName;
+		this.photoUri = photoUri;
 	}
 
 	public static PlaceDetail create(String placeId) {
@@ -57,5 +62,9 @@ public class PlaceDetail {
 			.googleMapsUri(googleMapsUri)
 			.photoName(photoName)
 			.build();
+	}
+
+	public void updatePhotoUri(String photoUri) {
+		this.photoUri = photoUri;
 	}
 }
