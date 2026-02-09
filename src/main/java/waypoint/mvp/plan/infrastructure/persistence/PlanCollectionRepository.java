@@ -18,8 +18,8 @@ public interface PlanCollectionRepository extends JpaRepository<PlanCollection, 
 	boolean existsByPlanIdAndCollectionId(@Param("planExternalId") String planExternalId,
 		@Param("collectionExternalId") String collectionExternalId);
 
-	@Query("SELECT pc FROM PlanCollection pc JOIN FETCH pc.collection "
-		+ "WHERE pc.plan.externalId = :planExternalId AND pc.collection.externalId = :collectionExternalId")
+	@Query("SELECT pc FROM PlanCollection pc JOIN pc.collection c "
+		+ "WHERE pc.plan.externalId = :planExternalId AND c.externalId = :collectionExternalId")
 	Optional<PlanCollection> findByPlanIdAndCollectionId(
 		@Param("planExternalId") String planExternalId,
 		@Param("collectionExternalId") String collectionExternalId
