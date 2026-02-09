@@ -5,6 +5,7 @@ import java.util.Optional;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.global.error.exception.BusinessException;
@@ -36,5 +37,25 @@ public class PlaceService {
 			return placeRepository.findByDetailPlaceId(place.getDetail().getPlaceId())
 				.orElseThrow(() -> new BusinessException(PlaceError.PLACE_NOT_FOUND));
 		}
+	}
+	
+	@Transactional
+	public void cachePhotoUri(String googlePlaceId, String photoUri) {
+		if (!StringUtils.hasText(googlePlaceId) || !StringUtils.hasText(photoUri)) {
+			return;
+		}
+
+		placeRepository.findByDetailPlaceId(googlePlaceId).ifPresent(place -> {
+			var detail = place.getDetail();
+			if (detail == null) {
+				return;
+			}
+
+			if (StringUtils.hasText(detail.getPhotoUri())) {
+				return;
+			}
+
+			detail.updatePhotoUri(photoUri);
+		});
 	}
 }
