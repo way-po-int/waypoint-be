@@ -1,5 +1,6 @@
 package waypoint.mvp.collection.application;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -16,6 +17,7 @@ import waypoint.mvp.collection.application.dto.request.CollectionCreateRequest;
 import waypoint.mvp.collection.application.dto.request.CollectionUpdateRequest;
 import waypoint.mvp.collection.application.dto.response.CollectionMemberResponse;
 import waypoint.mvp.collection.application.dto.response.CollectionResponse;
+import waypoint.mvp.collection.application.response.CollectionMemberGroupResponse;
 import waypoint.mvp.collection.domain.Collection;
 import waypoint.mvp.collection.domain.CollectionMember;
 import waypoint.mvp.collection.domain.CollectionRole;
@@ -116,15 +118,27 @@ public class CollectionService {
 		newOwner.updateRole(CollectionRole.OWNER);
 	}
 
-	public List<CollectionMemberResponse> getCollectionMembers(String externalId, AuthPrincipal user) {
+	public CollectionMemberGroupResponse findCollectionMemberGroup(String externalId, AuthPrincipal user) {
 		Collection collection = getCollection(externalId);
 		Long collectionId = collection.getId();
 		collectionAuthorizer.verifyAccess(user, collectionId);
 
-		return collectionMemberService.findMembers(collectionId)
-			.stream()
-			.map(CollectionMemberResponse::from)
-			.toList();
+		List<CollectionMember> members = collectionMemberService.findMembers(collectionId);
+		Long currentUserId = (user instanceof UserPrincipal up) ? up.getId() : null;
+
+		List<CollectionMemberResponse> allResponses = new ArrayList<>(members.size());
+		CollectionMemberResponse me = null;
+
+		for (CollectionMember member : members) {
+			CollectionMemberResponse m = CollectionMemberResponse.from(member);
+			allResponses.add(m);
+
+			if (me == null && member.getUser().getId().equals(currentUserId)) {
+				me = m;
+			}
+		}
+
+		return new CollectionMemberGroupResponse(me, allResponses, currentUserId != null);
 	}
 
 	@Transactional
