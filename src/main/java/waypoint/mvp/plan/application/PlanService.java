@@ -1,5 +1,8 @@
 package waypoint.mvp.plan.application;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
@@ -15,6 +18,8 @@ import waypoint.mvp.global.common.SliceResponse;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.plan.application.dto.request.PlanCreateRequest;
 import waypoint.mvp.plan.application.dto.request.PlanUpdateRequest;
+import waypoint.mvp.plan.application.dto.response.PlanMemberGroupResponse;
+import waypoint.mvp.plan.application.dto.response.PlanMemberResponse;
 import waypoint.mvp.plan.application.dto.response.PlanResponse;
 import waypoint.mvp.plan.domain.Plan;
 import waypoint.mvp.plan.domain.PlanMember;
@@ -162,6 +167,36 @@ public class PlanService {
 		shareLink.increaseUseCount();
 
 		return plan.getId();
+	}
+
+	/**
+	 * 플랜에 참여 중인 전체 멤버 목록과 현재 접속자의 정보를 조회합니다.
+	 * @param planExternalId 플랜의 외부 식별자
+	 * @param user  AuthPrincipal(비로그인 가능)
+	 * @return 현재 사용자 정보(me)와 전체 멤버 리스트가 포함된 응답 객체,
+	 * <p></p>
+	 * 비로그인 시 {@code me}는 null, {@code isAuthenticated}는 false를 반환합니다.
+	 */
+	public PlanMemberGroupResponse findPlanMemberGroup(String planExternalId, AuthPrincipal user) {
+		Plan plan = getPlan(planExternalId);
+		planAuthorizer.verifyAccess(user, plan.getId());
+
+		List<PlanMember> members = planMemberService.findMembers(plan.getId());
+		Long currentUserId = (user instanceof UserPrincipal up) ? up.getId() : null;
+
+		List<PlanMemberResponse> allResponses = new ArrayList<>(members.size());
+		PlanMemberResponse me = null;
+
+		for (PlanMember member : members) {
+			PlanMemberResponse m = PlanMemberResponse.from(member);
+			allResponses.add(m);
+
+			if (me == null && member.getUser().getId().equals(currentUserId)) {
+				me = m;
+			}
+		}
+
+		return new PlanMemberGroupResponse(me, allResponses, currentUserId != null);
 	}
 
 }

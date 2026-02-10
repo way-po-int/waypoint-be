@@ -1,5 +1,6 @@
 package waypoint.mvp.plan.application;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -94,5 +95,9 @@ public class PlanMemberService {
 			member.withdraw();
 			plan.decreaseMemberCount();
 		}
+	}
+
+	public List<PlanMember> findMembers(Long planId) {
+		return planMemberRepository.findActiveAll(planId);
 	}
 }
