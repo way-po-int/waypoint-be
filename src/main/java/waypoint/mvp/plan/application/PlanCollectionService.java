@@ -85,4 +85,16 @@ public class PlanCollectionService {
 		);
 	}
 
+	@Transactional
+	public void deletePlanCollection(String planExternalId, String collectionExternalId, UserPrincipal user) {
+		Plan plan = planService.getPlan(planExternalId);
+		planAuthorizer.verifyMember(user, plan.getId());
+
+		PlanCollection planCollection = planCollectionRepository
+			.findByPlanIdAndCollectionId(planExternalId, collectionExternalId)
+			.orElseThrow(() -> new BusinessException(PlanCollectionError.PLAN_COLLECTION_NOT_FOUND));
+
+		planCollectionRepository.delete(planCollection);
+	}
+
 }

@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -67,6 +68,18 @@ public class PlanCollectionController {
 			planCollectionService.findPlanCollectionPlaces(planId, collectionId, pageable, user);
 
 		return ResponseEntity.ok(response);
+	}
+
+	@Authorize(level = AuthLevel.AUTHENTICATED)
+	@DeleteMapping("/{collectionId}")
+	public ResponseEntity<Void> deletePlanCollection(
+		@PathVariable String planId,
+		@PathVariable String collectionId,
+		@AuthenticationPrincipal UserPrincipal user
+	) {
+		planCollectionService.deletePlanCollection(planId, collectionId, user);
+
+		return ResponseEntity.noContent().build();
 	}
 
 }
