@@ -7,6 +7,6 @@ import waypoint.mvp.collection.application.dto.response.CollectionMemberResponse
 public record CollectionMemberGroupResponse(
 	CollectionMemberResponse me,
 	List<CollectionMemberResponse> members,
-	boolean isAuthenticated
+	Boolean isAuthenticated
 ) {
 }

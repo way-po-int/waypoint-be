@@ -5,6 +5,6 @@ import java.util.List;
 public record PlanMemberGroupResponse(
 	PlanMemberResponse me,
 	List<PlanMemberResponse> members,
-	boolean isAuthenticated
+	Boolean isAuthenticated
 ) {
 }
