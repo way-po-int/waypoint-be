@@ -49,15 +49,15 @@ public class CollectionPlaceDraftService {
 		}
 
 		// 장소 추출 이벤트 요청
-		SocialMediaInfo socialMediaInfo = socialMediaService.addJob(request.url());
+		SocialMedia socialMedia = socialMediaService.getOrCreateSocialMedia(request.url());
 
 		// 어떤 멤버가 어떤 URL을 요청했는지 구분하기 위한 중간 테이블
-		SocialMedia media = socialMediaService.getSocialMedia(socialMediaInfo.id());
-		CollectionPlaceDraft draft = CollectionPlaceDraft.create(member, media);
+		CollectionPlaceDraft draft = CollectionPlaceDraft.create(member, socialMedia);
+		draftRepository.save(draft);
 
 		return new ExtractionJobResponse(
 			draft.getExternalId(),
-			socialMediaInfo.status()
+			socialMedia.getStatus()
 		);
 	}
 }
