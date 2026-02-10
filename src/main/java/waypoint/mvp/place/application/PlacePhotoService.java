@@ -50,10 +50,9 @@ public class PlacePhotoService {
 			Optional<String> fetched = googlePlacesClient.getPhotoUri(photoName)
 				.filter(StringUtils::hasText);
 
-			fetched.ifPresent(uri -> {
-				detail.updatePhotoUri(uri);
-				placeService.cachePhotoUri(detail.getPlaceId(), uri);
-			});
+			fetched.ifPresent(uri ->
+				placeService.cachePhotoUri(detail.getPlaceId(), uri)
+			);
 
 			return fetched.map(List::of).orElseGet(List::of);
 		} catch (Exception e) {
