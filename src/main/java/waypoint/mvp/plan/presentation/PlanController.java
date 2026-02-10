@@ -26,6 +26,7 @@ import waypoint.mvp.plan.application.PlanService;
 import waypoint.mvp.plan.application.dto.request.ChangePlanOwnerRequest;
 import waypoint.mvp.plan.application.dto.request.PlanCreateRequest;
 import waypoint.mvp.plan.application.dto.request.PlanUpdateRequest;
+import waypoint.mvp.plan.application.dto.response.PlanMemberGroupResponse;
 import waypoint.mvp.plan.application.dto.response.PlanResponse;
 import waypoint.mvp.sharelink.application.dto.response.ShareLinkResponse;
 
@@ -65,6 +66,16 @@ public class PlanController {
 	) {
 		PlanResponse plan = planService.findPlanByExternalId(planId, user);
 		return ResponseEntity.ok(plan);
+	}
+
+	@Authorize(level = AuthLevel.GUEST_OR_MEMBER)
+	@GetMapping("/{planId}/members")
+	public ResponseEntity<PlanMemberGroupResponse> findPlanMemberGroup(
+		@PathVariable String planId,
+		@AuthenticationPrincipal AuthPrincipal user
+	) {
+		PlanMemberGroupResponse response = planService.findPlanMemberGroup(planId, user);
+		return ResponseEntity.ok(response);
 	}
 
 	@Authorize(level = AuthLevel.AUTHENTICATED)
