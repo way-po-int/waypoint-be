@@ -8,5 +8,5 @@ import waypoint.mvp.collection.domain.CollectionPlaceDraft;
 
 public interface CollectionPlaceDraftRepository extends JpaRepository<CollectionPlaceDraft, Long> {
 
-	Optional<CollectionPlaceDraft> findByMemberIdAndSocialMediaId(Long memberId, Long socialMediaId);
+	Optional<CollectionPlaceDraft> findByMemberId(Long memberId);
 }
