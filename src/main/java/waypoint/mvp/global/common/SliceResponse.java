@@ -24,6 +24,17 @@ public record SliceResponse<T>(
 		);
 	}
 
+	public static <T> SliceResponse<T> from(Slice<?> slice, List<T> contents) {
+		Objects.requireNonNull(slice, "slice는 null이 될 수 없습니다.");
+
+		return new SliceResponse<>(
+			contents,
+			slice.hasNext(),
+			slice.getNumber(),
+			slice.getSize()
+		);
+	}
+
 	public static <T, E> SliceResponse<T> of(Slice<E> slice, Function<E, T> converter) {
 		Objects.requireNonNull(slice, "slice는 null이 될 수 없습니다.");
 		Objects.requireNonNull(converter, "converter는 null이 될 수 없습니다.");

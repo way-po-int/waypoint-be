@@ -8,9 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -142,34 +141,30 @@ public class CollectionPlaceService {
 
 	public SliceResponse<CollectionPlaceResponse> getPlaces(
 		String collectionId,
-		int page,
-		int size,
-		CollectionPlaceSort sort,
 		String addedByMemberId,
+		Pageable pageable,
 		AuthPrincipal principal
 	) {
 		Collection collection = getCollection(collectionId);
 		collectionAuthorizer.verifyAccess(principal, collection.getId());
 
-		int safePage = Math.max(page, 1);
-		int safeSize = Math.max(size, 1);
+		return getPlacesByCollectionId(collection.getId(), addedByMemberId, pageable);
+	}
 
-		Sort jpaSort = Sort.by(sort == CollectionPlaceSort.LATEST ? Sort.Direction.DESC : Sort.Direction.ASC,
-				"createdAt")
-			.and(Sort.by(Sort.Direction.DESC, "id"));
-
-		PageRequest pageable = PageRequest.of(safePage - 1, safeSize, jpaSort);
-
+	public SliceResponse<CollectionPlaceResponse> getPlacesByCollectionId(
+		Long collectionId,
+		String addedByMemberId,
+		Pageable pageable
+	) {
 		Slice<CollectionPlace> result;
 		if (addedByMemberId != null) {
-			collectionMemberService.findMember(collection.getId(), addedByMemberId);
 			result = collectionPlaceRepository.findAllByCollectionIdAndAddedByExternalId(
-				collection.getId(),
+				collectionId,
 				addedByMemberId,
 				pageable
 			);
 		} else {
-			result = collectionPlaceRepository.findAllByCollectionId(collection.getId(), pageable);
+			result = collectionPlaceRepository.findAllByCollectionId(collectionId, pageable);
 		}
 
 		List<CollectionPlace> places = result.getContent();
@@ -190,7 +185,7 @@ public class CollectionPlaceService {
 			return CollectionPlaceResponse.of(cp, placeResponse, picked, passed);
 		}).toList();
 
-		return new SliceResponse<>(content, result.hasNext(), safePage, safeSize);
+		return SliceResponse.from(result, content);
 	}
 
 	public CollectionPlaceDetailResponse getPlaceDetail(

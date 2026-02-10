@@ -2,6 +2,7 @@ package waypoint.mvp.collection.presentation;
 
 import java.net.URI;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -18,7 +19,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.collection.application.CollectionPlaceService;
-import waypoint.mvp.collection.application.CollectionPlaceService.CollectionPlaceSort;
 import waypoint.mvp.collection.application.dto.request.CollectionPlaceCreateRequest;
 import waypoint.mvp.collection.application.dto.request.CollectionPlaceFromUrlRequest;
 import waypoint.mvp.collection.application.dto.request.CollectionPlaceUpdateRequest;
@@ -66,14 +66,12 @@ public class CollectionPlaceController {
 	@GetMapping
 	public ResponseEntity<SliceResponse<CollectionPlaceResponse>> getPlaces(
 		@PathVariable String collectionId,
-		@RequestParam(defaultValue = "1") int page,
-		@RequestParam(defaultValue = "10") int size,
-		@RequestParam(defaultValue = "LATEST") CollectionPlaceSort sort,
 		@RequestParam(required = false) String addedByMemberId,
+		Pageable pageable,
 		@AuthenticationPrincipal AuthPrincipal principal
 	) {
 		SliceResponse<CollectionPlaceResponse> response =
-			collectionPlaceService.getPlaces(collectionId, page, size, sort, addedByMemberId, principal);
+			collectionPlaceService.getPlaces(collectionId, addedByMemberId, pageable, principal);
 
 		return ResponseEntity.ok(response);
 	}

@@ -2,15 +2,19 @@ package waypoint.mvp.plan.application;
 
 import java.util.List;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
+import waypoint.mvp.collection.application.CollectionPlaceService;
 import waypoint.mvp.collection.application.CollectionService;
+import waypoint.mvp.collection.application.dto.response.CollectionPlaceResponse;
 import waypoint.mvp.collection.domain.Collection;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
+import waypoint.mvp.global.common.SliceResponse;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.plan.application.dto.request.CreatePlanCollectionRequest;
 import waypoint.mvp.plan.application.dto.response.PlanCollectionResponse;
@@ -25,6 +29,7 @@ import waypoint.mvp.plan.infrastructure.persistence.PlanCollectionRepository;
 @RequiredArgsConstructor
 public class PlanCollectionService {
 	private final CollectionService collectionService;
+	private final CollectionPlaceService collectionPlaceService;
 	private final PlanMemberService planMemberService;
 	private final PlanService planService;
 	private final PlanCollectionRepository planCollectionRepository;
@@ -60,6 +65,24 @@ public class PlanCollectionService {
 
 		return planCollectionRepository.findAllByPlanId(planId)
 			.stream().map(PlanCollectionResponse::from).toList();
+	}
+
+	public SliceResponse<CollectionPlaceResponse> findPlanCollectionPlaces(
+		String planId,
+		String collectionId,
+		Pageable pageable,
+		AuthPrincipal user
+	) {
+		Plan plan = planService.getPlan(planId);
+		planAuthorizer.verifyMember(user, plan.getId());
+
+		PlanCollection planCollection = planCollectionRepository
+			.findByPlanIdAndCollectionId(planId, collectionId)
+			.orElseThrow(() -> new BusinessException(PlanCollectionError.PLAN_COLLECTION_NOT_FOUND));
+
+		return collectionPlaceService.getPlacesByCollectionId(
+			planCollection.getCollection().getId(), null, pageable
+		);
 	}
 
 }
