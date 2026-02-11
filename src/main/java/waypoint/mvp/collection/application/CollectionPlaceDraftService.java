@@ -1,5 +1,6 @@
 package waypoint.mvp.collection.application;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
@@ -8,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.collection.application.dto.request.CollectionPlaceDraftCreateRequest;
+import waypoint.mvp.collection.application.dto.response.ExtractionJobDetailResponse;
 import waypoint.mvp.collection.application.dto.response.ExtractionJobResponse;
 import waypoint.mvp.collection.domain.Collection;
 import waypoint.mvp.collection.domain.CollectionMember;
@@ -18,6 +20,8 @@ import waypoint.mvp.global.auth.ResourceAuthorizer;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.place.application.SocialMediaService;
 import waypoint.mvp.place.domain.SocialMedia;
+import waypoint.mvp.place.domain.SocialMediaPlace;
+import waypoint.mvp.place.infrastructure.persistence.SocialMediaPlaceRepository;
 
 @Service
 @Transactional(readOnly = true)
@@ -28,6 +32,7 @@ public class CollectionPlaceDraftService {
 	private final CollectionMemberService collectionMemberService;
 	private final SocialMediaService socialMediaService;
 	private final CollectionPlaceDraftRepository draftRepository;
+	private final SocialMediaPlaceRepository socialMediaPlaceRepository;
 	private final ResourceAuthorizer collectionAuthorizer;
 
 	@Transactional
@@ -59,5 +64,18 @@ public class CollectionPlaceDraftService {
 			draft.getExternalId(),
 			socialMedia.getStatus()
 		);
+	}
+
+	public ExtractionJobDetailResponse getDraft(String collectionId, String jobId, AuthPrincipal user) {
+		Collection collection = collectionService.getCollection(collectionId);
+		collectionAuthorizer.verifyMember(user, collection.getId());
+
+		CollectionPlaceDraft draft = draftRepository.findDraft(jobId, collection.getId(), user.getId())
+			.orElseThrow(() -> new BusinessException(CollectionPlaceDraftError.DRAFT_NOT_FOUND));
+
+		List<SocialMediaPlace> socialMediaPlaces = socialMediaPlaceRepository.findAllBySocialMediaId(
+			draft.getSocialMedia().getId());
+
+		return ExtractionJobDetailResponse.of(draft, socialMediaPlaces);
 	}
 }
