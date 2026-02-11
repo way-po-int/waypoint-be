@@ -54,8 +54,7 @@ public class CollectionService {
 		Collection collection = Collection.create(request.title());
 		Collection savedCollection = collectionRepository.save(collection);
 
-		eventPublisher.publishEvent(
-			CollectionCreatedEvent.of(savedCollection.getId(), user)); // 이벤트는 실제 유저만 발생시키므로 캐스팅
+		eventPublisher.publishEvent(CollectionCreatedEvent.of(savedCollection.getId(), user)); // 이벤트는 실제 유저만 발생시키므로 캐스팅
 
 		return CollectionResponse.from(savedCollection);
 	}
@@ -125,6 +124,7 @@ public class CollectionService {
 
 		List<CollectionMember> members = collectionMemberService.findMembers(collectionId);
 		Long currentUserId = (user instanceof UserPrincipal up) ? up.getId() : null;
+		boolean isAuthenticated = currentUserId != null;
 
 		List<CollectionMemberResponse> allResponses = new ArrayList<>(members.size());
 		CollectionMemberResponse me = null;
@@ -138,7 +138,7 @@ public class CollectionService {
 			}
 		}
 
-		return new CollectionMemberGroupResponse(me, allResponses, currentUserId != null);
+		return new CollectionMemberGroupResponse(isAuthenticated, me, allResponses);
 	}
 
 	@Transactional
@@ -169,8 +169,7 @@ public class CollectionService {
 		collectionAuthorizer.verifyMember(user, collection.getId());
 
 		ShareLink shareLink = ShareLink.create(ShareLink.ShareLinkType.COLLECTION, collection.getExternalId(),
-			collection.getId(), user.getId(),
-			invitationExpirationHours);
+			collection.getId(), user.getId(), invitationExpirationHours);
 
 		shareLinkRepository.save(shareLink);
 

@@ -183,6 +183,7 @@ public class PlanService {
 
 		List<PlanMember> members = planMemberService.findMembers(plan.getId());
 		Long currentUserId = (user instanceof UserPrincipal up) ? up.getId() : null;
+		boolean isAuthenticated = currentUserId != null;
 
 		List<PlanMemberResponse> allResponses = new ArrayList<>(members.size());
 		PlanMemberResponse me = null;
@@ -196,7 +197,7 @@ public class PlanService {
 			}
 		}
 
-		return new PlanMemberGroupResponse(me, allResponses, currentUserId != null);
+		return new PlanMemberGroupResponse(isAuthenticated, me, allResponses);
 	}
 
 }
