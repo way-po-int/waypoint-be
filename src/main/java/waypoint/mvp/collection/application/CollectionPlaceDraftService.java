@@ -3,6 +3,7 @@ package waypoint.mvp.collection.application;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -83,7 +84,10 @@ public class CollectionPlaceDraftService {
 		Collection collection = collectionService.getCollection(collectionId);
 		collectionAuthorizer.verifyMember(user, collection.getId());
 
-		CollectionPlaceDraft draft = draftRepository.findLatestDraft(collection.getId(), user.getId())
+		PageRequest pageRequest = PageRequest.of(0, 1);
+		CollectionPlaceDraft draft = draftRepository.findLatestDraft(collection.getId(), user.getId(), pageRequest)
+			.stream()
+			.findFirst()
 			.orElseThrow(() -> new BusinessException(CollectionPlaceDraftError.DRAFT_NOT_FOUND));
 
 		List<SocialMediaPlace> socialMediaPlaces = socialMediaPlaceRepository.findAllBySocialMediaId(

@@ -1,7 +1,9 @@
 package waypoint.mvp.collection.infrastructure.persistence;
 
+import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -23,9 +25,11 @@ public interface CollectionPlaceDraftRepository extends JpaRepository<Collection
 
 	@Query("SELECT d FROM CollectionPlaceDraft d JOIN FETCH d.member m"
 		+ " JOIN FETCH m.collection c JOIN FETCH d.socialMedia s"
-		+ " WHERE m.collection.id = :collectionId AND m.user.id = :userId")
-	Optional<CollectionPlaceDraft> findLatestDraft(
+		+ " WHERE m.collection.id = :collectionId AND m.user.id = :userId"
+		+ " ORDER BY d.id DESC")
+	List<CollectionPlaceDraft> findLatestDraft(
 		@Param("collectionId") Long collectionId,
-		@Param("userId") Long userId
+		@Param("userId") Long userId,
+		Pageable pageable
 	);
 }
