@@ -27,4 +27,6 @@ public abstract class ContentSnapshot {
 
 	private String contentId;
 	private String title;
+
+	public abstract String getAuthorName();
 }
