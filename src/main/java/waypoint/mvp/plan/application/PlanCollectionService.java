@@ -11,6 +11,7 @@ import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.collection.application.CollectionPlaceQueryService;
 import waypoint.mvp.collection.application.CollectionService;
+import waypoint.mvp.collection.application.dto.response.CollectionPlaceDetailResponse;
 import waypoint.mvp.collection.application.dto.response.CollectionPlaceResponse;
 import waypoint.mvp.collection.domain.Collection;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
@@ -89,6 +90,23 @@ public class PlanCollectionService {
 
 		return collectionPlaceQueryService.getPlacesByCollectionId(
 			planCollection.getCollection().getId(), null, pageable
+		);
+	}
+
+	public CollectionPlaceDetailResponse findPlanCollectionPlaceDetail(
+		String planId,
+		String collectionId,
+		String collectionPlaceId,
+		UserPrincipal user
+	) {
+		Plan plan = planService.getPlan(planId);
+		planAuthorizer.verifyMember(user, plan.getId());
+
+		PlanCollection planCollection = getPlanCollection(planId, collectionId);
+		Collection collection = planCollection.getCollection();
+
+		return collectionPlaceQueryService.getPlaceDetail(
+			collection.getExternalId(), collectionPlaceId
 		);
 	}
 
