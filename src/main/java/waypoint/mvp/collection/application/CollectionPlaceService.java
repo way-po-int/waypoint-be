@@ -1,9 +1,6 @@
 package waypoint.mvp.collection.application;
 
-import static java.util.stream.Collectors.*;
-
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.data.domain.Pageable;
@@ -14,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.collection.application.dto.request.CollectionPlaceCreateRequest;
 import waypoint.mvp.collection.application.dto.request.CollectionPlaceUpdateRequest;
-import waypoint.mvp.collection.application.dto.response.CollectionMemberResponse;
 import waypoint.mvp.collection.application.dto.response.CollectionPlaceDetailResponse;
 import waypoint.mvp.collection.application.dto.response.CollectionPlaceResponse;
 import waypoint.mvp.collection.application.dto.response.PickPassResponse;
@@ -191,20 +187,7 @@ public class CollectionPlaceService {
 			preferenceRepository.save(CollectionPlacePreference.create(place, me, type));
 		}
 
-		Map<CollectionPlacePreference.Type, List<CollectionMemberResponse>> preferenceByType =
-			preferenceRepository.findAllByPlaceIdIn(List.of(collectionPlacePk))
-				.stream()
-				.collect(groupingBy(
-					CollectionPlacePreference::getType,
-					mapping(p -> CollectionMemberResponse.from(p.getMember()), toList())
-				));
-
-		List<CollectionMemberResponse> picked =
-			preferenceByType.getOrDefault(CollectionPlacePreference.Type.PICK, List.of());
-		List<CollectionMemberResponse> passed =
-			preferenceByType.getOrDefault(CollectionPlacePreference.Type.PASS, List.of());
-
-		return PickPassResponse.of(picked, passed);
+		return collectionPlaceQueryService.getPickPass(collectionPlacePk);
 	}
 
 	private Collection getCollection(String collectionId) {

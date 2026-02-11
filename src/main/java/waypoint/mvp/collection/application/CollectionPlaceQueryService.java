@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import waypoint.mvp.collection.application.dto.response.CollectionMemberResponse;
 import waypoint.mvp.collection.application.dto.response.CollectionPlaceDetailResponse;
 import waypoint.mvp.collection.application.dto.response.CollectionPlaceResponse;
+import waypoint.mvp.collection.application.dto.response.PickPassResponse;
 import waypoint.mvp.collection.application.dto.response.SocialMediaResponse;
 import waypoint.mvp.collection.domain.Collection;
 import waypoint.mvp.collection.domain.CollectionPlace;
@@ -119,6 +120,26 @@ public class CollectionPlaceQueryService {
 		SocialMediaResponse socialMediaResponse = toSocialMediaResponse(collectionPlace);
 
 		return CollectionPlaceDetailResponse.of(collectionPlace, placeResponse, socialMediaResponse);
+	}
+
+	/**
+	 * CollectionPlace의 Pick/Pass 현재 상태 조회 (권한 검증 없음)
+	 */
+	public PickPassResponse getPickPass(Long collectionPlaceId) {
+		Map<CollectionPlacePreference.Type, List<CollectionMemberResponse>> preferenceByType =
+			preferenceRepository.findAllByPlaceIdIn(List.of(collectionPlaceId))
+				.stream()
+				.collect(groupingBy(
+					CollectionPlacePreference::getType,
+					mapping(p -> CollectionMemberResponse.from(p.getMember()), toList())
+				));
+
+		List<CollectionMemberResponse> picked =
+			preferenceByType.getOrDefault(CollectionPlacePreference.Type.PICK, List.of());
+		List<CollectionMemberResponse> passed =
+			preferenceByType.getOrDefault(CollectionPlacePreference.Type.PASS, List.of());
+
+		return PickPassResponse.of(picked, passed);
 	}
 
 	/**
