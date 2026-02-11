@@ -2,14 +2,11 @@ package waypoint.mvp.collection.application;
 
 import static java.util.stream.Collectors.*;
 
-import java.util.Collections;
-import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,7 +18,6 @@ import waypoint.mvp.collection.application.dto.response.CollectionMemberResponse
 import waypoint.mvp.collection.application.dto.response.CollectionPlaceDetailResponse;
 import waypoint.mvp.collection.application.dto.response.CollectionPlaceResponse;
 import waypoint.mvp.collection.application.dto.response.PickPassResponse;
-import waypoint.mvp.collection.application.dto.response.SocialMediaResponse;
 import waypoint.mvp.collection.domain.Collection;
 import waypoint.mvp.collection.domain.CollectionMember;
 import waypoint.mvp.collection.domain.CollectionPlace;
@@ -48,6 +44,7 @@ public class CollectionPlaceService {
 	private final ResourceAuthorizer collectionAuthorizer;
 	private final CollectionRepository collectionRepository;
 	private final CollectionMemberService collectionMemberService;
+	private final CollectionPlaceQueryService collectionPlaceQueryService;
 
 	private final PlaceRepository placeRepository;
 	private final CollectionPlaceRepository collectionPlaceRepository;
@@ -78,7 +75,8 @@ public class CollectionPlaceService {
 			updateCollectionThumbnail(collection, place);
 		}
 
-		PlaceResponse placeResponse = PlaceResponse.from(place, extractPhotos(place));
+		PlaceResponse placeResponse = PlaceResponse.from(place,
+			placePhotoService.resolveRepresentativePhotoUris(place));
 		return CollectionPlaceResponse.of(saved, placeResponse, List.of(), List.of());
 	}
 
@@ -120,44 +118,7 @@ public class CollectionPlaceService {
 		Collection collection = getCollection(collectionId);
 		collectionAuthorizer.verifyAccess(principal, collection.getId());
 
-		return getPlacesByCollectionId(collection.getId(), addedByMemberId, pageable);
-	}
-
-	public SliceResponse<CollectionPlaceResponse> getPlacesByCollectionId(
-		Long collectionId,
-		String addedByMemberId,
-		Pageable pageable
-	) {
-		Slice<CollectionPlace> result;
-		if (addedByMemberId != null) {
-			result = collectionPlaceRepository.findAllByCollectionIdAndAddedByExternalId(
-				collectionId,
-				addedByMemberId,
-				pageable
-			);
-		} else {
-			result = collectionPlaceRepository.findAllByCollectionId(collectionId, pageable);
-		}
-
-		List<CollectionPlace> places = result.getContent();
-		List<Long> collectionPlaceIds = places.stream().map(CollectionPlace::getId).toList();
-
-		Map<Long, Map<CollectionPlacePreference.Type, List<CollectionMemberResponse>>> grouped =
-			groupPreferences(collectionPlaceIds);
-
-		List<CollectionPlaceResponse> content = places.stream().map(cp -> {
-			PlaceResponse placeResponse = PlaceResponse.from(cp.getPlace(), extractPhotos(cp.getPlace()));
-
-			Map<CollectionPlacePreference.Type, List<CollectionMemberResponse>> byType =
-				grouped.getOrDefault(cp.getId(), Collections.emptyMap());
-
-			List<CollectionMemberResponse> picked = byType.getOrDefault(CollectionPlacePreference.Type.PICK, List.of());
-			List<CollectionMemberResponse> passed = byType.getOrDefault(CollectionPlacePreference.Type.PASS, List.of());
-
-			return CollectionPlaceResponse.of(cp, placeResponse, picked, passed);
-		}).toList();
-
-		return SliceResponse.from(result, content);
+		return collectionPlaceQueryService.getPlacesByCollectionId(collection.getId(), addedByMemberId, pageable);
 	}
 
 	public CollectionPlaceDetailResponse getPlaceDetail(
@@ -168,15 +129,7 @@ public class CollectionPlaceService {
 		Collection collection = getCollection(collectionId);
 		collectionAuthorizer.verifyAccess(principal, collection.getId());
 
-		CollectionPlace collectionPlace = getCollectionPlace(collection, collectionPlaceId);
-
-		PlaceResponse placeResponse = PlaceResponse.from(
-			collectionPlace.getPlace(),
-			extractPhotos(collectionPlace.getPlace())
-		);
-		SocialMediaResponse socialMediaResponse = toSocialMediaResponse(collectionPlace);
-
-		return CollectionPlaceDetailResponse.of(collectionPlace, placeResponse, socialMediaResponse);
+		return collectionPlaceQueryService.getPlaceDetail(collectionId, collectionPlaceId);
 	}
 
 	@Transactional
@@ -190,7 +143,7 @@ public class CollectionPlaceService {
 		collectionAuthorizer.verifyMember(principal, collection.getId());
 		getActiveMember(collection.getId(), principal.getId());
 
-		CollectionPlace collectionPlace = getCollectionPlace(collection, collectionPlaceId);
+		CollectionPlace collectionPlace = collectionPlaceQueryService.getCollectionPlace(collection, collectionPlaceId);
 		collectionPlace.updateMemo(request.memo());
 	}
 
@@ -204,7 +157,7 @@ public class CollectionPlaceService {
 		collectionAuthorizer.verifyMember(principal, collection.getId());
 		getActiveMember(collection.getId(), principal.getId());
 
-		CollectionPlace collectionPlace = getCollectionPlace(collection, collectionPlaceId);
+		CollectionPlace collectionPlace = collectionPlaceQueryService.getCollectionPlace(collection, collectionPlaceId);
 		collectionPlaceRepository.delete(collectionPlace);
 	}
 
@@ -219,7 +172,7 @@ public class CollectionPlaceService {
 		collectionAuthorizer.verifyMember(principal, collection.getId());
 
 		CollectionMember me = getActiveMember(collection.getId(), principal.getId());
-		CollectionPlace place = getCollectionPlace(collection, collectionPlaceId);
+		CollectionPlace place = collectionPlaceQueryService.getCollectionPlace(collection, collectionPlaceId);
 
 		Long collectionPlacePk = place.getId();
 
@@ -259,43 +212,4 @@ public class CollectionPlaceService {
 			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
 	}
 
-	private CollectionPlace getCollectionPlace(Collection collection, String collectionPlaceId) {
-		return collectionPlaceRepository.findByExternalIdAndCollectionId(collectionPlaceId, collection.getId())
-			.orElseThrow(() -> new BusinessException(CollectionPlaceError.COLLECTION_PLACE_NOT_FOUND));
-	}
-
-	private List<String> extractPhotos(Place place) {
-		return placePhotoService.resolveRepresentativePhotoUris(place);
-	}
-
-	private SocialMediaResponse toSocialMediaResponse(CollectionPlace collectionPlace) {
-		if (collectionPlace.getSocialMedia() == null) {
-			return null;
-		}
-		return SocialMediaResponse.from(collectionPlace.getSocialMedia());
-	}
-
-	private Map<Long, Map<CollectionPlacePreference.Type, List<CollectionMemberResponse>>> groupPreferences(
-		List<Long> collectionPlaceIds
-	) {
-		if (collectionPlaceIds.isEmpty()) {
-			return Collections.emptyMap();
-		}
-
-		List<CollectionPlacePreference> preference = preferenceRepository.findAllByPlaceIdIn(collectionPlaceIds);
-
-		return preference.stream()
-			.collect(groupingBy(
-				pref -> pref.getPlace().getId(),
-				groupingBy(
-					CollectionPlacePreference::getType,
-					() -> new EnumMap<>(CollectionPlacePreference.Type.class),
-					mapping(pref -> CollectionMemberResponse.from(pref.getMember()), toList())
-				)
-			));
-	}
-
-	public enum CollectionPlaceSort {
-		LATEST, OLDEST
-	}
 }
