@@ -4,8 +4,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
+import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.user.application.dto.SocialUserProfile;
+import waypoint.mvp.user.application.dto.UserResponse;
 import waypoint.mvp.user.domain.SocialAccount;
 import waypoint.mvp.user.domain.User;
 import waypoint.mvp.user.error.UserError;
@@ -28,6 +30,11 @@ public class UserService implements UserFinder {
 				profile.picture(),
 				profile.email()
 			)));
+	}
+
+	public UserResponse findMe(UserPrincipal user) {
+		User me = findById(user.id());
+		return UserResponse.from(me);
 	}
 
 	@Override
