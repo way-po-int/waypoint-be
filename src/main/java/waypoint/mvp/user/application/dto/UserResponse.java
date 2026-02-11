@@ -1,10 +1,11 @@
 package waypoint.mvp.user.application.dto;
 
+import waypoint.mvp.global.util.MaskingUtils;
 import waypoint.mvp.user.domain.Provider;
 import waypoint.mvp.user.domain.User;
 
 public record UserResponse(
-	Long userId,
+	String userId,
 	Provider provider,
 	String nickname,
 	String picture,
@@ -12,11 +13,11 @@ public record UserResponse(
 ) {
 	public static UserResponse from(User user) {
 		return new UserResponse(
-			user.getId(),
+			user.getExternalId(),
 			user.getSocialAccount().getProvider(),
 			user.getNickname(),
 			user.getPicture(),
-			user.getEmail()
+			MaskingUtils.maskEmail(user.getEmail())
 		);
 	}
 }

@@ -12,7 +12,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import waypoint.mvp.global.common.BaseTimeEntity;
+import waypoint.mvp.global.common.ExternalIdEntity;
 
 @Entity
 @Table(
@@ -21,7 +21,7 @@ import waypoint.mvp.global.common.BaseTimeEntity;
 )
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class User extends BaseTimeEntity {
+public class User extends ExternalIdEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
