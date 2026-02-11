@@ -1,5 +1,6 @@
 package waypoint.mvp.collection.application;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -14,6 +15,7 @@ import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.collection.application.dto.request.CollectionCreateRequest;
 import waypoint.mvp.collection.application.dto.request.CollectionUpdateRequest;
+import waypoint.mvp.collection.application.dto.response.CollectionMemberGroupResponse;
 import waypoint.mvp.collection.application.dto.response.CollectionMemberResponse;
 import waypoint.mvp.collection.application.dto.response.CollectionResponse;
 import waypoint.mvp.collection.domain.Collection;
@@ -52,8 +54,7 @@ public class CollectionService {
 		Collection collection = Collection.create(request.title());
 		Collection savedCollection = collectionRepository.save(collection);
 
-		eventPublisher.publishEvent(
-			CollectionCreatedEvent.of(savedCollection.getId(), user)); // 이벤트는 실제 유저만 발생시키므로 캐스팅
+		eventPublisher.publishEvent(CollectionCreatedEvent.of(savedCollection.getId(), user)); // 이벤트는 실제 유저만 발생시키므로 캐스팅
 
 		return CollectionResponse.from(savedCollection);
 	}
@@ -116,15 +117,28 @@ public class CollectionService {
 		newOwner.updateRole(CollectionRole.OWNER);
 	}
 
-	public List<CollectionMemberResponse> getCollectionMembers(String externalId, AuthPrincipal user) {
+	public CollectionMemberGroupResponse findCollectionMemberGroup(String externalId, AuthPrincipal user) {
 		Collection collection = getCollection(externalId);
 		Long collectionId = collection.getId();
 		collectionAuthorizer.verifyAccess(user, collectionId);
 
-		return collectionMemberService.findMembers(collectionId)
-			.stream()
-			.map(CollectionMemberResponse::from)
-			.toList();
+		List<CollectionMember> members = collectionMemberService.findMembers(collectionId);
+		Long currentUserId = (user instanceof UserPrincipal up) ? up.getId() : null;
+		boolean isAuthenticated = currentUserId != null;
+
+		List<CollectionMemberResponse> allResponses = new ArrayList<>(members.size());
+		CollectionMemberResponse me = null;
+
+		for (CollectionMember member : members) {
+			CollectionMemberResponse m = CollectionMemberResponse.from(member);
+			allResponses.add(m);
+
+			if (me == null && member.getUser().getId().equals(currentUserId)) {
+				me = m;
+			}
+		}
+
+		return new CollectionMemberGroupResponse(isAuthenticated, me, allResponses);
 	}
 
 	@Transactional
@@ -155,8 +169,7 @@ public class CollectionService {
 		collectionAuthorizer.verifyMember(user, collection.getId());
 
 		ShareLink shareLink = ShareLink.create(ShareLink.ShareLinkType.COLLECTION, collection.getExternalId(),
-			collection.getId(), user.getId(),
-			invitationExpirationHours);
+			collection.getId(), user.getId(), invitationExpirationHours);
 
 		shareLinkRepository.save(shareLink);
 
