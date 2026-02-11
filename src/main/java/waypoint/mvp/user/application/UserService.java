@@ -32,6 +32,13 @@ public class UserService implements UserFinder {
 			)));
 	}
 
+	@Transactional
+	public UserResponse updateNickname(UserPrincipal user, String nickname) {
+		User me = findById(user.id());
+		me.changeNickname(nickname);
+		return UserResponse.from(me);
+	}
+
 	public UserResponse findMe(UserPrincipal user) {
 		User me = findById(user.id());
 		return UserResponse.from(me);
