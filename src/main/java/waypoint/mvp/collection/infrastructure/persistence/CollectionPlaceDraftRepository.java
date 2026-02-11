@@ -20,4 +20,12 @@ public interface CollectionPlaceDraftRepository extends JpaRepository<Collection
 		@Param("collectionId") Long collectionId,
 		@Param("userId") Long userId
 	);
+
+	@Query("SELECT d FROM CollectionPlaceDraft d JOIN FETCH d.member m"
+		+ " JOIN FETCH m.collection c JOIN FETCH d.socialMedia s"
+		+ " WHERE m.collection.id = :collectionId AND m.user.id = :userId")
+	Optional<CollectionPlaceDraft> findLatestDraft(
+		@Param("collectionId") Long collectionId,
+		@Param("userId") Long userId
+	);
 }

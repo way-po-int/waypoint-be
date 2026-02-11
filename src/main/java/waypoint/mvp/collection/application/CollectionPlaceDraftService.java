@@ -78,4 +78,17 @@ public class CollectionPlaceDraftService {
 
 		return ExtractionJobDetailResponse.of(draft, socialMediaPlaces);
 	}
+
+	public ExtractionJobDetailResponse getLatestDraft(String collectionId, AuthPrincipal user) {
+		Collection collection = collectionService.getCollection(collectionId);
+		collectionAuthorizer.verifyMember(user, collection.getId());
+
+		CollectionPlaceDraft draft = draftRepository.findLatestDraft(collection.getId(), user.getId())
+			.orElseThrow(() -> new BusinessException(CollectionPlaceDraftError.DRAFT_NOT_FOUND));
+
+		List<SocialMediaPlace> socialMediaPlaces = socialMediaPlaceRepository.findAllBySocialMediaId(
+			draft.getSocialMedia().getId());
+
+		return ExtractionJobDetailResponse.of(draft, socialMediaPlaces);
+	}
 }

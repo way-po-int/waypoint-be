@@ -46,4 +46,13 @@ public class CollectionPlaceDraftController {
 		ExtractionJobDetailResponse response = draftService.getDraft(collectionId, jobId, user);
 		return ResponseEntity.ok(response);
 	}
+
+	@GetMapping("/latest")
+	public ResponseEntity<ExtractionJobDetailResponse> getLatestDraft(
+		@PathVariable String collectionId,
+		@AuthenticationPrincipal AuthPrincipal user
+	) {
+		ExtractionJobDetailResponse response = draftService.getLatestDraft(collectionId, user);
+		return ResponseEntity.ok(response);
+	}
 }
