@@ -3,13 +3,13 @@ package waypoint.mvp.collection.application.dto.response;
 import java.util.List;
 
 public record PickPassResponse(
-	List<CollectionMemberResponse> pickedMember,
-	List<CollectionMemberResponse> passedMember
+	List<CollectionMemberResponse> pickedMembers,
+	List<CollectionMemberResponse> passedMembers
 ) {
 	public static PickPassResponse of(
-		List<CollectionMemberResponse> pickedMember,
-		List<CollectionMemberResponse> passedMember
+		List<CollectionMemberResponse> pickedMembers,
+		List<CollectionMemberResponse> passedMembers
 	) {
-		return new PickPassResponse(pickedMember, passedMember);
+		return new PickPassResponse(pickedMembers, passedMembers);
 	}
 }
