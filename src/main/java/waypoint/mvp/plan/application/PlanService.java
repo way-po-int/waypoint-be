@@ -109,7 +109,7 @@ public class PlanService {
 		);
 
 		// 1. 경고가 있고, 실제로 영향을 받는 날짜(일정이 있는 날)가 존재할 때만 컨펌 요구
-		if (syncResult.hasWarnings() && !syncResult.affectedDays().isEmpty()) {
+		if (syncResult.hasWarnings()){
 			return PlanUpdateResponse.confirmRequired(syncResult.affectedDays());
 		}
 
