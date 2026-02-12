@@ -7,6 +7,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ import waypoint.mvp.collection.application.dto.response.SocialMediaResponse;
 import waypoint.mvp.collection.domain.Collection;
 import waypoint.mvp.collection.domain.CollectionPlace;
 import waypoint.mvp.collection.domain.CollectionPlacePreference;
+import waypoint.mvp.collection.domain.PlaceSortType;
 import waypoint.mvp.collection.error.CollectionError;
 import waypoint.mvp.collection.error.CollectionPlaceError;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionPlacePreferenceRepository;
@@ -69,17 +71,24 @@ public class CollectionPlaceQueryService {
 	public SliceResponse<CollectionPlaceResponse> getPlacesByCollectionId(
 		Long collectionId,
 		String addedByMemberId,
+		PlaceSortType sortType,
 		Pageable pageable
 	) {
+		Pageable sortedPageable = PageRequest.of(
+			pageable.getPageNumber(),
+			pageable.getPageSize(),
+			sortType.getSort()
+		);
+
 		Slice<CollectionPlace> result;
 		if (addedByMemberId != null) {
 			result = collectionPlaceRepository.findAllByCollectionIdAndAddedByExternalId(
 				collectionId,
 				addedByMemberId,
-				pageable
+				sortedPageable
 			);
 		} else {
-			result = collectionPlaceRepository.findAllByCollectionId(collectionId, pageable);
+			result = collectionPlaceRepository.findAllByCollectionId(collectionId, sortedPageable);
 		}
 
 		List<CollectionPlace> places = result.getContent();

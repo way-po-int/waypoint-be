@@ -18,6 +18,7 @@ import waypoint.mvp.collection.domain.Collection;
 import waypoint.mvp.collection.domain.CollectionMember;
 import waypoint.mvp.collection.domain.CollectionPlace;
 import waypoint.mvp.collection.domain.CollectionPlacePreference;
+import waypoint.mvp.collection.domain.PlaceSortType;
 import waypoint.mvp.collection.error.CollectionError;
 import waypoint.mvp.collection.error.CollectionPlaceError;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionPlacePreferenceRepository;
@@ -108,13 +109,14 @@ public class CollectionPlaceService {
 	public SliceResponse<CollectionPlaceResponse> getPlaces(
 		String collectionId,
 		String addedByMemberId,
+		PlaceSortType sortType,
 		Pageable pageable,
 		AuthPrincipal principal
 	) {
 		Collection collection = getCollection(collectionId);
 		collectionAuthorizer.verifyAccess(principal, collection.getId());
 
-		return collectionPlaceQueryService.getPlacesByCollectionId(collection.getId(), addedByMemberId, pageable);
+		return collectionPlaceQueryService.getPlacesByCollectionId(collection.getId(), addedByMemberId, sortType, pageable);
 	}
 
 	public CollectionPlaceDetailResponse getPlaceDetail(

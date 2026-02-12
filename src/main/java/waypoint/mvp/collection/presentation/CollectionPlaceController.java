@@ -25,6 +25,7 @@ import waypoint.mvp.collection.application.dto.response.CollectionPlaceDetailRes
 import waypoint.mvp.collection.application.dto.response.CollectionPlaceResponse;
 import waypoint.mvp.collection.application.dto.response.PickPassResponse;
 import waypoint.mvp.collection.domain.CollectionPlacePreference;
+import waypoint.mvp.collection.domain.PlaceSortType;
 import waypoint.mvp.global.auth.annotations.AuthLevel;
 import waypoint.mvp.global.auth.annotations.Authorize;
 import waypoint.mvp.global.common.SliceResponse;
@@ -54,11 +55,12 @@ public class CollectionPlaceController {
 	public ResponseEntity<SliceResponse<CollectionPlaceResponse>> getPlaces(
 		@PathVariable String collectionId,
 		@RequestParam(required = false) String addedByMemberId,
+		@RequestParam(defaultValue = "LATEST") PlaceSortType sortType,
 		Pageable pageable,
 		@AuthenticationPrincipal AuthPrincipal principal
 	) {
 		SliceResponse<CollectionPlaceResponse> response =
-			collectionPlaceService.getPlaces(collectionId, addedByMemberId, pageable, principal);
+			collectionPlaceService.getPlaces(collectionId, addedByMemberId, sortType, pageable, principal);
 
 		return ResponseEntity.ok(response);
 	}

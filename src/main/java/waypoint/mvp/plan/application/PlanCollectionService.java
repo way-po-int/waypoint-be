@@ -14,6 +14,7 @@ import waypoint.mvp.collection.application.CollectionService;
 import waypoint.mvp.collection.application.dto.response.CollectionPlaceDetailResponse;
 import waypoint.mvp.collection.application.dto.response.CollectionPlaceResponse;
 import waypoint.mvp.collection.domain.Collection;
+import waypoint.mvp.collection.domain.PlaceSortType;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
 import waypoint.mvp.global.common.SliceResponse;
 import waypoint.mvp.global.error.exception.BusinessException;
@@ -80,6 +81,7 @@ public class PlanCollectionService {
 	public SliceResponse<CollectionPlaceResponse> findPlanCollectionPlaces(
 		String planId,
 		String collectionId,
+		PlaceSortType sortType,
 		Pageable pageable,
 		AuthPrincipal user
 	) {
@@ -89,7 +91,7 @@ public class PlanCollectionService {
 		PlanCollection planCollection = getPlanCollection(planId, collectionId);
 
 		return collectionPlaceQueryService.getPlacesByCollectionId(
-			planCollection.getCollection().getId(), null, pageable
+			planCollection.getCollection().getId(), null, sortType, pageable
 		);
 	}
 
