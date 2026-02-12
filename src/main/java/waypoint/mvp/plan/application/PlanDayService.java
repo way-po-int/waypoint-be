@@ -29,10 +29,11 @@ public class PlanDayService {
 	@Transactional
 	public void initPlanDays(Plan plan) {
 		int totalDays = calculateTotalDays(plan.getStartDate(), plan.getEndDate());
+		List<PlanDay> planDays = java.util.stream.IntStream.rangeClosed(1, totalDays)
+			.mapToObj(day -> PlanDay.create(plan, day))
+			.toList();
 
-		for (int day = 1; day <= totalDays; day++) {
-			planDayRepository.save(PlanDay.create(plan, day));
-		}
+		planDayRepository.saveAll(planDays);
 	}
 
 	/**
@@ -52,16 +53,18 @@ public class PlanDayService {
 		}
 
 		if (targetDays < currentDays) {
-			return shrinkDays(plan, currentDays, confirm);
+			return shrinkDays(plan, targetDays, confirm);
 		}
 
 		return PlanDaySyncResult.success();
 	}
 
 	private void expandDays(Plan plan, int currentDays, int targetDays) {
-		for (int day = currentDays + 1; day <= targetDays; day++) {
-			planDayRepository.save(PlanDay.create(plan, day));
-		}
+		List<PlanDay> newPlanDays = java.util.stream.IntStream.rangeClosed(currentDays + 1, targetDays)
+			.mapToObj(day -> PlanDay.create(plan, day))
+			.toList();
+
+		planDayRepository.saveAll(newPlanDays);
 	}
 
 	private PlanDaySyncResult shrinkDays(Plan plan, int targetDays,
