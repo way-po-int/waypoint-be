@@ -9,10 +9,12 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
-import waypoint.mvp.collection.application.CollectionPlaceService;
+import waypoint.mvp.collection.application.CollectionPlaceQueryService;
 import waypoint.mvp.collection.application.CollectionService;
+import waypoint.mvp.collection.application.dto.response.CollectionPlaceDetailResponse;
 import waypoint.mvp.collection.application.dto.response.CollectionPlaceResponse;
 import waypoint.mvp.collection.domain.Collection;
+import waypoint.mvp.collection.domain.PlaceSortType;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
 import waypoint.mvp.global.common.SliceResponse;
 import waypoint.mvp.global.error.exception.BusinessException;
@@ -29,13 +31,16 @@ import waypoint.mvp.plan.infrastructure.persistence.PlanCollectionRepository;
 @RequiredArgsConstructor
 public class PlanCollectionService {
 	private final CollectionService collectionService;
-	private final CollectionPlaceService collectionPlaceService;
+	private final CollectionPlaceQueryService collectionPlaceQueryService;
 	private final PlanMemberService planMemberService;
 	private final PlanService planService;
 	private final PlanCollectionRepository planCollectionRepository;
 	private final ResourceAuthorizer planAuthorizer;
 	private final ResourceAuthorizer collectionAuthorizer;
 
+	/**
+	 * plan에 collection추가는 collection의 멤버만 추가할 수 있다.
+	 * */
 	@Transactional
 	public PlanCollectionResponse createPlanCollection(
 		String planExternalId,
@@ -59,6 +64,12 @@ public class PlanCollectionService {
 		return PlanCollectionResponse.from(planCollectionRepository.save(planCollection));
 	}
 
+	public PlanCollection getPlanCollection(String planId, String collectionId) {
+		return planCollectionRepository
+			.findByPlanIdAndCollectionId(planId, collectionId)
+			.orElseThrow(() -> new BusinessException(PlanCollectionError.PLAN_COLLECTION_NOT_FOUND));
+	}
+
 	public List<PlanCollectionResponse> findPlanCollectionResponses(String planId, AuthPrincipal user) {
 		Plan plan = planService.getPlan(planId);
 		planAuthorizer.verifyAccess(user, plan.getId());
@@ -70,29 +81,42 @@ public class PlanCollectionService {
 	public SliceResponse<CollectionPlaceResponse> findPlanCollectionPlaces(
 		String planId,
 		String collectionId,
+		PlaceSortType sortType,
 		Pageable pageable,
 		AuthPrincipal user
 	) {
 		Plan plan = planService.getPlan(planId);
 		planAuthorizer.verifyMember(user, plan.getId());
 
-		PlanCollection planCollection = planCollectionRepository
-			.findByPlanIdAndCollectionId(planId, collectionId)
-			.orElseThrow(() -> new BusinessException(PlanCollectionError.PLAN_COLLECTION_NOT_FOUND));
+		PlanCollection planCollection = getPlanCollection(planId, collectionId);
 
-		return collectionPlaceService.getPlacesByCollectionId(
-			planCollection.getCollection().getId(), null, pageable
+		return collectionPlaceQueryService.getPlacesByCollectionId(
+			planCollection.getCollection().getId(), null, sortType, pageable
+		);
+	}
+
+	public CollectionPlaceDetailResponse findPlanCollectionPlaceDetail(
+		String planId,
+		String collectionId,
+		String collectionPlaceId,
+		UserPrincipal user
+	) {
+		Plan plan = planService.getPlan(planId);
+		planAuthorizer.verifyMember(user, plan.getId());
+
+		getPlanCollection(planId, collectionId);
+
+		return collectionPlaceQueryService.getPlaceDetail(
+			collectionId, collectionPlaceId
 		);
 	}
 
 	@Transactional
-	public void deletePlanCollection(String planExternalId, String collectionExternalId, UserPrincipal user) {
-		Plan plan = planService.getPlan(planExternalId);
+	public void deletePlanCollection(String planId, String collectionId, UserPrincipal user) {
+		Plan plan = planService.getPlan(planId);
 		planAuthorizer.verifyMember(user, plan.getId());
 
-		PlanCollection planCollection = planCollectionRepository
-			.findByPlanIdAndCollectionId(planExternalId, collectionExternalId)
-			.orElseThrow(() -> new BusinessException(PlanCollectionError.PLAN_COLLECTION_NOT_FOUND));
+		PlanCollection planCollection = getPlanCollection(planId, collectionId);
 
 		planCollectionRepository.delete(planCollection);
 	}
