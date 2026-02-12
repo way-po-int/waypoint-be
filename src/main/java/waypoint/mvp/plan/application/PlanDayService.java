@@ -12,7 +12,6 @@ import waypoint.mvp.plan.application.dto.PlanDaySyncResult;
 import waypoint.mvp.plan.application.dto.response.PlanUpdateResponse;
 import waypoint.mvp.plan.domain.Plan;
 import waypoint.mvp.plan.domain.PlanDay;
-import waypoint.mvp.plan.domain.TimeBlock;
 import waypoint.mvp.plan.infrastructure.persistence.BlockRepository;
 import waypoint.mvp.plan.infrastructure.persistence.PlanDayRepository;
 import waypoint.mvp.plan.infrastructure.persistence.TimeBlockRepository;
@@ -87,20 +86,9 @@ public class PlanDayService {
 	}
 
 	private void deleteExcessDays(Long planId, int targetDays) {
-		List<PlanDay> excessDays = planDayRepository.findAllByPlanIdAndDayGreaterThan(planId, targetDays);
-
-		if (excessDays.isEmpty()) {
-			return;
-		}
-
-		List<TimeBlock> timeBlocks = timeBlockRepository.findAllByPlanDayIn(excessDays);
-
-		if (!timeBlocks.isEmpty()) {
-			blockRepository.deleteAllByTimeBlockIn(timeBlocks);
-			timeBlockRepository.deleteAllByPlanDayIn(excessDays);
-		}
-
-		planDayRepository.deleteAll(excessDays);
+		blockRepository.deleteAllForExcessDays(planId, targetDays);
+		timeBlockRepository.deleteAllForExcessDays(planId, targetDays);
+		planDayRepository.deleteAllForExcessDays(planId, targetDays);
 	}
 
 	private int calculateTotalDays(LocalDate startDate, LocalDate endDate) {
