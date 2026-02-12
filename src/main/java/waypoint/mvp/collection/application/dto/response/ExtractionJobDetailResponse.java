@@ -39,7 +39,7 @@ public record ExtractionJobDetailResponse(
 			: null;
 
 		return new ExtractionJobDetailResponse(
-			job.getExternalId(),
+			job.getJobId(),
 			job.getCreatedAt(),
 			socialMedia.getStatus(),
 			socialMedia.getFailureCode(),

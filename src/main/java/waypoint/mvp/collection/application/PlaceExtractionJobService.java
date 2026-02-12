@@ -50,7 +50,7 @@ public class PlaceExtractionJobService {
 		extractionJobRepository.findByMemberIdAndDecidedAtIsNull(member.getId())
 			.ifPresent(job -> {
 				throw new BusinessException(PlaceExtractionJobError.JOB_IN_PROGRESS)
-					.addProperty("job_id", job.getExternalId());
+					.addProperty("job_id", job.getJobId());
 			});
 
 		// 장소 추출 이벤트 요청
@@ -61,7 +61,7 @@ public class PlaceExtractionJobService {
 		extractionJobRepository.save(job);
 
 		return new ExtractionJobResponse(
-			job.getExternalId(),
+			job.getJobId(),
 			socialMedia.getStatus()
 		);
 	}

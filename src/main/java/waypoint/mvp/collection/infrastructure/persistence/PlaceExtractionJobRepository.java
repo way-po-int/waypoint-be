@@ -16,9 +16,9 @@ public interface PlaceExtractionJobRepository extends JpaRepository<PlaceExtract
 
 	@Query("SELECT j FROM PlaceExtractionJob j JOIN FETCH j.member m"
 		+ " JOIN FETCH m.collection c JOIN FETCH j.socialMedia s"
-		+ " WHERE j.externalId = :externalId AND c.id = :collectionId AND m.user.id = :userId")
+		+ " WHERE j.jobId = :jobId AND c.id = :collectionId AND m.user.id = :userId")
 	Optional<PlaceExtractionJob> findExtractionJob(
-		@Param("externalId") String externalId,
+		@Param("jobId") String jobId,
 		@Param("collectionId") Long collectionId,
 		@Param("userId") Long userId
 	);
