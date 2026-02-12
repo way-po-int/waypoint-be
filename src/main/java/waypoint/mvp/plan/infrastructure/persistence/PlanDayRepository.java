@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import waypoint.mvp.plan.application.dto.response.PlanUpdateResponse;
 import waypoint.mvp.plan.domain.PlanDay;
 
 public interface PlanDayRepository extends JpaRepository<PlanDay, Long> {
@@ -17,7 +18,9 @@ public interface PlanDayRepository extends JpaRepository<PlanDay, Long> {
 
 	int countByPlanId(Long planId);
 
-	@Query("SELECT pd.day, COUNT(tb) FROM PlanDay pd LEFT JOIN TimeBlock tb ON tb.planDay = pd "
+	@Query("SELECT new waypoint.mvp.plan.application.dto.response.PlanUpdateResponse$AffectedDay(pd.day, COUNT(tb)) "
+		+ "FROM PlanDay pd LEFT JOIN TimeBlock tb ON tb.planDay = pd "
 		+ "WHERE pd.plan.id = :planId AND pd.day > :day GROUP BY pd.day ORDER BY pd.day")
-	List<Object[]> countTimeBlocksByDayGreaterThan(@Param("planId") Long planId, @Param("day") int day);
+	List<PlanUpdateResponse.AffectedDay> countTimeBlocksByDayGreaterThan(@Param("planId") Long planId,
+		@Param("day") int day);
 }

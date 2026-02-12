@@ -83,14 +83,7 @@ public class PlanDayService {
 	}
 
 	private List<PlanUpdateResponse.AffectedDay> findAffectedDays(Long planId, int targetDays) {
-		List<Object[]> rows = planDayRepository.countTimeBlocksByDayGreaterThan(planId, targetDays);
-
-		return rows.stream()
-			.map(row -> new PlanUpdateResponse.AffectedDay(
-				(int)row[0],
-				(long)row[1]
-			))
-			.toList();
+		return planDayRepository.countTimeBlocksByDayGreaterThan(planId, targetDays);
 	}
 
 	private void deleteExcessDays(Long planId, int targetDays) {
