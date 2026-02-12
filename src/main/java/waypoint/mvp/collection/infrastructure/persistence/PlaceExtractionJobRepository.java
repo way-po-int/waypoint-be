@@ -32,4 +32,6 @@ public interface PlaceExtractionJobRepository extends JpaRepository<PlaceExtract
 		@Param("userId") Long userId,
 		Pageable pageable
 	);
+
+	Optional<PlaceExtractionJob> findByMemberIdAndJobId(Long memberId, String jobId);
 }
