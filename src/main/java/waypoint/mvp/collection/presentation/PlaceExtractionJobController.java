@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.AuthPrincipal;
-import waypoint.mvp.collection.application.CollectionPlaceDraftService;
-import waypoint.mvp.collection.application.dto.request.CollectionPlaceDraftCreateRequest;
+import waypoint.mvp.collection.application.PlaceExtractionJobService;
+import waypoint.mvp.collection.application.dto.request.PlaceExtractionJobCreateRequest;
 import waypoint.mvp.collection.application.dto.response.ExtractionJobDetailResponse;
 import waypoint.mvp.collection.application.dto.response.ExtractionJobResponse;
 import waypoint.mvp.global.auth.annotations.AuthLevel;
@@ -21,38 +21,38 @@ import waypoint.mvp.global.auth.annotations.Authorize;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/collections/{collectionId}/drafts")
-public class CollectionPlaceDraftController {
+@RequestMapping("/collections/{collectionId}/extraction-jobs")
+public class PlaceExtractionJobController {
 
-	private final CollectionPlaceDraftService draftService;
+	private final PlaceExtractionJobService extractionJobService;
 
 	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@PostMapping
-	public ResponseEntity<ExtractionJobResponse> createDraft(
+	public ResponseEntity<ExtractionJobResponse> createExtractionJob(
 		@PathVariable String collectionId,
-		@RequestBody @Valid CollectionPlaceDraftCreateRequest request,
+		@RequestBody @Valid PlaceExtractionJobCreateRequest request,
 		@AuthenticationPrincipal AuthPrincipal user
 	) {
-		ExtractionJobResponse response = draftService.createDraft(collectionId, request, user);
+		ExtractionJobResponse response = extractionJobService.createExtractionJob(collectionId, request, user);
 		return ResponseEntity.accepted().body(response);
 	}
 
 	@GetMapping("/{jobId}")
-	public ResponseEntity<ExtractionJobDetailResponse> getDraft(
+	public ResponseEntity<ExtractionJobDetailResponse> getExtractionJob(
 		@PathVariable String collectionId,
 		@PathVariable String jobId,
 		@AuthenticationPrincipal AuthPrincipal user
 	) {
-		ExtractionJobDetailResponse response = draftService.getDraft(collectionId, jobId, user);
+		ExtractionJobDetailResponse response = extractionJobService.getExtractionJob(collectionId, jobId, user);
 		return ResponseEntity.ok(response);
 	}
 
 	@GetMapping("/latest")
-	public ResponseEntity<ExtractionJobDetailResponse> getLatestDraft(
+	public ResponseEntity<ExtractionJobDetailResponse> getLatestExtractionJob(
 		@PathVariable String collectionId,
 		@AuthenticationPrincipal AuthPrincipal user
 	) {
-		ExtractionJobDetailResponse response = draftService.getLatestDraft(collectionId, user);
+		ExtractionJobDetailResponse response = extractionJobService.getLatestExtractionJob(collectionId, user);
 		return ResponseEntity.ok(response);
 	}
 }

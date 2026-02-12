@@ -3,7 +3,7 @@ package waypoint.mvp.collection.application.dto.response;
 import java.util.List;
 import java.util.Objects;
 
-import waypoint.mvp.collection.domain.CollectionPlaceDraft;
+import waypoint.mvp.collection.domain.PlaceExtractionJob;
 import waypoint.mvp.place.domain.SocialMedia;
 import waypoint.mvp.place.domain.SocialMediaPlace;
 import waypoint.mvp.place.domain.SocialMediaStatus;
@@ -18,10 +18,10 @@ public record ExtractionJobDetailResponse(
 	Result result
 ) {
 	public static ExtractionJobDetailResponse of(
-		CollectionPlaceDraft draft,
+		PlaceExtractionJob job,
 		List<SocialMediaPlace> socialMediaPlaces
 	) {
-		SocialMedia socialMedia = draft.getSocialMedia();
+		SocialMedia socialMedia = job.getSocialMedia();
 
 		Result result = null;
 		if (socialMedia.getStatus() == SocialMediaStatus.COMPLETED) {
@@ -33,7 +33,7 @@ public record ExtractionJobDetailResponse(
 			: null;
 
 		return new ExtractionJobDetailResponse(
-			draft.getExternalId(),
+			job.getExternalId(),
 			socialMedia.getStatus(),
 			socialMedia.getFailureCode(),
 			failureMessage,
