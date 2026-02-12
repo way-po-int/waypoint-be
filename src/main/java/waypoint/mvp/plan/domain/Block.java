@@ -58,6 +58,17 @@ public class Block extends ExternalIdEntity {
 		this.addedBy = addedBy;
 	}
 
+	public static Block create(Place place, SocialMedia socialMedia, TimeBlock timeBlock, String memo,
+		PlanMember addedBy) {
+		return builder()
+			.place(place)
+			.socialMedia(socialMedia)
+			.timeBlock(timeBlock)
+			.memo(memo)
+			.addedBy(addedBy)
+			.build();
+	}
+
 	public void select() {
 		this.selected = true;
 	}

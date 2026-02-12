@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import waypoint.mvp.global.common.ExternalIdEntity;
@@ -31,4 +32,16 @@ public class PlanDay extends ExternalIdEntity {
 	@Column(nullable = false)
 	private int day;
 
+	@Builder(access = AccessLevel.PRIVATE)
+	private PlanDay(Plan plan, int day) {
+		this.plan = plan;
+		this.day = day;
+	}
+
+	public static PlanDay create(Plan plan, int day) {
+		return builder()
+			.plan(plan)
+			.day(day)
+			.build();
+	}
 }

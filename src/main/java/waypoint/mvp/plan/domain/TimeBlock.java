@@ -45,13 +45,22 @@ public class TimeBlock extends ExternalIdEntity {
 	@Column(nullable = false)
 	private TimeBlockType type;
 
-	@Builder
-	public TimeBlock(PlanDay planDay, LocalTime startTime, LocalTime endTime, TimeBlockType type) {
+	@Builder(access = AccessLevel.PRIVATE)
+	private TimeBlock(PlanDay planDay, LocalTime startTime, LocalTime endTime, TimeBlockType type) {
 		validateTimeRange(startTime, endTime); // 생성 시점 방어 로직
 		this.planDay = planDay;
 		this.startTime = startTime;
 		this.endTime = endTime;
 		this.type = type;
+	}
+
+	public static TimeBlock create(PlanDay planDay, LocalTime startTime, LocalTime endTime, TimeBlockType type) {
+		return builder()
+			.planDay(planDay)
+			.startTime(startTime)
+			.endTime(endTime)
+			.type(type)
+			.build();
 	}
 
 	public void updatePlanDay(PlanDay planDay) {

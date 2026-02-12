@@ -54,13 +54,24 @@ public class BlockOpinion extends ExternalIdEntity {
 	@Column(name = "opinion_tag_id")
 	private List<String> opinionTagIds = new ArrayList<>();
 
-	@Builder
-	public BlockOpinion(Block block, PlanMember addedBy, BlockOpinionType type, String comment,
+	@Builder(access = AccessLevel.PRIVATE)
+	private BlockOpinion(Block block, PlanMember addedBy, BlockOpinionType type, String comment,
 		List<String> opinionTagIds) {
 		this.block = block;
 		this.addedBy = addedBy;
 		this.type = type;
 		this.comment = comment;
 		this.opinionTagIds = (opinionTagIds != null) ? opinionTagIds : new ArrayList<>();
+	}
+
+	public static BlockOpinion create(Block block, PlanMember addedBy, BlockOpinionType type, String comment,
+		List<String> opinionTagIds) {
+		return builder()
+			.block(block)
+			.addedBy(addedBy)
+			.type(type)
+			.comment(comment)
+			.opinionTagIds(opinionTagIds)
+			.build();
 	}
 }
