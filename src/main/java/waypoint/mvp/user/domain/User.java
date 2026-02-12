@@ -55,4 +55,8 @@ public class User extends ExternalIdEntity {
 			.email(email)
 			.build();
 	}
+
+	public void changeNickname(String nickname) {
+		this.nickname = nickname;
+	}
 }

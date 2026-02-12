@@ -8,14 +8,15 @@ import java.lang.annotation.Target;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
-import waypoint.mvp.global.validation.validator.TitlePolicyValidator;
+import waypoint.mvp.global.validation.validator.NicknamePolicyValidator;
 
 @Documented
-@Constraint(validatedBy = TitlePolicyValidator.class)
+@Constraint(validatedBy = NicknamePolicyValidator.class)
 @Target({ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface TitlePolicy {
-	String message() default "한글, 영문, 숫자, 특수문자(' _), 이모지만 사용할 수 있습니다.";
+public @interface NicknamePolicy {
+
+	String message() default "닉네임은 2~10자의 한글/영문/숫자만 가능합니다. (공백/특수문자 불가)";
 
 	Class<?>[] groups() default {};
 
