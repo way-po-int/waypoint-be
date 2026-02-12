@@ -1,5 +1,6 @@
 package waypoint.mvp.place.domain.content;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
@@ -28,5 +29,6 @@ public abstract class ContentSnapshot {
 	private String contentId;
 	private String title;
 
+	@JsonIgnore
 	public abstract String getAuthorName();
 }
