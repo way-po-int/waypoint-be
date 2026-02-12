@@ -33,5 +33,11 @@ public interface PlaceExtractionJobRepository extends JpaRepository<PlaceExtract
 		Pageable pageable
 	);
 
-	Optional<PlaceExtractionJob> findByMemberIdAndJobId(Long memberId, String jobId);
+	@Query("SELECT j FROM PlaceExtractionJob j JOIN j.member m"
+		+ " WHERE j.jobId = :jobId AND m.collection.id = :collectionId AND m.user.id = :userId")
+	Optional<PlaceExtractionJob> findByJobIdAndCollectionIdAndUserId(
+		@Param("jobId") String jobId,
+		@Param("collectionId") Long collectionId,
+		@Param("userId") Long userId
+	);
 }

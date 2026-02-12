@@ -101,9 +101,8 @@ public class PlaceExtractionJobService {
 		Collection collection = collectionService.getCollection(collectionId);
 		collectionAuthorizer.verifyMember(user, collection.getId());
 
-		CollectionMember member = collectionMemberService.findMemberByUserId(collection.getId(), user.getId());
-
-		PlaceExtractionJob job = extractionJobRepository.findByMemberIdAndJobId(member.getId(), jobId)
+		PlaceExtractionJob job = extractionJobRepository
+			.findByJobIdAndCollectionIdAndUserId(jobId, collection.getId(), user.getId())
 			.orElseThrow(() -> new BusinessException(PlaceExtractionJobError.JOB_NOT_FOUND));
 
 		job.ignore();
