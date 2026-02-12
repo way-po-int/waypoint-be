@@ -95,4 +95,16 @@ public class PlaceExtractionJobService {
 
 		return ExtractionJobDetailResponse.of(job, socialMediaPlaces);
 	}
+
+	@Transactional
+	public void ignoreExtractionJob(String collectionId, String jobId, AuthPrincipal user) {
+		Collection collection = collectionService.getCollection(collectionId);
+		collectionAuthorizer.verifyMember(user, collection.getId());
+
+		PlaceExtractionJob job = extractionJobRepository
+			.findByJobIdAndCollectionIdAndUserId(jobId, collection.getId(), user.getId())
+			.orElseThrow(() -> new BusinessException(PlaceExtractionJobError.JOB_NOT_FOUND));
+
+		job.ignore();
+	}
 }

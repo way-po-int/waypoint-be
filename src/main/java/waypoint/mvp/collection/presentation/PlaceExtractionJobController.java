@@ -2,6 +2,7 @@ package waypoint.mvp.collection.presentation;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -37,6 +38,7 @@ public class PlaceExtractionJobController {
 		return ResponseEntity.accepted().body(response);
 	}
 
+	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@GetMapping("/{jobId}")
 	public ResponseEntity<ExtractionJobDetailResponse> getExtractionJob(
 		@PathVariable String collectionId,
@@ -47,6 +49,7 @@ public class PlaceExtractionJobController {
 		return ResponseEntity.ok(response);
 	}
 
+	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@GetMapping("/latest")
 	public ResponseEntity<ExtractionJobDetailResponse> getLatestExtractionJob(
 		@PathVariable String collectionId,
@@ -54,5 +57,16 @@ public class PlaceExtractionJobController {
 	) {
 		ExtractionJobDetailResponse response = extractionJobService.getLatestExtractionJob(collectionId, user);
 		return ResponseEntity.ok(response);
+	}
+
+	@Authorize(level = AuthLevel.AUTHENTICATED)
+	@DeleteMapping("/{jobId}")
+	public ResponseEntity<Void> ignoreExtractionJob(
+		@PathVariable String collectionId,
+		@PathVariable String jobId,
+		@AuthenticationPrincipal AuthPrincipal user
+	) {
+		extractionJobService.ignoreExtractionJob(collectionId, jobId, user);
+		return ResponseEntity.noContent().build();
 	}
 }
