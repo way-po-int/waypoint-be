@@ -73,7 +73,7 @@ public class CollectionPlaceService {
 
 		PlaceResponse placeResponse = PlaceResponse.from(place,
 			placePhotoService.resolveRepresentativePhotoUris(place));
-		return CollectionPlaceResponse.of(saved, placeResponse, List.of(), List.of());
+		return CollectionPlaceResponse.of(saved, placeResponse, PickPassResponse.of(List.of(), List.of()));
 	}
 
 	private Place getPlace(String placeId) {

@@ -97,7 +97,7 @@ public class CollectionPlaceQueryService {
 			List<CollectionMemberResponse> picked = byType.getOrDefault(CollectionPlacePreference.Type.PICK, List.of());
 			List<CollectionMemberResponse> passed = byType.getOrDefault(CollectionPlacePreference.Type.PASS, List.of());
 
-			return CollectionPlaceResponse.of(cp, placeResponse, picked, passed);
+			return CollectionPlaceResponse.of(cp, placeResponse, PickPassResponse.of(picked, passed));
 		}).toList();
 
 		return SliceResponse.from(result, content);
