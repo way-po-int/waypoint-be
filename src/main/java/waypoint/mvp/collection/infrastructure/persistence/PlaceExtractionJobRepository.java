@@ -12,7 +12,7 @@ import waypoint.mvp.collection.domain.PlaceExtractionJob;
 
 public interface PlaceExtractionJobRepository extends JpaRepository<PlaceExtractionJob, Long> {
 
-	Optional<PlaceExtractionJob> findByMemberId(Long memberId);
+	Optional<PlaceExtractionJob> findByMemberIdAndDecidedAtIsNull(Long memberId);
 
 	@Query("SELECT j FROM PlaceExtractionJob j JOIN FETCH j.member m"
 		+ " JOIN FETCH m.collection c JOIN FETCH j.socialMedia s"

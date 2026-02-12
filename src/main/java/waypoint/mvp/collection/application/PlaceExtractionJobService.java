@@ -1,7 +1,6 @@
 package waypoint.mvp.collection.application;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -48,11 +47,11 @@ public class PlaceExtractionJobService {
 		CollectionMember member = collectionMemberService.findMemberByUserId(collection.getId(), user.getId());
 
 		// 이미 진행 중인 작업이 있는지 확인
-		Optional<PlaceExtractionJob> existingJob = extractionJobRepository.findByMemberId(member.getId());
-		if (existingJob.isPresent()) {
-			throw new BusinessException(PlaceExtractionJobError.JOB_IN_PROGRESS)
-				.addProperty("job_id", existingJob.get().getExternalId());
-		}
+		extractionJobRepository.findByMemberIdAndDecidedAtIsNull(member.getId())
+			.ifPresent(job -> {
+				throw new BusinessException(PlaceExtractionJobError.JOB_IN_PROGRESS)
+					.addProperty("job_id", job.getExternalId());
+			});
 
 		// 장소 추출 이벤트 요청
 		SocialMedia socialMedia = socialMediaService.getOrCreateSocialMedia(request.url());
