@@ -104,11 +104,10 @@ public class PlanCollectionService {
 		Plan plan = planService.getPlan(planId);
 		planAuthorizer.verifyMember(user, plan.getId());
 
-		PlanCollection planCollection = getPlanCollection(planId, collectionId);
-		Collection collection = planCollection.getCollection();
+		getPlanCollection(planId, collectionId);
 
 		return collectionPlaceQueryService.getPlaceDetail(
-			collection.getExternalId(), collectionPlaceId
+			collectionId, collectionPlaceId
 		);
 	}
 
