@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.user.application.dto.SocialUserProfile;
-import waypoint.mvp.user.application.dto.UserResponse;
+import waypoint.mvp.user.application.dto.response.UserResponse;
 import waypoint.mvp.user.domain.SocialAccount;
 import waypoint.mvp.user.domain.User;
 import waypoint.mvp.user.error.UserError;

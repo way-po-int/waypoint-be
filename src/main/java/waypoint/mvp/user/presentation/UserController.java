@@ -14,8 +14,8 @@ import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.global.auth.annotations.AuthLevel;
 import waypoint.mvp.global.auth.annotations.Authorize;
 import waypoint.mvp.user.application.UserService;
-import waypoint.mvp.user.application.dto.UserResponse;
 import waypoint.mvp.user.application.dto.request.UserUpdateRequest;
+import waypoint.mvp.user.application.dto.response.UserResponse;
 
 @RestController
 @RequiredArgsConstructor

@@ -1,4 +1,4 @@
-package waypoint.mvp.user.application.dto;
+package waypoint.mvp.user.application.dto.response;
 
 import waypoint.mvp.global.util.MaskingUtils;
 import waypoint.mvp.user.domain.Provider;
