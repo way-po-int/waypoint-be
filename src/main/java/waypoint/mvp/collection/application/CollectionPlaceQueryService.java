@@ -66,6 +66,22 @@ public class CollectionPlaceQueryService {
 	}
 
 	/**
+	 * CollectionPlace 정보 조회 - externalId 기반 (권한 검증 없음)
+	 */
+	public CollectionPlace getCollectionPlace(String collectionPlaceId) {
+		return collectionPlaceRepository.findByExternalId(collectionPlaceId)
+			.orElseThrow(() -> new BusinessException(CollectionPlaceError.COLLECTION_PLACE_NOT_FOUND));
+	}
+
+	/**
+	 * CollectionPlace 정보 조회 - Long id 기반 (권한 검증 없음)
+	 */
+	public CollectionPlace getCollectionPlace(Long collectionPlaceId) {
+		return collectionPlaceRepository.findByIdWithFetch(collectionPlaceId)
+			.orElseThrow(() -> new BusinessException(CollectionPlaceError.COLLECTION_PLACE_NOT_FOUND));
+	}
+
+	/**
 	 * Place 정보를 PlaceResponse로 변환 (사진 포함)
 	 */
 	public PlaceResponse toPlaceResponse(Place place) {
