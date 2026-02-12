@@ -1,6 +1,11 @@
 package waypoint.mvp.collection.domain;
 
+import java.time.Instant;
+
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -12,7 +17,9 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import waypoint.mvp.collection.error.PlaceExtractionJobError;
 import waypoint.mvp.global.common.ExternalIdEntity;
+import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.place.domain.SocialMedia;
 
 @Entity
@@ -33,10 +40,18 @@ public class PlaceExtractionJob extends ExternalIdEntity {
 	@JoinColumn(nullable = false)
 	private SocialMedia socialMedia;
 
+	@Column(nullable = false)
+	@Enumerated(EnumType.STRING)
+	private DecisionStatus decisionStatus;
+
+	@Column
+	private Instant decidedAt;
+
 	@Builder(access = AccessLevel.PRIVATE)
 	private PlaceExtractionJob(CollectionMember member, SocialMedia socialMedia) {
 		this.member = member;
 		this.socialMedia = socialMedia;
+		this.decisionStatus = DecisionStatus.UNDECIDED;
 	}
 
 	public static PlaceExtractionJob create(CollectionMember member, SocialMedia socialMedia) {
@@ -44,5 +59,29 @@ public class PlaceExtractionJob extends ExternalIdEntity {
 			.member(member)
 			.socialMedia(socialMedia)
 			.build();
+	}
+
+	public void select() {
+		validateDecisionStatus();
+		this.decisionStatus = DecisionStatus.SELECTED;
+		this.decidedAt = Instant.now();
+	}
+
+	public void ignore() {
+		validateDecisionStatus();
+		this.decisionStatus = DecisionStatus.IGNORED;
+		this.decidedAt = Instant.now();
+	}
+
+	private void validateDecisionStatus() {
+		if (this.decisionStatus != DecisionStatus.UNDECIDED) {
+			throw new BusinessException(PlaceExtractionJobError.ALREADY_DECIDED);
+		}
+	}
+
+	enum DecisionStatus {
+		UNDECIDED,
+		SELECTED,
+		IGNORED
 	}
 }
