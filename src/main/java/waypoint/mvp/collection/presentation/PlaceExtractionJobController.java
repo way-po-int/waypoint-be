@@ -38,6 +38,7 @@ public class PlaceExtractionJobController {
 		return ResponseEntity.accepted().body(response);
 	}
 
+	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@GetMapping("/{jobId}")
 	public ResponseEntity<ExtractionJobDetailResponse> getExtractionJob(
 		@PathVariable String collectionId,
@@ -48,6 +49,7 @@ public class PlaceExtractionJobController {
 		return ResponseEntity.ok(response);
 	}
 
+	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@GetMapping("/latest")
 	public ResponseEntity<ExtractionJobDetailResponse> getLatestExtractionJob(
 		@PathVariable String collectionId,
@@ -57,6 +59,7 @@ public class PlaceExtractionJobController {
 		return ResponseEntity.ok(response);
 	}
 
+	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@DeleteMapping("/{jobId}")
 	public ResponseEntity<Void> ignoreExtractionJob(
 		@PathVariable String collectionId,
