@@ -1,5 +1,8 @@
 package waypoint.mvp.collection.application.dto.response;
 
+import static waypoint.mvp.collection.domain.PlaceExtractionJob.*;
+
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
@@ -12,9 +15,12 @@ import waypoint.mvp.place.error.ExtractFailureCode;
 
 public record ExtractionJobDetailResponse(
 	String jobId,
+	Instant requestedAt,
 	SocialMediaStatus status,
 	ExtractFailureCode failureCode,
 	String failureMessage,
+	DecisionStatus decisionStatus,
+	Instant decidedAt,
 	Result result
 ) {
 	public static ExtractionJobDetailResponse of(
@@ -34,14 +40,19 @@ public record ExtractionJobDetailResponse(
 
 		return new ExtractionJobDetailResponse(
 			job.getExternalId(),
+			job.getCreatedAt(),
 			socialMedia.getStatus(),
 			socialMedia.getFailureCode(),
 			failureMessage,
+			job.getDecisionStatus(),
+			job.getDecidedAt(),
 			result
 		);
 	}
 
 	public record Result(
+		int detectedCount,
+		int matchedCount,
 		SocialMediaType mediaType,
 		String url,
 		String authorName,
@@ -55,11 +66,14 @@ public record ExtractionJobDetailResponse(
 			String authorName = snapshot != null ? snapshot.getAuthorName() : null;
 
 			List<Place> places = socialMediaPlaces.stream()
+				.filter(SocialMediaPlace::isCompleted)
 				.map(Place::from)
 				.filter(Objects::nonNull)
 				.toList();
 
 			return new Result(
+				socialMediaPlaces.size(),
+				places.size(),
 				socialMedia.getType(),
 				socialMedia.getUrl(),
 				authorName,

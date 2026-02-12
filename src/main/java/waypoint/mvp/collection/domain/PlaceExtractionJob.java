@@ -79,7 +79,7 @@ public class PlaceExtractionJob extends ExternalIdEntity {
 		}
 	}
 
-	enum DecisionStatus {
+	public enum DecisionStatus {
 		UNDECIDED,
 		SELECTED,
 		IGNORED

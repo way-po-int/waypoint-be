@@ -25,7 +25,7 @@ public interface PlaceExtractionJobRepository extends JpaRepository<PlaceExtract
 
 	@Query("SELECT j FROM PlaceExtractionJob j JOIN FETCH j.member m"
 		+ " JOIN FETCH m.collection c JOIN FETCH j.socialMedia s"
-		+ " WHERE m.collection.id = :collectionId AND m.user.id = :userId"
+		+ " WHERE m.collection.id = :collectionId AND m.user.id = :userId AND j.decidedAt IS NULL"
 		+ " ORDER BY j.id DESC")
 	List<PlaceExtractionJob> findLatestExtractionJob(
 		@Param("collectionId") Long collectionId,

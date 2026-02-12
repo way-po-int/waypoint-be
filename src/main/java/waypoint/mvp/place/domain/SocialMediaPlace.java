@@ -89,6 +89,10 @@ public class SocialMediaPlace {
 		return this.status.isFinished();
 	}
 
+	public boolean isCompleted() {
+		return this.status == PlaceSearchStatus.COMPLETED;
+	}
+
 	public static SocialMediaPlace create(SocialMedia socialMedia, String searchQuery) {
 		return builder()
 			.socialMedia(socialMedia)
