@@ -20,11 +20,9 @@ import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.collection.application.CollectionPlaceService;
 import waypoint.mvp.collection.application.dto.request.CollectionPlaceCreateRequest;
-import waypoint.mvp.collection.application.dto.request.CollectionPlaceFromUrlRequest;
 import waypoint.mvp.collection.application.dto.request.CollectionPlaceUpdateRequest;
 import waypoint.mvp.collection.application.dto.response.CollectionPlaceDetailResponse;
 import waypoint.mvp.collection.application.dto.response.CollectionPlaceResponse;
-import waypoint.mvp.collection.application.dto.response.ExtractionJobResponse;
 import waypoint.mvp.collection.application.dto.response.PickPassResponse;
 import waypoint.mvp.collection.domain.CollectionPlacePreference;
 import waypoint.mvp.global.auth.annotations.AuthLevel;
@@ -49,17 +47,6 @@ public class CollectionPlaceController {
 
 		URI location = URI.create("/collections/" + collectionId + "/places/" + response.collectionPlaceId());
 		return ResponseEntity.created(location).body(response);
-	}
-
-	@Authorize(level = AuthLevel.AUTHENTICATED)
-	@PostMapping("/from-url")
-	public ResponseEntity<ExtractionJobResponse> fromUrl(
-		@PathVariable String collectionId,
-		@Valid @RequestBody CollectionPlaceFromUrlRequest request,
-		@AuthenticationPrincipal AuthPrincipal principal
-	) {
-		ExtractionJobResponse response = collectionPlaceService.addPlacesFromUrl(collectionId, request, principal);
-		return ResponseEntity.accepted().body(response);
 	}
 
 	@Authorize(level = AuthLevel.GUEST_OR_MEMBER)

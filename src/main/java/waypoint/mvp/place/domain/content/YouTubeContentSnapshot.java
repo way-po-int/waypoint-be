@@ -20,4 +20,9 @@ public class YouTubeContentSnapshot extends ContentSnapshot {
 	private String channelId;
 	private String channelTitle;
 	private String duration;
+
+	@Override
+	public String getAuthorName() {
+		return channelTitle;
+	}
 }

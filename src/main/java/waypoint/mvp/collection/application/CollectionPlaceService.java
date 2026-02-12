@@ -16,22 +16,18 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.collection.application.dto.request.CollectionPlaceCreateRequest;
-import waypoint.mvp.collection.application.dto.request.CollectionPlaceFromUrlRequest;
 import waypoint.mvp.collection.application.dto.request.CollectionPlaceUpdateRequest;
 import waypoint.mvp.collection.application.dto.response.CollectionMemberResponse;
 import waypoint.mvp.collection.application.dto.response.CollectionPlaceDetailResponse;
 import waypoint.mvp.collection.application.dto.response.CollectionPlaceResponse;
-import waypoint.mvp.collection.application.dto.response.ExtractionJobResponse;
 import waypoint.mvp.collection.application.dto.response.PickPassResponse;
 import waypoint.mvp.collection.application.dto.response.SocialMediaResponse;
 import waypoint.mvp.collection.domain.Collection;
 import waypoint.mvp.collection.domain.CollectionMember;
 import waypoint.mvp.collection.domain.CollectionPlace;
-import waypoint.mvp.collection.domain.CollectionPlaceDraft;
 import waypoint.mvp.collection.domain.CollectionPlacePreference;
 import waypoint.mvp.collection.error.CollectionError;
 import waypoint.mvp.collection.error.CollectionPlaceError;
-import waypoint.mvp.collection.infrastructure.persistence.CollectionPlaceDraftRepository;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionPlacePreferenceRepository;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionPlaceRepository;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionRepository;
@@ -39,11 +35,8 @@ import waypoint.mvp.global.auth.ResourceAuthorizer;
 import waypoint.mvp.global.common.SliceResponse;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.place.application.PlacePhotoService;
-import waypoint.mvp.place.application.SocialMediaService;
 import waypoint.mvp.place.application.dto.PlaceResponse;
-import waypoint.mvp.place.application.dto.SocialMediaInfo;
 import waypoint.mvp.place.domain.Place;
-import waypoint.mvp.place.domain.SocialMedia;
 import waypoint.mvp.place.error.PlaceError;
 import waypoint.mvp.place.infrastructure.persistence.PlaceRepository;
 
@@ -60,8 +53,6 @@ public class CollectionPlaceService {
 	private final CollectionPlaceRepository collectionPlaceRepository;
 	private final CollectionPlacePreferenceRepository preferenceRepository;
 
-	private final SocialMediaService socialMediaService;
-	private final CollectionPlaceDraftRepository jobRepository;
 	private final PlacePhotoService placePhotoService;
 
 	@Transactional
@@ -110,28 +101,6 @@ public class CollectionPlaceService {
 		if (updatedCount > 0) {
 			collection.updateThumbnail(thumbnailUrl);
 		}
-	}
-
-	@Transactional
-	public ExtractionJobResponse addPlacesFromUrl(
-		String collectionId,
-		CollectionPlaceFromUrlRequest request,
-		AuthPrincipal principal
-	) {
-		Collection collection = getCollection(collectionId);
-		collectionAuthorizer.verifyMember(principal, collection.getId());
-		CollectionMember member = collectionMemberService.findMemberByUserId(collection.getId(), principal.getId());
-
-		// 장소 추출 이벤트 요청
-		SocialMediaInfo socialMediaInfo = socialMediaService.addJob(request.url());
-
-		// 어떤 멤버가 어떤 URL을 요청했는지 구분하기 위한 중간 테이블
-		CollectionPlaceDraft draft = createOrGetDraft(member, socialMediaInfo.id());
-
-		return new ExtractionJobResponse(
-			draft.getExternalId(),
-			socialMediaInfo.status()
-		);
 	}
 
 	private CollectionMember getActiveMember(Long collectionId, Long userId) {
@@ -283,15 +252,6 @@ public class CollectionPlaceService {
 			preferenceByType.getOrDefault(CollectionPlacePreference.Type.PASS, List.of());
 
 		return PickPassResponse.of(picked, passed);
-	}
-
-	private CollectionPlaceDraft createOrGetDraft(CollectionMember member, Long socialMediaId) {
-		return jobRepository.findByMemberIdAndSocialMediaId(member.getId(), socialMediaId)
-			.orElseGet(() -> {
-				SocialMedia media = socialMediaService.getSocialMedia(socialMediaId);
-				CollectionPlaceDraft draft = CollectionPlaceDraft.create(member, media);
-				return jobRepository.save(draft);
-			});
 	}
 
 	private Collection getCollection(String collectionId) {

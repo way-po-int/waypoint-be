@@ -6,7 +6,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.global.error.exception.BusinessException;
-import waypoint.mvp.place.application.dto.SocialMediaInfo;
 import waypoint.mvp.place.application.dto.llm.PlaceAnalysis;
 import waypoint.mvp.place.application.dto.llm.PlaceExtractionResult;
 import waypoint.mvp.place.domain.SocialMedia;
@@ -26,9 +25,17 @@ public class SocialMediaService {
 	private final ApplicationEventPublisher eventPublisher;
 
 	@Transactional
-	public SocialMediaInfo addJob(String url) {
-		SocialMedia socialMedia = createOrGetSocialMedia(url);
-		return SocialMediaInfo.from(socialMedia);
+	public SocialMedia getOrCreateSocialMedia(String url) {
+		return socialMediaRepository.findByUrl(url)
+			.orElseGet(() -> {
+				SocialMedia socialMedia = socialMediaRepository.save(SocialMedia.create(url));
+
+				// 장소 추출 이벤트 발행
+				PlaceExtractionRequestedEvent event = new PlaceExtractionRequestedEvent(socialMedia.getId());
+				eventPublisher.publishEvent(event);
+
+				return socialMedia;
+			});
 	}
 
 	public SocialMedia getSocialMedia(Long socialMediaId) {
@@ -77,18 +84,5 @@ public class SocialMediaService {
 	public void fail(Long socialMediaId, ExtractFailureCode failureCode) {
 		SocialMedia socialMedia = getSocialMedia(socialMediaId);
 		socialMedia.fail(failureCode);
-	}
-
-	private SocialMedia createOrGetSocialMedia(String url) {
-		return socialMediaRepository.findByUrl(url)
-			.orElseGet(() -> {
-				SocialMedia socialMedia = socialMediaRepository.save(SocialMedia.create(url));
-
-				// 장소 추출 이벤트 발행
-				PlaceExtractionRequestedEvent event = new PlaceExtractionRequestedEvent(socialMedia.getId());
-				eventPublisher.publishEvent(event);
-
-				return socialMedia;
-			});
 	}
 }
