@@ -13,13 +13,13 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import waypoint.mvp.global.common.ExternalIdEntity;
+import waypoint.mvp.global.common.BaseTimeEntity;
 
 @Entity
 @Table(name = "plan_days")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class PlanDay extends ExternalIdEntity {
+public class PlanDay extends BaseTimeEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

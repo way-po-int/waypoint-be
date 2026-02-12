@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum TimeBlockType {
-	PLACE("장소 볼록"),
+	PLACE("장소 블록"),
 	FREE("자유시간 블록");
 
 	private final String description;
