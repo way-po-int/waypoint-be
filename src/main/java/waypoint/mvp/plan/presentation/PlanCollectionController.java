@@ -47,7 +47,7 @@ public class PlanCollectionController {
 		return ResponseEntity.created(location).body(response);
 	}
 
-	@Authorize(level = AuthLevel.GUEST_OR_MEMBER)
+	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@GetMapping
 	public ResponseEntity<List<PlanCollectionResponse>> findConnectedCollections(
 		@PathVariable String planId,
