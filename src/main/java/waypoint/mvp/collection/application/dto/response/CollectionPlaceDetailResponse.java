@@ -7,18 +7,21 @@ public record CollectionPlaceDetailResponse(
 	String collectionPlaceId,
 	String memo,
 	PlaceResponse place,
-	SocialMediaResponse socialMedia
+	SocialMediaResponse socialMedia,
+	PickPassResponse pickPass
 ) {
 	public static CollectionPlaceDetailResponse of(
 		CollectionPlace collectionPlace,
 		PlaceResponse place,
-		SocialMediaResponse socialMedia
+		SocialMediaResponse socialMedia,
+		PickPassResponse pickPass
 	) {
 		return new CollectionPlaceDetailResponse(
 			collectionPlace.getExternalId(),
 			collectionPlace.getMemo(),
 			place,
-			socialMedia
+			socialMedia,
+			pickPass
 		);
 	}
 }

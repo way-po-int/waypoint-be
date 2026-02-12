@@ -118,8 +118,9 @@ public class CollectionPlaceQueryService {
 			extractPhotos(collectionPlace.getPlace())
 		);
 		SocialMediaResponse socialMediaResponse = toSocialMediaResponse(collectionPlace);
+		PickPassResponse pickPass = getPickPass(collection.getId());
 
-		return CollectionPlaceDetailResponse.of(collectionPlace, placeResponse, socialMediaResponse);
+		return CollectionPlaceDetailResponse.of(collectionPlace, placeResponse, socialMediaResponse, pickPass);
 	}
 
 	/**
