@@ -1,0 +1,47 @@
+package waypoint.mvp.plan.domain;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import waypoint.mvp.global.common.BaseTimeEntity;
+
+@Entity
+@Table(name = "plan_days")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class PlanDay extends BaseTimeEntity {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(nullable = false)
+	private Plan plan;
+
+	@Column(nullable = false)
+	private int day;
+
+	@Builder(access = AccessLevel.PRIVATE)
+	private PlanDay(Plan plan, int day) {
+		this.plan = plan;
+		this.day = day;
+	}
+
+	public static PlanDay create(Plan plan, int day) {
+		return builder()
+			.plan(plan)
+			.day(day)
+			.build();
+	}
+}
