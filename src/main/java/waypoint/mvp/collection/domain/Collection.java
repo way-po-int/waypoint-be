@@ -1,6 +1,5 @@
 package waypoint.mvp.collection.domain;
 
-import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import jakarta.persistence.Column;
@@ -19,7 +18,6 @@ import waypoint.mvp.global.common.LogicalDeleteEntity;
 @Table(name = "collections")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@SQLDelete(sql = "UPDATE collections SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
 public class Collection extends LogicalDeleteEntity {
 
@@ -68,5 +66,9 @@ public class Collection extends LogicalDeleteEntity {
 
 	public boolean isThumbnailEmpty() {
 		return thumbnail == null || thumbnail.isBlank();
+	}
+
+	public void delete() {
+		super.softDelete();
 	}
 }
