@@ -17,8 +17,8 @@ public interface BlockRepository extends JpaRepository<Block, Long> {
 	@Query("SELECT b FROM Block b "
 		+ "JOIN FETCH b.timeBlock tb "
 		+ "JOIN FETCH tb.planDay "
-		+ "JOIN FETCH b.place "
-		+ "JOIN FETCH b.socialMedia "
+		+ "LEFT JOIN FETCH b.place "
+		+ "LEFT JOIN FETCH b.socialMedia "
 		+ "WHERE b.externalId = :externalId")
 	Optional<Block> findByExternalIdWithFetch(@Param("externalId") String externalId);
 

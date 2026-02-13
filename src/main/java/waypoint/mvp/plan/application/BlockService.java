@@ -53,37 +53,27 @@ public class BlockService {
 		Plan plan = getPlanAuthor(planExternalId, user);
 		Long planId = plan.getId();
 
-		CollectionPlace collectionPlace = collectionPlaceQueryService.getCollectionPlace(request.collectionPlaceId());
-		PlaceResponse placeResponse = collectionPlaceQueryService.toPlaceResponse(collectionPlace);
-
 		PlanDay planDay = findPlanDay(planId, request.day());
-
 		TimeBlock timeBlock = saveTimeBlock(planDay, request.startTime(), request.endTime(), request.type());
-		Block block = saveBlock(timeBlock, collectionPlace, planId, request.memo(), user);
+		PlanMember addedBy = planMemberService.findMemberByUserId(planId, user.getId());
 
-		return BlockResponse.from(timeBlock, block, placeResponse);
+		if (request.type() == TimeBlockType.PLACE) {
+			CollectionPlace collectionPlace = collectionPlaceQueryService.getCollectionPlace(request.collectionPlaceId());
+			PlaceResponse placeResponse = collectionPlaceQueryService.toPlaceResponse(collectionPlace);
+			Block block = blockRepository.save(
+				Block.create(collectionPlace.getPlace(), collectionPlace.getSocialMedia(), timeBlock, request.memo(), addedBy)
+			);
+			return BlockResponse.from(timeBlock, block, placeResponse);
+		}
+
+		Block block = blockRepository.save(Block.createFree(timeBlock, request.memo(), addedBy));
+		return BlockResponse.from(timeBlock, block, null);
 	}
 
 	private TimeBlock saveTimeBlock(PlanDay planDay, LocalTime startTime, LocalTime endTime, TimeBlockType type) {
 		TimeBlock timeBlock = TimeBlock.create(planDay, startTime, endTime, type);
 
 		return timeBlockRepository.save(timeBlock);
-	}
-
-	private Block saveBlock(
-		TimeBlock timeBlock, CollectionPlace collectionPlace, Long planId,
-		String memo, UserPrincipal user
-	) {
-		PlanMember addedBy = planMemberService.findMemberByUserId(planId, user.getId());
-		Block block = Block.create(
-			collectionPlace.getPlace(),
-			collectionPlace.getSocialMedia(),
-			timeBlock,
-			memo,
-			addedBy
-		);
-
-		return blockRepository.save(block);
 	}
 
 	public SliceResponse<BlockResponse> findBlocks(String planId, int day, AuthPrincipal user, Pageable pageable) {
@@ -114,15 +104,19 @@ public class BlockService {
 
 		Block block = blockRepository.findByExternalIdWithFetch(blockId)
 			.orElseThrow(() -> new BusinessException(BlockError.PLAN_NOT_FOUND));
-		PlaceResponse placeResponse = collectionPlaceQueryService.toPlaceResponse(block.getPlace());
 
-		return BlockDetailResponse.from(block, placeResponse);
+		return BlockDetailResponse.from(block, toPlaceResponse(block));
 	}
 
 	private BlockResponse toBlockResponse(TimeBlock timeBlock, Block selectedBlock) {
-		PlaceResponse placeResponse = collectionPlaceQueryService.toPlaceResponse(selectedBlock.getPlace());
+		return BlockResponse.from(timeBlock, selectedBlock, toPlaceResponse(selectedBlock));
+	}
 
-		return BlockResponse.from(timeBlock, selectedBlock, placeResponse);
+	private PlaceResponse toPlaceResponse(Block block) {
+		if (block == null || block.getPlace() == null) {
+			return null;
+		}
+		return collectionPlaceQueryService.toPlaceResponse(block.getPlace());
 	}
 
 	private PlanDay findPlanDay(Long planId, int day) {
