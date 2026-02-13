@@ -31,6 +31,8 @@ dependencies {
     implementation("com.aventrix.jnanoid:jnanoid:2.0.0")
     implementation(libs.jjwt.api)
     implementation(libs.youtube.api)
+    implementation(platform("software.amazon.awssdk:bom:2.41.25"))
+    implementation("software.amazon.awssdk:s3")
 
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
