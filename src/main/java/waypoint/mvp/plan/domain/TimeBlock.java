@@ -2,6 +2,9 @@ package waypoint.mvp.plan.domain;
 
 import java.time.LocalTime;
 
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -13,14 +16,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import waypoint.mvp.global.common.ExternalIdEntity;
 import waypoint.mvp.global.error.exception.BusinessException;
+import waypoint.mvp.global.util.TimeUtils;
 import waypoint.mvp.plan.domain.error.TimeBlockError;
 
 @Entity
@@ -77,8 +79,7 @@ public class TimeBlock extends ExternalIdEntity {
 	}
 
 	private void validateTimeRange(LocalTime start, LocalTime end) {
-		// TODO timeUtil 사용으로 변경
-		if (start.isAfter(end) || start.equals(end)) {
+		if (TimeUtils.isValidRange(start, end)) {
 			throw new BusinessException(TimeBlockError.INVALID_TIME_RANGE);
 		}
 	}
