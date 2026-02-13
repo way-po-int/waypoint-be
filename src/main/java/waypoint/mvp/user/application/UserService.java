@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.user.application.dto.SocialUserProfile;
+import waypoint.mvp.user.application.dto.response.PresignedUrlResponse;
 import waypoint.mvp.user.application.dto.response.UserResponse;
 import waypoint.mvp.user.domain.SocialAccount;
 import waypoint.mvp.user.domain.User;
@@ -19,6 +20,7 @@ import waypoint.mvp.user.infrastructure.persistence.UserRepository;
 public class UserService implements UserFinder {
 
 	private final UserRepository userRepository;
+	private final UserProfileImageService userProfileImageService;
 
 	@Transactional
 	public User loadSocialUser(SocialUserProfile profile) {
@@ -37,6 +39,17 @@ public class UserService implements UserFinder {
 		User me = findById(user.id());
 		me.changeNickname(nickname);
 		return UserResponse.from(me);
+	}
+
+	@Transactional
+	public PresignedUrlResponse updateProfilePicture(UserPrincipal user, String contentType) {
+		User me = findById(user.id());
+
+		var result = userProfileImageService.presignProfileUpload(me.getExternalId(), contentType);
+
+		me.changePicture(result.pictureUrl());
+
+		return PresignedUrlResponse.from(result.presignedUrl());
 	}
 
 	public UserResponse findMe(UserPrincipal user) {
