@@ -59,4 +59,8 @@ public class User extends ExternalIdEntity {
 	public void changeNickname(String nickname) {
 		this.nickname = nickname;
 	}
+
+	public void changePicture(String picture) {
+		this.picture = picture;
+	}
 }
