@@ -21,4 +21,6 @@ public interface BlockRepository extends JpaRepository<Block, Long> {
 		+ "JOIN FETCH b.socialMedia "
 		+ "WHERE b.externalId = :externalId")
 	Optional<Block> findByExternalIdWithFetch(@Param("externalId") String externalId);
+
+
 }
