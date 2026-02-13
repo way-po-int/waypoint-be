@@ -6,7 +6,6 @@ import java.util.Set;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import lombok.RequiredArgsConstructor;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
@@ -14,7 +13,6 @@ import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.user.error.UserError;
 
 @Service
-@RequiredArgsConstructor
 public class UserProfileImageService {
 
 	private static final Duration PRESIGN_TTL = Duration.ofMinutes(10);
@@ -26,12 +24,21 @@ public class UserProfileImageService {
 	);
 
 	private final S3Presigner presigner;
+	private final String bucket;
+	private final String region;
+	private final String urlFormat;
 
-	@Value("${aws.s3.bucket}")
-	private String bucket;
-
-	@Value("${aws.region}")
-	private String region;
+	public UserProfileImageService(
+		S3Presigner presigner,
+		@Value("${aws.s3.bucket}") String bucket,
+		@Value("${aws.region}") String region,
+		@Value("${aws.s3.url-format}") String urlFormat
+	) {
+		this.presigner = presigner;
+		this.bucket = bucket;
+		this.region = region;
+		this.urlFormat = urlFormat;
+	}
 
 	public PresignedUpload presignProfileUpload(String userExternalId, String contentType) {
 		String normalized = normalizeAndValidateContentType(contentType);
@@ -51,13 +58,13 @@ public class UserProfileImageService {
 			.build();
 
 		String presignedUrl = presigner.presignPutObject(presignRequest).url().toString();
-		String pictureUrl = "https://%s.s3.%s.amazonaws.com/%s".formatted(bucket, region, key);
+		String pictureUrl = urlFormat.formatted(bucket, region, key);
 
 		return new PresignedUpload(presignedUrl, pictureUrl);
 	}
 
 	private String normalizeAndValidateContentType(String contentType) {
-		String normalized = contentType == null ? "" : contentType.trim().toLowerCase();
+		String normalized = contentType == null ? "" : contentType.trim().toLowerCase(java.util.Locale.ROOT);
 		if (!ALLOWED_CONTENT_TYPES.contains(normalized)) {
 			throw new BusinessException(UserError.UNSUPPORTED_IMAGE_CONTENT_TYPE);
 		}

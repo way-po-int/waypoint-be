@@ -107,3 +107,4 @@ aws:
   region: ${AWS_REGION:ap-northeast-2}
   s3:
     bucket: ${AWS_S3_BUCKET:way-point-bucket}
+    url-format: ${AWS_S3_URL_FORMAT:https://%s.s3.%s.amazonaws.com/%s}
