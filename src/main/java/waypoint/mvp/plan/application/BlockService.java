@@ -57,17 +57,9 @@ public class BlockService {
 		TimeBlock timeBlock = saveTimeBlock(planDay, request.startTime(), request.endTime(), request.type());
 		PlanMember addedBy = planMemberService.findMemberByUserId(planId, user.getId());
 
-		if (request.type() == TimeBlockType.PLACE) {
-			CollectionPlace collectionPlace = collectionPlaceQueryService.getCollectionPlace(request.collectionPlaceId());
-			PlaceResponse placeResponse = collectionPlaceQueryService.toPlaceResponse(collectionPlace);
-			Block block = blockRepository.save(
-				Block.create(collectionPlace.getPlace(), collectionPlace.getSocialMedia(), timeBlock, request.memo(), addedBy)
-			);
-			return BlockResponse.from(timeBlock, block, placeResponse);
-		}
+		Block block = createBlockByType(request, timeBlock, addedBy);
 
-		Block block = blockRepository.save(Block.createFree(timeBlock, request.memo(), addedBy));
-		return BlockResponse.from(timeBlock, block, null);
+		return BlockResponse.from(timeBlock, block, toPlaceResponse(block));
 	}
 
 	private TimeBlock saveTimeBlock(PlanDay planDay, LocalTime startTime, LocalTime endTime, TimeBlockType type) {
@@ -86,15 +78,8 @@ public class BlockService {
 			return SliceResponse.from(timeBlockSlice, List.of());
 		}
 
-		List<Long> timeBlockIds = timeBlocks.stream().map(TimeBlock::getId).toList();
-		Map<Long, Block> selectedBlockByTimeBlockId = blockRepository.findAllByTimeBlockIds(timeBlockIds)
-			.stream()
-			.filter(Block::isSelected)
-			.collect(Collectors.toMap(block -> block.getTimeBlock().getId(), Function.identity()));
-
-		List<BlockResponse> contents = timeBlocks.stream()
-			.map(timeBlock -> toBlockResponse(timeBlock, selectedBlockByTimeBlockId.get(timeBlock.getId())))
-			.toList();
+		Map<Long, Block> selectedBlocks = findSelectedBlocks(timeBlocks);
+		List<BlockResponse> contents = mapToBlockResponses(timeBlocks, selectedBlocks);
 
 		return SliceResponse.from(timeBlockSlice, contents);
 	}
@@ -106,6 +91,38 @@ public class BlockService {
 			.orElseThrow(() -> new BusinessException(BlockError.PLAN_NOT_FOUND));
 
 		return BlockDetailResponse.from(block, toPlaceResponse(block));
+	}
+
+	private Block createBlockByType(BlockCreateRequest request, TimeBlock timeBlock, PlanMember addedBy) {
+		if (request.type() == TimeBlockType.PLACE) {
+			return createPlaceBlock(request, timeBlock, addedBy);
+		}
+		return createFreeBlock(request, timeBlock, addedBy);
+	}
+
+	private Block createPlaceBlock(BlockCreateRequest request, TimeBlock timeBlock, PlanMember addedBy) {
+		CollectionPlace collectionPlace = collectionPlaceQueryService.getCollectionPlace(request.collectionPlaceId());
+		return blockRepository.save(
+			Block.create(collectionPlace.getPlace(), collectionPlace.getSocialMedia(), timeBlock, request.memo(), addedBy)
+		);
+	}
+
+	private Block createFreeBlock(BlockCreateRequest request, TimeBlock timeBlock, PlanMember addedBy) {
+		return blockRepository.save(Block.createFree(timeBlock, request.memo(), addedBy));
+	}
+
+	private Map<Long, Block> findSelectedBlocks(List<TimeBlock> timeBlocks) {
+		List<Long> timeBlockIds = timeBlocks.stream().map(TimeBlock::getId).toList();
+		return blockRepository.findAllByTimeBlockIds(timeBlockIds)
+			.stream()
+			.filter(Block::isSelected)
+			.collect(Collectors.toMap(block -> block.getTimeBlock().getId(), Function.identity()));
+	}
+
+	private List<BlockResponse> mapToBlockResponses(List<TimeBlock> timeBlocks, Map<Long, Block> selectedBlocks) {
+		return timeBlocks.stream()
+			.map(timeBlock -> toBlockResponse(timeBlock, selectedBlocks.get(timeBlock.getId())))
+			.toList();
 	}
 
 	private BlockResponse toBlockResponse(TimeBlock timeBlock, Block selectedBlock) {

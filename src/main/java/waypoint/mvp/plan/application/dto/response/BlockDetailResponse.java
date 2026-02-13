@@ -41,7 +41,7 @@ public record BlockDetailResponse(
 			timeBlock.getEndTime(),
 			block.getMemo(),
 			place,
-			SocialMediaResponse.from(block.getSocialMedia())
+			block.getSocialMedia() != null ? SocialMediaResponse.from(block.getSocialMedia()) : null
 		);
 	}
 }
