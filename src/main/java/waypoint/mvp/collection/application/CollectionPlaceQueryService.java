@@ -66,6 +66,36 @@ public class CollectionPlaceQueryService {
 	}
 
 	/**
+	 * CollectionPlace 정보 조회 - externalId 기반 (권한 검증 없음)
+	 */
+	public CollectionPlace getCollectionPlace(String collectionPlaceId) {
+		return collectionPlaceRepository.findByExternalId(collectionPlaceId)
+			.orElseThrow(() -> new BusinessException(CollectionPlaceError.COLLECTION_PLACE_NOT_FOUND));
+	}
+
+	/**
+	 * CollectionPlace 정보 조회 - Long id 기반 (권한 검증 없음)
+	 */
+	public CollectionPlace getCollectionPlace(Long collectionPlaceId) {
+		return collectionPlaceRepository.findByIdWithFetch(collectionPlaceId)
+			.orElseThrow(() -> new BusinessException(CollectionPlaceError.COLLECTION_PLACE_NOT_FOUND));
+	}
+
+	/**
+	 * Place 정보를 PlaceResponse로 변환 (사진 포함)
+	 */
+	public PlaceResponse toPlaceResponse(Place place) {
+		return PlaceResponse.from(place, placePhotoService.resolveRepresentativePhotoUris(place));
+	}
+
+	/**
+	 * CollectionPlace의 Place 정보를 PlaceResponse로 변환
+	 */
+	public PlaceResponse toPlaceResponse(CollectionPlace collectionPlace) {
+		return toPlaceResponse(collectionPlace.getPlace());
+	}
+
+	/**
 	 * Collection의 장소 목록 조회 (권한 검증 없음)
 	 */
 	public SliceResponse<CollectionPlaceResponse> getPlacesByCollectionId(
@@ -80,16 +110,7 @@ public class CollectionPlaceQueryService {
 			sortType.getSort()
 		);
 
-		Slice<CollectionPlace> result;
-		if (addedByMemberId != null) {
-			result = collectionPlaceRepository.findAllByCollectionIdAndAddedByExternalId(
-				collectionId,
-				addedByMemberId,
-				sortedPageable
-			);
-		} else {
-			result = collectionPlaceRepository.findAllByCollectionId(collectionId, sortedPageable);
-		}
+		Slice<CollectionPlace> result = fetchCollectionPlaces(collectionId, addedByMemberId, sortedPageable);
 
 		List<CollectionPlace> places = result.getContent();
 		List<Long> collectionPlaceIds = places.stream().map(CollectionPlace::getId).toList();
@@ -98,15 +119,8 @@ public class CollectionPlaceQueryService {
 			groupPreferences(collectionPlaceIds);
 
 		List<CollectionPlaceResponse> content = places.stream().map(cp -> {
-			PlaceResponse placeResponse = PlaceResponse.from(cp.getPlace(), extractPhotos(cp.getPlace()));
-
-			Map<CollectionPlacePreference.Type, List<CollectionMemberResponse>> byType =
-				grouped.getOrDefault(cp.getId(), Collections.emptyMap());
-
-			List<CollectionMemberResponse> picked = byType.getOrDefault(CollectionPlacePreference.Type.PICK, List.of());
-			List<CollectionMemberResponse> passed = byType.getOrDefault(CollectionPlacePreference.Type.PASS, List.of());
-
-			return CollectionPlaceResponse.of(cp, placeResponse, PickPassResponse.of(picked, passed));
+			PickPassResponse pickPass = toPickPassResponse(grouped, cp.getId());
+			return CollectionPlaceResponse.of(cp, toPlaceResponse(cp), pickPass);
 		}).toList();
 
 		return SliceResponse.from(result, content);
@@ -122,14 +136,12 @@ public class CollectionPlaceQueryService {
 		Collection collection = getCollectionById(collectionId);
 		CollectionPlace collectionPlace = getCollectionPlace(collection, collectionPlaceId);
 
-		PlaceResponse placeResponse = PlaceResponse.from(
-			collectionPlace.getPlace(),
-			extractPhotos(collectionPlace.getPlace())
+		return CollectionPlaceDetailResponse.of(
+			collectionPlace,
+			toPlaceResponse(collectionPlace),
+			toSocialMediaResponse(collectionPlace),
+			getPickPass(collectionPlace.getId())
 		);
-		SocialMediaResponse socialMediaResponse = toSocialMediaResponse(collectionPlace);
-		PickPassResponse pickPass = getPickPass(collection.getId());
-
-		return CollectionPlaceDetailResponse.of(collectionPlace, placeResponse, socialMediaResponse, pickPass);
 	}
 
 	/**
@@ -152,17 +164,24 @@ public class CollectionPlaceQueryService {
 		return PickPassResponse.of(picked, passed);
 	}
 
-	/**
-	 * Collection ID로 Collection 정보 조회 (권한 검증 없음)
-	 */
+	// ── private  ──────────────────────────────────────────────────
+
 	private Collection getCollectionById(String collectionId) {
 		return collectionRepository.findByExternalId(collectionId)
 			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
 	}
 
-	/**
-	 * CollectionPlacePreference 정보 그룹화 (권한 검증 없음)
-	 */
+	private Slice<CollectionPlace> fetchCollectionPlaces(
+		Long collectionId, String addedByMemberId, Pageable pageable
+	) {
+		if (addedByMemberId != null) {
+			return collectionPlaceRepository.findAllByCollectionIdAndAddedByExternalId(
+				collectionId, addedByMemberId, pageable
+			);
+		}
+		return collectionPlaceRepository.findAllByCollectionId(collectionId, pageable);
+	}
+
 	private Map<Long, Map<CollectionPlacePreference.Type, List<CollectionMemberResponse>>> groupPreferences(
 		List<Long> collectionPlaceIds
 	) {
@@ -170,9 +189,7 @@ public class CollectionPlaceQueryService {
 			return Collections.emptyMap();
 		}
 
-		List<CollectionPlacePreference> preference = preferenceRepository.findAllByPlaceIdIn(collectionPlaceIds);
-
-		return preference.stream()
+		return preferenceRepository.findAllByPlaceIdIn(collectionPlaceIds).stream()
 			.collect(groupingBy(
 				pref -> pref.getPlace().getId(),
 				groupingBy(
@@ -183,16 +200,19 @@ public class CollectionPlaceQueryService {
 			));
 	}
 
-	/**
-	 * Place 사진 정보 추출
-	 */
-	private List<String> extractPhotos(Place place) {
-		return placePhotoService.resolveRepresentativePhotoUris(place);
+	private PickPassResponse toPickPassResponse(
+		Map<Long, Map<CollectionPlacePreference.Type, List<CollectionMemberResponse>>> grouped,
+		Long collectionPlaceId
+	) {
+		Map<CollectionPlacePreference.Type, List<CollectionMemberResponse>> byType =
+			grouped.getOrDefault(collectionPlaceId, Collections.emptyMap());
+
+		return PickPassResponse.of(
+			byType.getOrDefault(CollectionPlacePreference.Type.PICK, List.of()),
+			byType.getOrDefault(CollectionPlacePreference.Type.PASS, List.of())
+		);
 	}
 
-	/**
-	 * SocialMedia 정보 변환
-	 */
 	private SocialMediaResponse toSocialMediaResponse(CollectionPlace collectionPlace) {
 		if (collectionPlace.getSocialMedia() == null) {
 			return null;

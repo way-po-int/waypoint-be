@@ -16,7 +16,8 @@ public enum PlanError implements ErrorCode {
 	FORBIDDEN_NOT_MEMBER(HttpStatus.FORBIDDEN, "플랜의 멤버만 이 작업을 수행할 수 있습니다."),
 	FORBIDDEN_NOT_GUEST(HttpStatus.FORBIDDEN, "플랜 게스트 권한으로는 이 작업을 수행할 수 없습니다."),
 	NEED_TO_DELEGATE_OWNERSHIP(HttpStatus.CONFLICT, "소유자는 소유권을 다른 멤버에게 위임해야 탈퇴할 수 있습니다."),
-	CANNOT_DELEGATE_OWNERSHIP_TO_SELF(HttpStatus.CONFLICT, "%s에게 소유권을 위임할 수 없습니다.");
+	CANNOT_DELEGATE_OWNERSHIP_TO_SELF(HttpStatus.CONFLICT, "%s에게 소유권을 위임할 수 없습니다."),
+	PLAN_DAY_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 일차를 찾을 수 없습니다.");
 
 	private final HttpStatus httpStatus;
 	private final String message;

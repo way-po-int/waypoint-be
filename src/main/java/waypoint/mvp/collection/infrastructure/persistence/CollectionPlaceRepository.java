@@ -17,6 +17,12 @@ public interface CollectionPlaceRepository extends JpaRepository<CollectionPlace
 		@Param("collectionId") Long collectionId
 	);
 
+	@Query("SELECT cp FROM CollectionPlace cp LEFT JOIN FETCH cp.place LEFT JOIN FETCH cp.socialMedia WHERE cp.externalId = :externalId")
+	Optional<CollectionPlace> findByExternalId(@Param("externalId") String externalId);
+
+	@Query("SELECT cp FROM CollectionPlace cp LEFT JOIN FETCH cp.place LEFT JOIN FETCH cp.socialMedia WHERE cp.id = :collectionPlaceId")
+	Optional<CollectionPlace> findByIdWithFetch(@Param("collectionPlaceId") Long collectionPlaceId);
+
 	boolean existsByCollectionIdAndPlaceId(Long collectionId, Long placeId);
 
 	@Query("select distinct cp from CollectionPlace cp join fetch cp.place where cp.collection.id = :collectionId")
