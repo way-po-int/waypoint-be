@@ -27,6 +27,9 @@ public record BlockResponse(
 	SelectedBlock selectedBlock
 ) {
 
+	/**
+	 *  TimeBlockType [FREE, Place] 모두 1개에 메서드로 사용됨
+	 */
 	public static BlockResponse from(TimeBlock timeBlock, Block block, PlaceResponse placeResponse) {
 		return new BlockResponse(
 			timeBlock.getExternalId(),
