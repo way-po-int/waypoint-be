@@ -34,7 +34,7 @@ public class BlockController {
 	) {
 		BlockResponse response = blockService.createBlock(planId, request, user);
 
-		URI location = URI.create("/plans/" + planId + "/blocks");
+		URI location = URI.create("/plans/" + planId + "/blocks/" + response.timeBlockId());
 		return ResponseEntity.created(location).body(response);
 	}
 }
