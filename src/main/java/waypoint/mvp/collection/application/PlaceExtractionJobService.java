@@ -73,10 +73,7 @@ public class PlaceExtractionJobService {
 		PlaceExtractionJob job = extractionJobRepository.findExtractionJob(jobId, collection.getId(), user.getId())
 			.orElseThrow(() -> new BusinessException(PlaceExtractionJobError.JOB_NOT_FOUND));
 
-		List<SocialMediaPlace> socialMediaPlaces = socialMediaPlaceRepository.findAllBySocialMediaId(
-			job.getSocialMedia().getId());
-
-		return ExtractionJobDetailResponse.of(job, socialMediaPlaces);
+		return toExtractionJobDetailResponse(job);
 	}
 
 	public ExtractionJobDetailResponse getLatestExtractionJob(String collectionId, AuthPrincipal user) {
@@ -84,16 +81,13 @@ public class PlaceExtractionJobService {
 		collectionAuthorizer.verifyMember(user, collection.getId());
 
 		PageRequest pageRequest = PageRequest.of(0, 1);
-		PlaceExtractionJob job = extractionJobRepository.findLatestExtractionJob(collection.getId(), user.getId(),
-				pageRequest)
+		PlaceExtractionJob job = extractionJobRepository
+			.findLatestExtractionJob(collection.getId(), user.getId(), pageRequest)
 			.stream()
 			.findFirst()
 			.orElseThrow(() -> new BusinessException(PlaceExtractionJobError.JOB_NOT_FOUND));
 
-		List<SocialMediaPlace> socialMediaPlaces = socialMediaPlaceRepository.findAllBySocialMediaId(
-			job.getSocialMedia().getId());
-
-		return ExtractionJobDetailResponse.of(job, socialMediaPlaces);
+		return toExtractionJobDetailResponse(job);
 	}
 
 	@Transactional
@@ -101,10 +95,20 @@ public class PlaceExtractionJobService {
 		Collection collection = collectionService.getCollection(collectionId);
 		collectionAuthorizer.verifyMember(user, collection.getId());
 
-		PlaceExtractionJob job = extractionJobRepository
-			.findByJobIdAndCollectionIdAndUserId(jobId, collection.getId(), user.getId())
-			.orElseThrow(() -> new BusinessException(PlaceExtractionJobError.JOB_NOT_FOUND));
-
+		PlaceExtractionJob job = findExtractionJob(jobId, collection.getId(), user.getId());
 		job.ignore();
+	}
+
+	private PlaceExtractionJob findExtractionJob(String jobId, Long collectionId, Long userId) {
+		return extractionJobRepository
+			.findByJobIdAndCollectionIdAndUserId(jobId, collectionId, userId)
+			.orElseThrow(() -> new BusinessException(PlaceExtractionJobError.JOB_NOT_FOUND));
+	}
+
+	private ExtractionJobDetailResponse toExtractionJobDetailResponse(PlaceExtractionJob job) {
+		List<SocialMediaPlace> socialMediaPlaces = socialMediaPlaceRepository
+			.findAllBySocialMediaId(job.getSocialMedia().getId());
+
+		return ExtractionJobDetailResponse.of(job, socialMediaPlaces);
 	}
 }
