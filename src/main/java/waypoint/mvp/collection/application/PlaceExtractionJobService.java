@@ -8,13 +8,18 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.AuthPrincipal;
+import waypoint.mvp.collection.application.dto.request.AddExtractedPlacesRequest;
 import waypoint.mvp.collection.application.dto.request.PlaceExtractionJobCreateRequest;
+import waypoint.mvp.collection.application.dto.response.CollectionPlaceResponse;
 import waypoint.mvp.collection.application.dto.response.ExtractionJobDetailResponse;
 import waypoint.mvp.collection.application.dto.response.ExtractionJobResponse;
+import waypoint.mvp.collection.application.dto.response.PickPassResponse;
 import waypoint.mvp.collection.domain.Collection;
 import waypoint.mvp.collection.domain.CollectionMember;
+import waypoint.mvp.collection.domain.CollectionPlace;
 import waypoint.mvp.collection.domain.PlaceExtractionJob;
 import waypoint.mvp.collection.error.PlaceExtractionJobError;
+import waypoint.mvp.collection.infrastructure.persistence.CollectionPlaceRepository;
 import waypoint.mvp.collection.infrastructure.persistence.PlaceExtractionJobRepository;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
 import waypoint.mvp.global.error.exception.BusinessException;
@@ -31,6 +36,9 @@ public class PlaceExtractionJobService {
 	private final CollectionService collectionService;
 	private final CollectionMemberService collectionMemberService;
 	private final SocialMediaService socialMediaService;
+	private final CollectionPlaceQueryService collectionPlaceQueryService;
+
+	private final CollectionPlaceRepository collectionPlaceRepository;
 	private final PlaceExtractionJobRepository extractionJobRepository;
 	private final SocialMediaPlaceRepository socialMediaPlaceRepository;
 	private final ResourceAuthorizer collectionAuthorizer;
@@ -88,6 +96,37 @@ public class PlaceExtractionJobService {
 			.orElseThrow(() -> new BusinessException(PlaceExtractionJobError.JOB_NOT_FOUND));
 
 		return toExtractionJobDetailResponse(job);
+	}
+
+	@Transactional
+	public List<CollectionPlaceResponse> addExtractedPlaces(
+		String collectionId,
+		String jobId,
+		AddExtractedPlacesRequest request,
+		AuthPrincipal user
+	) {
+		Collection collection = collectionService.getCollection(collectionId);
+		collectionAuthorizer.verifyMember(user, collection.getId());
+
+		PlaceExtractionJob job = findExtractionJob(jobId, collection.getId(), user.getId());
+		job.select();
+
+		// 이미 컬렉션에 저장된 장소는 제외하고 CollectionPlace로 변환
+		List<CollectionPlace> newCollectionPlaces = socialMediaPlaceRepository
+			.findPlacesNotAddedToCollection(job.getSocialMedia().getId(), request.placeIds(), collection.getId())
+			.stream()
+			.map(place -> CollectionPlace.create(collection, place, job.getMember(), job.getSocialMedia()))
+			.toList();
+
+		collectionPlaceRepository.saveAll(newCollectionPlaces);
+
+		return newCollectionPlaces.stream()
+			.map(collectionPlace -> CollectionPlaceResponse.of(
+				collectionPlace,
+				collectionPlaceQueryService.toPlaceResponse(collectionPlace),
+				PickPassResponse.of(List.of(), List.of())
+			))
+			.toList();
 	}
 
 	@Transactional
