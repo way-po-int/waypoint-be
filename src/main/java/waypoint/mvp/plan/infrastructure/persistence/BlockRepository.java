@@ -11,16 +11,21 @@ import waypoint.mvp.plan.domain.Block;
 
 public interface BlockRepository extends JpaRepository<Block, Long> {
 
-	@Query("SELECT b FROM Block b JOIN FETCH b.place JOIN FETCH b.addedBy WHERE b.timeBlock.id IN :timeBlockIds")
-	List<Block> findAllByTimeBlockIds(@Param("timeBlockIds") List<Long> timeBlockIds);
+	// @Query("SELECT b FROM Block b LEFT JOIN FETCH b.place JOIN FETCH b.addedBy WHERE b.timeBlock.id IN :timeBlockIds AND b.selected = true")
+	// List<Block> findAllByTimeBlockIds(@Param("timeBlockIds") List<Long> timeBlockIds);
+
+	@Query("SELECT b FROM Block b "
+		+ "LEFT JOIN FETCH b.place "
+		+ "JOIN FETCH b.addedBy "
+		+ "WHERE b.timeBlock.id IN :timeBlockIds AND b.timeBlock.planDay.plan.id = :planId AND b.selected = true")
+	List<Block> findAllByTimeBlockIds(@Param("planId") Long planId, @Param("timeBlockIds") List<Long> timeBlockIds);
 
 	@Query("SELECT b FROM Block b "
 		+ "JOIN FETCH b.timeBlock tb "
 		+ "JOIN FETCH tb.planDay "
 		+ "LEFT JOIN FETCH b.place "
 		+ "LEFT JOIN FETCH b.socialMedia "
-		+ "WHERE b.externalId = :externalId")
-	Optional<Block> findByExternalIdWithFetch(@Param("externalId") String externalId);
-
+		+ "WHERE b.externalId = :blockId AND tb.planDay.plan.id = :planId")
+	Optional<Block> findByExternalId(@Param("planId") Long planId, @Param("blockId") String blockId);
 
 }

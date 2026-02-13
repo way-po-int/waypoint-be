@@ -68,26 +68,28 @@ public class BlockService {
 		return timeBlockRepository.save(timeBlock);
 	}
 
-	public SliceResponse<BlockResponse> findBlocks(String planId, int day, AuthPrincipal user, Pageable pageable) {
-		Plan plan = getPlanAuthor(planId, user);
+	public SliceResponse<BlockResponse> findBlocks(String planExternalId, int day, AuthPrincipal user,
+		Pageable pageable) {
+		Plan plan = getPlanAuthor(planExternalId, user);
+		Long planId = plan.getId();
 
-		Slice<TimeBlock> timeBlockSlice = timeBlockRepository.findAllByPlanIdAndDay(plan.getId(), day, pageable);
+		Slice<TimeBlock> timeBlockSlice = timeBlockRepository.findAllByPlanIdAndDay(planId, day, pageable);
 		List<TimeBlock> timeBlocks = timeBlockSlice.getContent();
 
 		if (timeBlocks.isEmpty()) {
 			return SliceResponse.from(timeBlockSlice, List.of());
 		}
 
-		Map<Long, Block> selectedBlocks = findSelectedBlocks(timeBlocks);
+		Map<Long, Block> selectedBlocks = findSelectedBlocks(planId, timeBlocks);
 		List<BlockResponse> contents = mapToBlockResponses(timeBlocks, selectedBlocks);
 
 		return SliceResponse.from(timeBlockSlice, contents);
 	}
 
 	public BlockDetailResponse findBlockDetail(String planId, String blockId, AuthPrincipal user) {
-		getPlanAuthor(planId, user);
+		Plan plan = getPlanAuthor(planId, user);
 
-		Block block = blockRepository.findByExternalIdWithFetch(blockId)
+		Block block = blockRepository.findByExternalId(plan.getId(), blockId)
 			.orElseThrow(() -> new BusinessException(BlockError.PLAN_NOT_FOUND));
 
 		return BlockDetailResponse.from(block, toPlaceResponse(block));
@@ -103,7 +105,8 @@ public class BlockService {
 	private Block createPlaceBlock(BlockCreateRequest request, TimeBlock timeBlock, PlanMember addedBy) {
 		CollectionPlace collectionPlace = collectionPlaceQueryService.getCollectionPlace(request.collectionPlaceId());
 		return blockRepository.save(
-			Block.create(collectionPlace.getPlace(), collectionPlace.getSocialMedia(), timeBlock, request.memo(), addedBy)
+			Block.create(collectionPlace.getPlace(), collectionPlace.getSocialMedia(), timeBlock, request.memo(),
+				addedBy)
 		);
 	}
 
@@ -111,11 +114,10 @@ public class BlockService {
 		return blockRepository.save(Block.createFree(timeBlock, request.memo(), addedBy));
 	}
 
-	private Map<Long, Block> findSelectedBlocks(List<TimeBlock> timeBlocks) {
+	private Map<Long, Block> findSelectedBlocks(Long planId, List<TimeBlock> timeBlocks) {
 		List<Long> timeBlockIds = timeBlocks.stream().map(TimeBlock::getId).toList();
-		return blockRepository.findAllByTimeBlockIds(timeBlockIds)
+		return blockRepository.findAllByTimeBlockIds(planId, timeBlockIds)
 			.stream()
-			.filter(Block::isSelected)
 			.collect(Collectors.toMap(block -> block.getTimeBlock().getId(), Function.identity()));
 	}
 
@@ -126,6 +128,10 @@ public class BlockService {
 	}
 
 	private BlockResponse toBlockResponse(TimeBlock timeBlock, Block selectedBlock) {
+		if (selectedBlock == null) {
+			return new BlockResponse(timeBlock.getExternalId(), timeBlock.getType(), timeBlock.getStartTime(),
+				timeBlock.getEndTime(), null);
+		}
 		return BlockResponse.from(timeBlock, selectedBlock, toPlaceResponse(selectedBlock));
 	}
 
