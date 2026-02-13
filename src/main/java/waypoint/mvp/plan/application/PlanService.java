@@ -16,11 +16,13 @@ import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
 import waypoint.mvp.global.common.SliceResponse;
 import waypoint.mvp.global.error.exception.BusinessException;
+import waypoint.mvp.plan.application.dto.PlanDaySyncResult;
 import waypoint.mvp.plan.application.dto.request.PlanCreateRequest;
 import waypoint.mvp.plan.application.dto.request.PlanUpdateRequest;
 import waypoint.mvp.plan.application.dto.response.PlanMemberGroupResponse;
 import waypoint.mvp.plan.application.dto.response.PlanMemberResponse;
 import waypoint.mvp.plan.application.dto.response.PlanResponse;
+import waypoint.mvp.plan.application.dto.response.PlanUpdateResponse;
 import waypoint.mvp.plan.domain.Plan;
 import waypoint.mvp.plan.domain.PlanMember;
 import waypoint.mvp.plan.domain.PlanRole;
@@ -44,6 +46,7 @@ public class PlanService {
 	private final ShareLinkRepository shareLinkRepository;
 	private final UserFinder userFinder;
 	private final PlanMemberService planMemberService;
+	private final PlanDayService planDayService;
 	private final ResourceAuthorizer planAuthorizer;
 
 	@Value("${waypoint.invitation.expiration-hours}")
@@ -53,6 +56,8 @@ public class PlanService {
 	public PlanResponse createPlan(PlanCreateRequest request, UserPrincipal user) {
 		Plan plan = Plan.create(request.title(), request.startDate(), request.endDate());
 		Plan savedPlan = planRepository.save(plan);
+
+		planDayService.initPlanDays(savedPlan);
 
 		eventPublisher.publishEvent(
 			PlanCreateEvent.of(savedPlan.getId(), user)
@@ -93,12 +98,25 @@ public class PlanService {
 	}
 
 	@Transactional
-	public PlanResponse updatePlan(String planExternalId, PlanUpdateRequest request, UserPrincipal user) {
+	public PlanUpdateResponse updatePlan(String planExternalId, PlanUpdateRequest request, UserPrincipal user) {
 		Plan plan = getPlan(planExternalId);
 		planAuthorizer.verifyMember(user, plan.getId());
+
+		boolean confirm = Boolean.TRUE.equals(request.confirm());
+
+		PlanDaySyncResult syncResult = planDayService.syncPlanDays(
+			plan, request.startDate(), request.endDate(), confirm
+		);
+
+		// 1. 경고가 있고, 실제로 영향을 받는 날짜(일정이 있는 날)가 존재할 때만 컨펌 요구
+		if (syncResult.hasWarnings()){
+			return PlanUpdateResponse.confirmRequired(syncResult.affectedDays());
+		}
+
+		// 2. 그 외의 모든 경우(경고가 없거나, 컨펌을 이미 했거나)에는 바로 업데이트 진행
 		plan.update(request.title(), request.startDate(), request.endDate());
 
-		return PlanResponse.from(plan);
+		return PlanUpdateResponse.success(PlanResponse.from(plan));
 	}
 
 	@Transactional
@@ -138,7 +156,7 @@ public class PlanService {
 		Plan plan = getPlan(planExternalId);
 		planAuthorizer.verifyOwner(user, plan.getId());
 
-		planRepository.delete(plan);
+		plan.delete();
 	}
 
 	@Transactional

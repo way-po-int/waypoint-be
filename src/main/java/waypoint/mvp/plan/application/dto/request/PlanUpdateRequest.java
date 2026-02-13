@@ -22,7 +22,9 @@ public record PlanUpdateRequest(
 
 	@NotNull(message = "종료일은 필수입니다.")
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
-	LocalDate endDate
+	LocalDate endDate,
+
+	Boolean confirm
 
 ) {
 	@AssertTrue(message = "종료일이 시작일보다 빠를 수 없습니다.")

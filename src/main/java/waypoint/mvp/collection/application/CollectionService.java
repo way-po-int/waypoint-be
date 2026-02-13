@@ -160,7 +160,7 @@ public class CollectionService {
 		Long collectionId = collection.getId();
 		collectionAuthorizer.verifyOwner(user, collectionId);
 
-		collectionRepository.delete(collection);
+		collection.delete();
 	}
 
 	@Transactional

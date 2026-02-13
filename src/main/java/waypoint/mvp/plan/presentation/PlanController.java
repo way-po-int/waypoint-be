@@ -28,6 +28,7 @@ import waypoint.mvp.plan.application.dto.request.PlanCreateRequest;
 import waypoint.mvp.plan.application.dto.request.PlanUpdateRequest;
 import waypoint.mvp.plan.application.dto.response.PlanMemberGroupResponse;
 import waypoint.mvp.plan.application.dto.response.PlanResponse;
+import waypoint.mvp.plan.application.dto.response.PlanUpdateResponse;
 import waypoint.mvp.sharelink.application.dto.response.ShareLinkResponse;
 
 @RestController
@@ -80,11 +81,11 @@ public class PlanController {
 
 	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@PutMapping("/{planId}")
-	public ResponseEntity<PlanResponse> updatePlan(
+	public ResponseEntity<PlanUpdateResponse> updatePlan(
 		@PathVariable String planId,
 		@RequestBody @Valid PlanUpdateRequest request,
 		@AuthenticationPrincipal UserPrincipal user) {
-		PlanResponse response = planService.updatePlan(planId, request, user);
+		PlanUpdateResponse response = planService.updatePlan(planId, request, user);
 
 		return ResponseEntity.ok(response);
 	}
