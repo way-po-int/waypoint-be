@@ -156,7 +156,7 @@ public class PlanService {
 		Plan plan = getPlan(planExternalId);
 		planAuthorizer.verifyOwner(user, plan.getId());
 
-		planRepository.delete(plan);
+		plan.delete();
 	}
 
 	@Transactional

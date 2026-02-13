@@ -2,7 +2,6 @@ package waypoint.mvp.plan.domain;
 
 import java.time.LocalDate;
 
-import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import jakarta.persistence.Column;
@@ -24,7 +23,6 @@ import waypoint.mvp.plan.error.PlanError;
 @Table(name = "plans")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@SQLDelete(sql = "UPDATE plans SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
 public class Plan extends LogicalDeleteEntity {
 
@@ -83,4 +81,7 @@ public class Plan extends LogicalDeleteEntity {
 		this.endDate = endDate;
 	}
 
+	public void delete() {
+		super.softDelete();
+	}
 }
