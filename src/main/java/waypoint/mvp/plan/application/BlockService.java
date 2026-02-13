@@ -48,6 +48,10 @@ public class BlockService {
 	private final BlockRepository blockRepository;
 	private final CollectionPlaceQueryService collectionPlaceQueryService;
 
+	// =========================
+	// PUBLIC METHODS
+	// =========================
+
 	@Transactional
 	public BlockResponse createBlock(String planExternalId, BlockCreateRequest request, UserPrincipal user) {
 		Plan plan = getPlanAuthor(planExternalId, user);
@@ -64,35 +68,7 @@ public class BlockService {
 
 	private TimeBlock saveTimeBlock(PlanDay planDay, LocalTime startTime, LocalTime endTime, TimeBlockType type) {
 		TimeBlock timeBlock = TimeBlock.create(planDay, startTime, endTime, type);
-
 		return timeBlockRepository.save(timeBlock);
-	}
-
-	public SliceResponse<BlockResponse> findBlocks(String planExternalId, int day, AuthPrincipal user,
-		Pageable pageable) {
-		Plan plan = getPlanAuthor(planExternalId, user);
-		Long planId = plan.getId();
-
-		Slice<TimeBlock> timeBlockSlice = timeBlockRepository.findAllByPlanIdAndDay(planId, day, pageable);
-		List<TimeBlock> timeBlocks = timeBlockSlice.getContent();
-
-		if (timeBlocks.isEmpty()) {
-			return SliceResponse.from(timeBlockSlice, List.of());
-		}
-
-		Map<Long, Block> selectedBlocks = findSelectedBlocks(planId, timeBlocks);
-		List<BlockResponse> contents = mapToBlockResponses(timeBlocks, selectedBlocks);
-
-		return SliceResponse.from(timeBlockSlice, contents);
-	}
-
-	public BlockDetailResponse findBlockDetail(String planId, String blockId, AuthPrincipal user) {
-		Plan plan = getPlanAuthor(planId, user);
-
-		Block block = blockRepository.findByExternalId(plan.getId(), blockId)
-			.orElseThrow(() -> new BusinessException(BlockError.PLAN_NOT_FOUND));
-
-		return BlockDetailResponse.from(block, toPlaceResponse(block));
 	}
 
 	private Block createBlockByType(BlockCreateRequest request, TimeBlock timeBlock, PlanMember addedBy) {
@@ -112,6 +88,42 @@ public class BlockService {
 
 	private Block createFreeBlock(BlockCreateRequest request, TimeBlock timeBlock, PlanMember addedBy) {
 		return blockRepository.save(Block.createFree(timeBlock, request.memo(), addedBy));
+	}
+
+	private PlaceResponse toPlaceResponse(Block block) {
+		if (block == null || block.getPlace() == null) {
+			return null;
+		}
+		return collectionPlaceQueryService.toPlaceResponse(block.getPlace());
+	}
+
+	private PlanDay findPlanDay(Long planId, int day) {
+		return planDayRepository.findByPlanIdAndDay(planId, day)
+			.orElseThrow(() -> new BusinessException(PlanError.PLAN_DAY_NOT_FOUND));
+	}
+
+	private Plan getPlanAuthor(String planExternalId, UserPrincipal user) {
+		Plan plan = planService.getPlan(planExternalId);
+		planAuthorizer.verifyMember(user, plan.getId());
+		return plan;
+	}
+
+	public SliceResponse<BlockResponse> findBlocks(String planExternalId, int day, AuthPrincipal user,
+		Pageable pageable) {
+		Plan plan = getPlanAuthor(planExternalId, user);
+		Long planId = plan.getId();
+
+		Slice<TimeBlock> timeBlockSlice = timeBlockRepository.findAllByPlanIdAndDay(planId, day, pageable);
+		List<TimeBlock> timeBlocks = timeBlockSlice.getContent();
+
+		if (timeBlocks.isEmpty()) {
+			return SliceResponse.from(timeBlockSlice, List.of());
+		}
+
+		Map<Long, Block> selectedBlocks = findSelectedBlocks(planId, timeBlocks);
+		List<BlockResponse> contents = mapToBlockResponses(timeBlocks, selectedBlocks);
+
+		return SliceResponse.from(timeBlockSlice, contents);
 	}
 
 	private Map<Long, Block> findSelectedBlocks(Long planId, List<TimeBlock> timeBlocks) {
@@ -135,29 +147,18 @@ public class BlockService {
 		return BlockResponse.from(timeBlock, selectedBlock, toPlaceResponse(selectedBlock));
 	}
 
-	private PlaceResponse toPlaceResponse(Block block) {
-		if (block == null || block.getPlace() == null) {
-			return null;
-		}
-		return collectionPlaceQueryService.toPlaceResponse(block.getPlace());
-	}
-
-	private PlanDay findPlanDay(Long planId, int day) {
-		return planDayRepository.findByPlanIdAndDay(planId, day)
-			.orElseThrow(() -> new BusinessException(PlanError.PLAN_DAY_NOT_FOUND));
-	}
-
 	private Plan getPlanAuthor(String planExternalId, AuthPrincipal user) {
 		Plan plan = planService.getPlan(planExternalId);
 		planAuthorizer.verifyAccess(user, plan.getId());
-
 		return plan;
 	}
 
-	private Plan getPlanAuthor(String planExternalId, UserPrincipal user) {
-		Plan plan = planService.getPlan(planExternalId);
-		planAuthorizer.verifyMember(user, plan.getId());
+	public BlockDetailResponse findBlockDetail(String planId, String blockId, AuthPrincipal user) {
+		Plan plan = getPlanAuthor(planId, user);
 
-		return plan;
+		Block block = blockRepository.findByExternalId(plan.getId(), blockId)
+			.orElseThrow(() -> new BusinessException(BlockError.BLOCK_NOT_FOUND));
+
+		return BlockDetailResponse.from(block, toPlaceResponse(block));
 	}
 }
