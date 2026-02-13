@@ -12,9 +12,7 @@ import waypoint.mvp.plan.application.dto.PlanDaySyncResult;
 import waypoint.mvp.plan.application.dto.response.PlanUpdateResponse;
 import waypoint.mvp.plan.domain.Plan;
 import waypoint.mvp.plan.domain.PlanDay;
-import waypoint.mvp.plan.infrastructure.persistence.BlockRepository;
 import waypoint.mvp.plan.infrastructure.persistence.PlanDayRepository;
-import waypoint.mvp.plan.infrastructure.persistence.TimeBlockRepository;
 
 @Service
 @Transactional(readOnly = true)
@@ -22,8 +20,6 @@ import waypoint.mvp.plan.infrastructure.persistence.TimeBlockRepository;
 public class PlanDayService {
 
 	private final PlanDayRepository planDayRepository;
-	private final TimeBlockRepository timeBlockRepository;
-	private final BlockRepository blockRepository;
 
 	@Transactional
 	public void initPlanDays(Plan plan) {
@@ -86,8 +82,6 @@ public class PlanDayService {
 	}
 
 	private void deleteExcessDays(Long planId, int targetDays) {
-		blockRepository.deleteAllForExcessDays(planId, targetDays);
-		timeBlockRepository.deleteAllForExcessDays(planId, targetDays);
 		planDayRepository.deleteAllForExcessDays(planId, targetDays);
 	}
 
