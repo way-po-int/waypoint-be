@@ -8,13 +8,19 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.AuthPrincipal;
+import waypoint.mvp.collection.application.dto.request.AddExtractedPlacesRequest;
 import waypoint.mvp.collection.application.dto.request.PlaceExtractionJobCreateRequest;
+import waypoint.mvp.collection.application.dto.response.AddExtractedPlacesResponse;
+import waypoint.mvp.collection.application.dto.response.CollectionPlaceResponse;
 import waypoint.mvp.collection.application.dto.response.ExtractionJobDetailResponse;
 import waypoint.mvp.collection.application.dto.response.ExtractionJobResponse;
+import waypoint.mvp.collection.application.dto.response.PickPassResponse;
 import waypoint.mvp.collection.domain.Collection;
 import waypoint.mvp.collection.domain.CollectionMember;
+import waypoint.mvp.collection.domain.CollectionPlace;
 import waypoint.mvp.collection.domain.PlaceExtractionJob;
 import waypoint.mvp.collection.error.PlaceExtractionJobError;
+import waypoint.mvp.collection.infrastructure.persistence.CollectionPlaceRepository;
 import waypoint.mvp.collection.infrastructure.persistence.PlaceExtractionJobRepository;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
 import waypoint.mvp.global.error.exception.BusinessException;
@@ -31,6 +37,9 @@ public class PlaceExtractionJobService {
 	private final CollectionService collectionService;
 	private final CollectionMemberService collectionMemberService;
 	private final SocialMediaService socialMediaService;
+	private final CollectionPlaceQueryService collectionPlaceQueryService;
+
+	private final CollectionPlaceRepository collectionPlaceRepository;
 	private final PlaceExtractionJobRepository extractionJobRepository;
 	private final SocialMediaPlaceRepository socialMediaPlaceRepository;
 	private final ResourceAuthorizer collectionAuthorizer;
@@ -73,10 +82,7 @@ public class PlaceExtractionJobService {
 		PlaceExtractionJob job = extractionJobRepository.findExtractionJob(jobId, collection.getId(), user.getId())
 			.orElseThrow(() -> new BusinessException(PlaceExtractionJobError.JOB_NOT_FOUND));
 
-		List<SocialMediaPlace> socialMediaPlaces = socialMediaPlaceRepository.findAllBySocialMediaId(
-			job.getSocialMedia().getId());
-
-		return ExtractionJobDetailResponse.of(job, socialMediaPlaces);
+		return toExtractionJobDetailResponse(job);
 	}
 
 	public ExtractionJobDetailResponse getLatestExtractionJob(String collectionId, AuthPrincipal user) {
@@ -84,16 +90,47 @@ public class PlaceExtractionJobService {
 		collectionAuthorizer.verifyMember(user, collection.getId());
 
 		PageRequest pageRequest = PageRequest.of(0, 1);
-		PlaceExtractionJob job = extractionJobRepository.findLatestExtractionJob(collection.getId(), user.getId(),
-				pageRequest)
+		PlaceExtractionJob job = extractionJobRepository
+			.findLatestExtractionJob(collection.getId(), user.getId(), pageRequest)
 			.stream()
 			.findFirst()
 			.orElseThrow(() -> new BusinessException(PlaceExtractionJobError.JOB_NOT_FOUND));
 
-		List<SocialMediaPlace> socialMediaPlaces = socialMediaPlaceRepository.findAllBySocialMediaId(
-			job.getSocialMedia().getId());
+		return toExtractionJobDetailResponse(job);
+	}
 
-		return ExtractionJobDetailResponse.of(job, socialMediaPlaces);
+	@Transactional
+	public AddExtractedPlacesResponse addExtractedPlaces(
+		String collectionId,
+		String jobId,
+		AddExtractedPlacesRequest request,
+		AuthPrincipal user
+	) {
+		Collection collection = collectionService.getCollection(collectionId);
+		collectionAuthorizer.verifyMember(user, collection.getId());
+
+		PlaceExtractionJob job = findExtractionJob(jobId, collection.getId(), user.getId());
+		job.select();
+
+		// 이미 컬렉션에 저장된 장소는 제외하고 CollectionPlace로 변환
+		List<CollectionPlace> newCollectionPlaces = socialMediaPlaceRepository
+			.findPlacesNotAddedToCollection(job.getSocialMedia().getId(), request.placeIds(), collection.getId())
+			.stream()
+			.map(place -> CollectionPlace.create(collection, place, job.getMember(), job.getSocialMedia()))
+			.toList();
+
+		collectionPlaceRepository.saveAll(newCollectionPlaces);
+
+		int totalSize = request.placeIds().size();
+		List<CollectionPlaceResponse> addedPlaces = newCollectionPlaces.stream()
+			.map(collectionPlace -> CollectionPlaceResponse.of(
+				collectionPlace,
+				collectionPlaceQueryService.toPlaceResponse(collectionPlace),
+				PickPassResponse.of(List.of(), List.of())
+			))
+			.toList();
+
+		return AddExtractedPlacesResponse.of(totalSize, addedPlaces);
 	}
 
 	@Transactional
@@ -101,10 +138,20 @@ public class PlaceExtractionJobService {
 		Collection collection = collectionService.getCollection(collectionId);
 		collectionAuthorizer.verifyMember(user, collection.getId());
 
-		PlaceExtractionJob job = extractionJobRepository
-			.findByJobIdAndCollectionIdAndUserId(jobId, collection.getId(), user.getId())
-			.orElseThrow(() -> new BusinessException(PlaceExtractionJobError.JOB_NOT_FOUND));
-
+		PlaceExtractionJob job = findExtractionJob(jobId, collection.getId(), user.getId());
 		job.ignore();
+	}
+
+	private PlaceExtractionJob findExtractionJob(String jobId, Long collectionId, Long userId) {
+		return extractionJobRepository
+			.findByJobIdAndCollectionIdAndUserId(jobId, collectionId, userId)
+			.orElseThrow(() -> new BusinessException(PlaceExtractionJobError.JOB_NOT_FOUND));
+	}
+
+	private ExtractionJobDetailResponse toExtractionJobDetailResponse(PlaceExtractionJob job) {
+		List<SocialMediaPlace> socialMediaPlaces = socialMediaPlaceRepository
+			.findAllBySocialMediaId(job.getSocialMedia().getId());
+
+		return ExtractionJobDetailResponse.of(job, socialMediaPlaces);
 	}
 }

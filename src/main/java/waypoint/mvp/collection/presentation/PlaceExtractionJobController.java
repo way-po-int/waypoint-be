@@ -14,7 +14,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.collection.application.PlaceExtractionJobService;
+import waypoint.mvp.collection.application.dto.request.AddExtractedPlacesRequest;
 import waypoint.mvp.collection.application.dto.request.PlaceExtractionJobCreateRequest;
+import waypoint.mvp.collection.application.dto.response.AddExtractedPlacesResponse;
 import waypoint.mvp.collection.application.dto.response.ExtractionJobDetailResponse;
 import waypoint.mvp.collection.application.dto.response.ExtractionJobResponse;
 import waypoint.mvp.global.auth.annotations.AuthLevel;
@@ -57,6 +59,19 @@ public class PlaceExtractionJobController {
 	) {
 		ExtractionJobDetailResponse response = extractionJobService.getLatestExtractionJob(collectionId, user);
 		return ResponseEntity.ok(response);
+	}
+
+	@Authorize(level = AuthLevel.AUTHENTICATED)
+	@PostMapping("/{jobId}/places")
+	public ResponseEntity<AddExtractedPlacesResponse> addExtractedPlaces(
+		@PathVariable String collectionId,
+		@PathVariable String jobId,
+		@RequestBody @Valid AddExtractedPlacesRequest request,
+		@AuthenticationPrincipal AuthPrincipal user
+	) {
+		AddExtractedPlacesResponse responses =
+			extractionJobService.addExtractedPlaces(collectionId, jobId, request, user);
+		return ResponseEntity.ok(responses);
 	}
 
 	@Authorize(level = AuthLevel.AUTHENTICATED)
