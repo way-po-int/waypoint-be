@@ -14,7 +14,7 @@ import waypoint.mvp.place.domain.SocialMediaPlace;
 public interface SocialMediaPlaceRepository extends JpaRepository<SocialMediaPlace, Long> {
 	boolean existsBySocialMediaIdAndStatusIn(Long socialMediaId, Collection<PlaceSearchStatus> statuses);
 
-	@Query("SELECT smp FROM SocialMediaPlace smp JOIN FETCH smp.place p WHERE smp.socialMedia.id = :socialMediaId")
+	@Query("SELECT smp FROM SocialMediaPlace smp LEFT JOIN FETCH smp.place p WHERE smp.socialMedia.id = :socialMediaId")
 	List<SocialMediaPlace> findAllBySocialMediaId(Long socialMediaId);
 
 	@Query("SELECT p FROM SocialMediaPlace smp JOIN smp.place p"
