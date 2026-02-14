@@ -79,7 +79,7 @@ public class TimeBlock extends ExternalIdEntity {
 	}
 
 	private void validateTimeRange(LocalTime start, LocalTime end) {
-		if (TimeUtils.isValidRange(start, end)) {
+		if (!TimeUtils.isValidRange(start, end)) {
 			throw new BusinessException(TimeBlockError.INVALID_TIME_RANGE);
 		}
 	}
