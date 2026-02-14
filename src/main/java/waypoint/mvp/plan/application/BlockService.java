@@ -15,6 +15,7 @@ import waypoint.mvp.global.auth.ResourceAuthorizer;
 import waypoint.mvp.global.common.SliceResponse;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.plan.application.dto.request.BlockCreateRequest;
+import waypoint.mvp.plan.application.dto.request.BlockUpdateRequest;
 import waypoint.mvp.plan.application.dto.response.BlockDetailResponse;
 import waypoint.mvp.plan.application.dto.response.BlockResponse;
 import waypoint.mvp.plan.domain.Block;
@@ -99,6 +100,31 @@ public class BlockService {
 		Pageable pageable) {
 
 		return blockQueryService.findBlocks(planExternalId, day, user, pageable);
+	}
+
+	@Transactional
+	public BlockDetailResponse updateBlock(String planExternalId, String blockId, BlockUpdateRequest request,
+		UserPrincipal user) {
+		Plan plan = getPlanAuthor(planExternalId, user);
+		Long planId = plan.getId();
+
+		Block block = blockQueryService.getBlock(planId, blockId);
+		TimeBlock timeBlock = block.getTimeBlock();
+
+		if (request.day() != null) {
+			PlanDay newPlanDay = findPlanDay(planId, request.day());
+			timeBlock.updatePlanDay(newPlanDay);
+		}
+
+		if (request.startTime() != null && request.endTime() != null) {
+			timeBlock.updateTime(request.startTime(), request.endTime());
+		}
+
+		if (request.memo() != null) {
+			block.updateMemo(request.memo());
+		}
+
+		return BlockDetailResponse.from(block, blockQueryService.toPlaceResponse(block));
 	}
 
 }
