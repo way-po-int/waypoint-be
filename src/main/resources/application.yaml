@@ -102,3 +102,9 @@ waypoint:
     guest-access-token-name: "waypoint_guest"
     guest-access-token-max-age-seconds: 604800 # 7일
     refresh-token-name: "refresh_token"
+
+aws:
+  region: ${AWS_REGION:ap-northeast-2}
+  s3:
+    bucket: ${AWS_S3_BUCKET:way-point-bucket}
+    url-format: ${AWS_S3_URL_FORMAT:https://%s.s3.%s.amazonaws.com/%s}
