@@ -5,9 +5,12 @@ import org.locationtech.jts.geom.Point;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -37,20 +40,28 @@ public class Place extends ExternalIdEntity {
 	@Embedded
 	private PlaceDetail detail;
 
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(nullable = false)
+	private PlaceCategory category;
+
 	@Builder(access = AccessLevel.PRIVATE)
-	private Place(String name, String address, Point location, PlaceDetail detail) {
+	private Place(String name, String address, Point location, PlaceDetail detail, PlaceCategory category) {
 		this.name = name;
 		this.address = address;
 		this.location = location;
 		this.detail = detail;
+		this.category = category;
 	}
 
-	public static Place create(String name, String address, Point location, PlaceDetail detail) {
+	public static Place create(String name, String address, Point location, PlaceDetail detail,
+		PlaceCategory category) {
+
 		return builder()
 			.name(name)
 			.address(address)
 			.location(location)
 			.detail(detail)
+			.category(category)
 			.build();
 	}
 }
