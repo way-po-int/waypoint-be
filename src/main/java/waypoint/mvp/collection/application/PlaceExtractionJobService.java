@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.collection.application.dto.request.AddExtractedPlacesRequest;
 import waypoint.mvp.collection.application.dto.request.PlaceExtractionJobCreateRequest;
+import waypoint.mvp.collection.application.dto.response.AddExtractedPlacesResponse;
 import waypoint.mvp.collection.application.dto.response.CollectionPlaceResponse;
 import waypoint.mvp.collection.application.dto.response.ExtractionJobDetailResponse;
 import waypoint.mvp.collection.application.dto.response.ExtractionJobResponse;
@@ -99,7 +100,7 @@ public class PlaceExtractionJobService {
 	}
 
 	@Transactional
-	public List<CollectionPlaceResponse> addExtractedPlaces(
+	public AddExtractedPlacesResponse addExtractedPlaces(
 		String collectionId,
 		String jobId,
 		AddExtractedPlacesRequest request,
@@ -120,13 +121,16 @@ public class PlaceExtractionJobService {
 
 		collectionPlaceRepository.saveAll(newCollectionPlaces);
 
-		return newCollectionPlaces.stream()
+		int totalSize = request.placeIds().size();
+		List<CollectionPlaceResponse> addedPlaces = newCollectionPlaces.stream()
 			.map(collectionPlace -> CollectionPlaceResponse.of(
 				collectionPlace,
 				collectionPlaceQueryService.toPlaceResponse(collectionPlace),
 				PickPassResponse.of(List.of(), List.of())
 			))
 			.toList();
+
+		return AddExtractedPlacesResponse.of(totalSize, addedPlaces);
 	}
 
 	@Transactional
