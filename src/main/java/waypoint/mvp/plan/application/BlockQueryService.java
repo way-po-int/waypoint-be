@@ -87,7 +87,12 @@ public class BlockQueryService {
 		List<Long> timeBlockIds = timeBlocks.stream().map(TimeBlock::getId).toList();
 		return blockRepository.findAllByTimeBlockIds(planId, timeBlockIds)
 			.stream()
-			.collect(Collectors.toMap(block -> block.getTimeBlock().getId(), Function.identity()));
+			.filter(Block::isSelected)
+			.collect(Collectors.toMap(
+				block -> block.getTimeBlock().getId(),
+				Function.identity(),
+				(first, second) -> first
+			));
 	}
 
 	private List<BlockResponse> mapToBlockResponses(List<TimeBlock> timeBlocks, Map<Long, Block> selectedBlocks) {
