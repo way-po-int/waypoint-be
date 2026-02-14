@@ -47,7 +47,9 @@ public class UserService implements UserFinder {
 
 		var result = userProfileImageService.presignProfileUpload(me.getExternalId(), contentType);
 
-		me.changePicture(result.pictureUrl());
+		if (!result.pictureUrl().equals(me.getPicture())) {
+			me.changePicture(result.pictureUrl());
+		}
 
 		return PresignedUrlResponse.from(result.presignedUrl());
 	}
