@@ -28,7 +28,6 @@ import waypoint.mvp.global.auth.ResourceAuthorizer;
 import waypoint.mvp.global.common.SliceResponse;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.place.application.PlacePhotoService;
-import waypoint.mvp.place.application.dto.PlaceResponse;
 import waypoint.mvp.place.domain.Place;
 import waypoint.mvp.place.error.PlaceError;
 import waypoint.mvp.place.infrastructure.persistence.PlaceRepository;
@@ -72,9 +71,11 @@ public class CollectionPlaceService {
 			updateCollectionThumbnail(collection, place);
 		}
 
-		PlaceResponse placeResponse = PlaceResponse.from(place,
-			placePhotoService.resolveRepresentativePhotoUris(place));
-		return CollectionPlaceResponse.of(saved, placeResponse, PickPassResponse.of(List.of(), List.of()));
+		return CollectionPlaceResponse.of(
+			saved,
+			collectionPlaceQueryService.toPlaceResponse(saved),
+			PickPassResponse.of(List.of(), List.of())
+		);
 	}
 
 	private Place getPlace(String placeId) {
@@ -116,7 +117,8 @@ public class CollectionPlaceService {
 		Collection collection = getCollection(collectionId);
 		collectionAuthorizer.verifyAccess(principal, collection.getId());
 
-		return collectionPlaceQueryService.getPlacesByCollectionId(collection.getId(), addedByMemberId, sortType, pageable);
+		return collectionPlaceQueryService.getPlacesByCollectionId(collection.getId(), addedByMemberId, sortType,
+			pageable);
 	}
 
 	public CollectionPlaceDetailResponse getPlaceDetail(
