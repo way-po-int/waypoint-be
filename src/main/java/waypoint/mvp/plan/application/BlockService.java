@@ -1,13 +1,8 @@
 package waypoint.mvp.plan.application;
 
 import java.time.LocalTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Collections;
-import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,9 +14,8 @@ import waypoint.mvp.collection.domain.CollectionPlace;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
 import waypoint.mvp.global.common.SliceResponse;
 import waypoint.mvp.global.error.exception.BusinessException;
-import waypoint.mvp.place.application.dto.PlaceResponse;
-import waypoint.mvp.place.domain.Place;
 import waypoint.mvp.plan.application.dto.request.BlockCreateRequest;
+import waypoint.mvp.plan.application.dto.request.BlockUpdateRequest;
 import waypoint.mvp.plan.application.dto.response.BlockDetailResponse;
 import waypoint.mvp.plan.application.dto.response.BlockResponse;
 import waypoint.mvp.plan.domain.Block;
@@ -30,7 +24,6 @@ import waypoint.mvp.plan.domain.PlanDay;
 import waypoint.mvp.plan.domain.PlanMember;
 import waypoint.mvp.plan.domain.TimeBlock;
 import waypoint.mvp.plan.domain.TimeBlockType;
-import waypoint.mvp.plan.error.BlockError;
 import waypoint.mvp.plan.error.PlanError;
 import waypoint.mvp.plan.infrastructure.persistence.BlockRepository;
 import waypoint.mvp.plan.infrastructure.persistence.PlanDayRepository;
@@ -43,6 +36,7 @@ public class BlockService {
 
 	private final PlanService planService;
 	private final PlanMemberService planMemberService;
+	private final BlockQueryService blockQueryService;
 	private final ResourceAuthorizer planAuthorizer;
 	private final PlanDayRepository planDayRepository;
 	private final TimeBlockRepository timeBlockRepository;
@@ -60,7 +54,7 @@ public class BlockService {
 
 		Block block = createBlockByType(request, timeBlock, addedBy);
 
-		return BlockResponse.from(timeBlock, block, toPlaceResponse(block.getPlace()));
+		return BlockResponse.from(timeBlock, block, blockQueryService.toPlaceResponse(block));
 	}
 
 	private TimeBlock saveTimeBlock(PlanDay planDay, LocalTime startTime, LocalTime endTime, TimeBlockType type) {
@@ -87,13 +81,6 @@ public class BlockService {
 		return blockRepository.save(Block.createFree(timeBlock, request.memo(), addedBy));
 	}
 
-	private PlaceResponse toPlaceResponse(Place place) {
-		if (place == null) {
-			return null;
-		}
-		return collectionPlaceQueryService.toPlaceResponse(place);
-	}
-
 	private PlanDay findPlanDay(Long planId, int day) {
 		return planDayRepository.findByPlanIdAndDay(planId, day)
 			.orElseThrow(() -> new BusinessException(PlanError.PLAN_DAY_NOT_FOUND));
@@ -105,62 +92,39 @@ public class BlockService {
 		return plan;
 	}
 
+	public BlockDetailResponse findBlockDetail(String planId, String blockId, AuthPrincipal user) {
+		return blockQueryService.findBlockDetail(planId, blockId, user);
+	}
+
 	public SliceResponse<BlockResponse> findBlocks(String planExternalId, int day, AuthPrincipal user,
 		Pageable pageable) {
+
+		return blockQueryService.findBlocks(planExternalId, day, user, pageable);
+	}
+
+	@Transactional
+	public BlockDetailResponse updateBlock(String planExternalId, String blockId, BlockUpdateRequest request,
+		UserPrincipal user) {
 		Plan plan = getPlanAuthor(planExternalId, user);
 		Long planId = plan.getId();
 
-		Slice<TimeBlock> timeBlockSlice = timeBlockRepository.findAllByPlanIdAndDay(planId, day, pageable);
-		List<TimeBlock> timeBlocks = timeBlockSlice.getContent();
+		Block block = blockQueryService.getBlock(planId, blockId);
+		TimeBlock timeBlock = block.getTimeBlock();
 
-		if (timeBlocks.isEmpty()) {
-			return SliceResponse.from(timeBlockSlice, List.of());
+		if (request.day() != null) {
+			PlanDay newPlanDay = findPlanDay(planId, request.day());
+			timeBlock.updatePlanDay(newPlanDay);
 		}
 
-		Map<Long, List<Block>> blockMap = findAllBlocksGroupedByTimeBlock(planId, timeBlocks);
-		List<BlockResponse> contents = mapToBlockResponses(timeBlocks, blockMap);
-
-		return SliceResponse.from(timeBlockSlice, contents);
-	}
-
-	private Map<Long, List<Block>> findAllBlocksGroupedByTimeBlock(Long planId, List<TimeBlock> timeBlocks) {
-		List<Long> timeBlockIds = timeBlocks.stream().map(TimeBlock::getId).toList();
-		List<Block> allBlocks = blockRepository.findAllByTimeBlockIds(planId, timeBlockIds);
-		return allBlocks.stream()
-			.collect(Collectors.groupingBy(block -> block.getTimeBlock().getId()));
-	}
-
-	private List<BlockResponse> mapToBlockResponses(List<TimeBlock> timeBlocks, Map<Long, List<Block>> blockMap) {
-		return timeBlocks.stream()
-			.map(timeBlock -> toBlockResponse(timeBlock, blockMap.getOrDefault(timeBlock.getId(), Collections.emptyList())))
-			.toList();
-	}
-
-	private BlockResponse toBlockResponse(TimeBlock timeBlock, List<Block> blocks) {
-		Block selectedBlock = blocks.stream()
-			.filter(Block::isSelected)
-			.findFirst()
-			.orElse(null);
-
-		if (selectedBlock == null) {
-			return new BlockResponse(timeBlock.getExternalId(), timeBlock.getType(), timeBlock.getStartTime(),
-				timeBlock.getEndTime(), null);
+		if (request.startTime() != null && request.endTime() != null) {
+			timeBlock.updateTime(request.startTime(), request.endTime());
 		}
-		return BlockResponse.from(timeBlock, selectedBlock, toPlaceResponse(selectedBlock.getPlace()));
+
+		if (request.memo() != null) {
+			block.updateMemo(request.memo());
+		}
+
+		return BlockDetailResponse.from(block, blockQueryService.toPlaceResponse(block));
 	}
 
-	private Plan getPlanAuthor(String planExternalId, AuthPrincipal user) {
-		Plan plan = planService.getPlan(planExternalId);
-		planAuthorizer.verifyAccess(user, plan.getId());
-		return plan;
-	}
-
-	public BlockDetailResponse findBlockDetail(String planId, String blockId, AuthPrincipal user) {
-		Plan plan = getPlanAuthor(planId, user);
-
-		Block block = blockRepository.findByExternalId(plan.getId(), blockId)
-			.orElseThrow(() -> new BusinessException(BlockError.BLOCK_NOT_FOUND));
-
-		return BlockDetailResponse.from(block, toPlaceResponse(block.getPlace()));
-	}
 }

@@ -8,28 +8,18 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.validation.constraints.AssertTrue;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import waypoint.mvp.global.util.TimeUtils;
 import waypoint.mvp.global.validation.annotation.MemoPolicy;
-import waypoint.mvp.plan.domain.TimeBlockType;
 
-public record BlockCreateRequest(
+public record BlockUpdateRequest(
 
-	String collectionPlaceId,
-
-	@NotNull(message = "블록 타입은 필수입니다.")
-	TimeBlockType type,
-
-	@NotNull(message = "일차는 필수입니다.")
 	@Range(min = 1, max = 30, message = "일차는 1~30 사이여야 합니다.")
 	Integer day,
 
-	@NotNull(message = "시작 시간은 필수입니다.")
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
 	LocalTime startTime,
 
-	@NotNull(message = "종료 시간은 필수입니다.")
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
 	LocalTime endTime,
 
@@ -39,12 +29,12 @@ public record BlockCreateRequest(
 ) {
 
 	@JsonIgnore
-	@AssertTrue(message = "장소 블록에는 collection_place_id가 필수입니다.")
-	public boolean isCollectionPlaceIdValid() {
-		if (type == TimeBlockType.PLACE) {
-			return collectionPlaceId != null && !collectionPlaceId.isBlank();
+	@AssertTrue(message = "시작 시간과 종료 시간은 함께 입력해야 합니다.")
+	public boolean isTimePairValid() {
+		if (startTime == null && endTime == null) {
+			return true;
 		}
-		return true;
+		return startTime != null && endTime != null;
 	}
 
 	@JsonIgnore
