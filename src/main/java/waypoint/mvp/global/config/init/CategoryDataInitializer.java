@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import waypoint.mvp.place.application.PlaceCategoryService;
 import waypoint.mvp.place.infrastructure.persistence.PlaceCategoryRepository;
 
 @Component
@@ -23,6 +24,7 @@ public class CategoryDataInitializer implements CommandLineRunner {
 		"sql/place-category-mapping.sql"
 	};
 
+	private final PlaceCategoryService placeCategoryService;
 	private final PlaceCategoryRepository placeCategoryRepository;
 	private final DataSource dataSource;
 
@@ -42,7 +44,10 @@ public class CategoryDataInitializer implements CommandLineRunner {
 				ClassPathResource sqlFile = new ClassPathResource(fileName);
 				ScriptUtils.executeSqlScript(connection, sqlFile);
 			}
+
 			log.info("카테고리 데이터 초기화 완료");
+			placeCategoryService.loadCategory();
+
 		} catch (Exception e) {
 			log.error("카테고리 데이터 초기화에 실패했습니다.", e);
 		}
