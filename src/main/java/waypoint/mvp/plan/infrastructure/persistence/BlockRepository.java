@@ -17,7 +17,7 @@ public interface BlockRepository extends JpaRepository<Block, Long> {
 	@Query("SELECT b FROM Block b "
 		+ "LEFT JOIN FETCH b.place "
 		+ "JOIN FETCH b.addedBy "
-		+ "WHERE b.timeBlock.id IN :timeBlockIds AND b.timeBlock.planDay.plan.id = :planId AND b.selected = true")
+		+ "WHERE b.timeBlock.id IN :timeBlockIds AND b.timeBlock.planDay.plan.id = :planId")
 	List<Block> findAllByTimeBlockIds(@Param("planId") Long planId, @Param("timeBlockIds") List<Long> timeBlockIds);
 
 	@Query("SELECT b FROM Block b "
