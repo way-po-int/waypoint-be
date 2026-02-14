@@ -19,7 +19,8 @@ public interface SocialMediaPlaceRepository extends JpaRepository<SocialMediaPla
 
 	@Query("SELECT p FROM SocialMediaPlace smp JOIN smp.place p"
 		+ " WHERE smp.socialMedia.id = :socialMediaId AND p.externalId IN :placeIds"
-		+ " AND NOT EXISTS (SELECT 1 FROM CollectionPlace cp WHERE cp.place = p AND cp.collection.id = :collectionId)")
+		+ " AND NOT EXISTS (SELECT 1 FROM CollectionPlace cp"
+		+ " WHERE cp.place = p AND cp.socialMedia.id = :socialMediaId AND cp.collection.id = :collectionId)")
 	List<Place> findPlacesNotAddedToCollection(
 		@Param("socialMediaId") Long socialMediaId,
 		@Param("placeIds") List<String> placeIds,
