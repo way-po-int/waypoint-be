@@ -29,11 +29,11 @@ public class Block extends ExternalIdEntity {
 	private Long id;
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(nullable = false)
+	@JoinColumn
 	private Place place;
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(nullable = false)
+	@JoinColumn
 	private SocialMedia socialMedia;
 
 	@ManyToOne(fetch = FetchType.LAZY)
@@ -66,6 +66,14 @@ public class Block extends ExternalIdEntity {
 		return builder()
 			.place(place)
 			.socialMedia(socialMedia)
+			.timeBlock(timeBlock)
+			.memo(memo)
+			.addedBy(addedBy)
+			.build();
+	}
+
+	public static Block createFree(TimeBlock timeBlock, String memo, PlanMember addedBy) {
+		return builder()
 			.timeBlock(timeBlock)
 			.memo(memo)
 			.addedBy(addedBy)

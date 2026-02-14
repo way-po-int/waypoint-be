@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 
 import waypoint.mvp.plan.domain.Plan;
 
+// TODO API dog과 동일하게 변경
 public record PlanResponse(
 	String planId,
 
@@ -17,7 +18,8 @@ public record PlanResponse(
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
 	LocalDate endDate,
 
-	int memberCount) {
+	int memberCount
+) {
 
 	public static PlanResponse from(Plan plan) {
 		return new PlanResponse(
