@@ -108,11 +108,6 @@ public class UserProfileImageService {
 		}
 		String key = path.startsWith("/") ? path.substring(1) : path;
 
-		String bucketPrefix = bucket + "/";
-		if (key.startsWith(bucketPrefix)) {
-			key = key.substring(bucketPrefix.length());
-		}
-
 		String base = "users/%s/profile".formatted(userExternalId);
 		if (!(key.equals(base) || key.startsWith(base + "/"))) {
 			return null;
