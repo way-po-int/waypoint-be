@@ -2,6 +2,8 @@ package waypoint.mvp.user.application;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -64,11 +66,20 @@ public class UserService implements UserFinder {
 		if (old == null || old.isBlank()) {
 			return;
 		}
-		try {
-			userProfileImageService.deleteProfileImageIfManaged(me.getExternalId(), old);
-		} catch (Exception e) {
-			log.warn("Failed to delete profile image from S3. userId={}, url={}", user.id(), old, e);
-		}
+
+		Long userId = user.id();
+		String externalId = me.getExternalId();
+
+		TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+			@Override
+			public void afterCommit() {
+				try {
+					userProfileImageService.deleteProfileImageIfManaged(externalId, old);
+				} catch (Exception e) {
+					log.warn("Failed to delete profile image from S3 after commit. userId={}, url={}", userId, old, e);
+				}
+			}
+		});
 	}
 
 	public UserResponse findMe(UserPrincipal user) {
