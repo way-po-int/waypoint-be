@@ -21,12 +21,10 @@ import waypoint.mvp.plan.application.dto.response.BlockAssembly;
 import waypoint.mvp.plan.application.dto.response.BlockDetailResponse;
 import waypoint.mvp.plan.application.dto.response.BlockResponse;
 import waypoint.mvp.plan.domain.Block;
-import waypoint.mvp.plan.domain.BlockOpinion;
 import waypoint.mvp.plan.domain.Plan;
 import waypoint.mvp.plan.domain.TimeBlock;
 import waypoint.mvp.plan.domain.error.TimeBlockError;
 import waypoint.mvp.plan.error.BlockError;
-import waypoint.mvp.plan.infrastructure.persistence.BlockOpinionRepository;
 import waypoint.mvp.plan.infrastructure.persistence.BlockRepository;
 import waypoint.mvp.plan.infrastructure.persistence.TimeBlockRepository;
 
@@ -39,7 +37,7 @@ public class BlockQueryService {
 	private final ResourceAuthorizer planAuthorizer;
 	private final TimeBlockRepository timeBlockRepository;
 	private final BlockRepository blockRepository;
-	private final BlockOpinionRepository blockOpinionRepository;
+	private final BlockOpinionQueryService blockOpinionQueryService;
 	private final CollectionPlaceQueryService collectionPlaceQueryService;
 
 	public SliceResponse<BlockResponse> findBlocks(String planExternalId, int day, AuthPrincipal user,
@@ -60,9 +58,9 @@ public class BlockQueryService {
 			.flatMap(List::stream)
 			.map(Block::getId)
 			.toList();
-		BlockOpinionDto context = createOpinionDTO(allBlockIds);
+		BlockOpinionDto blockOpinionDto = blockOpinionQueryService.findByBlockIds(allBlockIds);
 
-		List<BlockResponse> contents = mapToBlockResponses(timeBlocks, blocksByTimeBlockId, context);
+		List<BlockResponse> contents = mapToBlockResponses(timeBlocks, blocksByTimeBlockId, blockOpinionDto);
 
 		return SliceResponse.from(timeBlockSlice, contents);
 	}
@@ -78,14 +76,14 @@ public class BlockQueryService {
 
 	public BlockDetailResponse toBlockDetailResponse(Block block, Long planId) {
 		TimeBlock timeBlock = block.getTimeBlock();
-		List<Block> blocks = blockRepository.findAllByTimeBlockIds(planId, List.of(timeBlock.getId()));
+		List<Block> candidateBlocks = blockRepository.findAllByTimeBlockIds(planId, List.of(timeBlock.getId()));
 
-		List<Long> blockIds = blocks.stream().map(Block::getId).toList();
-		BlockOpinionDto context = createOpinionDTO(blockIds);
-		BlockAssembly resolvedBlockDto = BlockAssembly.of(blocks, context, this::toPlaceResponse);
+		List<Long> candidateBlockIds = candidateBlocks.stream().map(Block::getId).toList();
+		BlockOpinionDto blockOpinionDto = blockOpinionQueryService.findByBlockIds(candidateBlockIds);
+		BlockAssembly assembly = BlockAssembly.of(candidateBlocks, blockOpinionDto, this::toPlaceResponse);
 
-		return BlockDetailResponse.from(block, resolvedBlockDto.status(), resolvedBlockDto.candidates(),
-			resolvedBlockDto.selectedBlock());
+		return BlockDetailResponse.from(block, assembly.status(), assembly.candidates(),
+			assembly.selectedBlock());
 	}
 
 	public Block getBlock(Long planId, String blockExternalId) {
@@ -105,25 +103,16 @@ public class BlockQueryService {
 			.orElseThrow(() -> new BusinessException(TimeBlockError.TIME_BLOCK_NOT_FOUND));
 	}
 
-	public BlockResponse toBlockResponse(TimeBlock timeBlock, List<Block> blocks) {
-		List<Long> blockIds = blocks.stream().map(Block::getId).toList();
-		BlockOpinionDto context = createOpinionDTO(blockIds);
-		return toBlockResponse(timeBlock, blocks, context);
+	public BlockResponse toBlockResponse(TimeBlock timeBlock, List<Block> candidateBlocks) {
+		List<Long> candidateBlockIds = candidateBlocks.stream().map(Block::getId).toList();
+		BlockOpinionDto blockOpinionDto = blockOpinionQueryService.findByBlockIds(candidateBlockIds);
+		return toBlockResponse(timeBlock, candidateBlocks, blockOpinionDto);
 	}
 
-	public BlockResponse toBlockResponse(TimeBlock timeBlock, List<Block> blocks, BlockOpinionDto blockOpinionDto) {
-		BlockAssembly assembly = BlockAssembly.of(blocks, blockOpinionDto, this::toPlaceResponse);
+	public BlockResponse toBlockResponse(TimeBlock timeBlock, List<Block> candidateBlocks,
+		BlockOpinionDto candidateOpinionDto) {
+		BlockAssembly assembly = BlockAssembly.of(candidateBlocks, candidateOpinionDto, this::toPlaceResponse);
 		return BlockResponse.from(timeBlock, assembly.status(), assembly.candidates(), assembly.selectedBlock());
-	}
-
-	private BlockOpinionDto createOpinionDTO(List<Long> blockIds) {
-		if (blockIds.isEmpty()) {
-			return new BlockOpinionDto(Map.of());
-		}
-		Map<Long, List<BlockOpinion>> opinionsByBlockId = blockOpinionRepository.findAllByBlockIds(blockIds)
-			.stream()
-			.collect(Collectors.groupingBy(opinion -> opinion.getBlock().getId()));
-		return new BlockOpinionDto(opinionsByBlockId);
 	}
 
 	private Plan getPlanWithAccess(String planExternalId, AuthPrincipal user) {
@@ -140,10 +129,10 @@ public class BlockQueryService {
 	}
 
 	private List<BlockResponse> mapToBlockResponses(
-		List<TimeBlock> timeBlocks, Map<Long, List<Block>> blocksByTimeBlockId, BlockOpinionDto context) {
+		List<TimeBlock> timeBlocks, Map<Long, List<Block>> blocksByTimeBlockId, BlockOpinionDto blockOpinionDto) {
 		return timeBlocks.stream()
 			.map(timeBlock -> toBlockResponse(
-				timeBlock, blocksByTimeBlockId.getOrDefault(timeBlock.getId(), List.of()), context))
+				timeBlock, blocksByTimeBlockId.getOrDefault(timeBlock.getId(), List.of()), blockOpinionDto))
 			.toList();
 	}
 }
