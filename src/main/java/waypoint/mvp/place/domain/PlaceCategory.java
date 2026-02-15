@@ -35,16 +35,13 @@ public class PlaceCategory {
 
 	public List<Long> getCategoryPathIds() {
 		List<Long> pathIds = new ArrayList<>();
+		PlaceCategory current = this;
 
-		if (this.level >= 1) {
-			pathIds.add((this.id / 100000) * 100000);
+		while (current != null) {
+			pathIds.addFirst(current.id);
+			current = current.parent;
 		}
-		if (this.level >= 2) {
-			pathIds.add((this.id / 1000) * 1000);
-		}
-		if (this.level >= 3) {
-			pathIds.add(this.id);
-		}
+
 		return pathIds;
 	}
 }
