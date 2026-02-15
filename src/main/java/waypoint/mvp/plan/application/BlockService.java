@@ -43,6 +43,7 @@ public class BlockService {
 	private final PlanDayRepository planDayRepository;
 	private final TimeBlockRepository timeBlockRepository;
 	private final BlockRepository blockRepository;
+	private final PlanCollectionService planCollectionService;
 	private final CollectionPlaceQueryService collectionPlaceQueryService;
 
 	@Transactional
@@ -54,7 +55,7 @@ public class BlockService {
 		TimeBlock timeBlock = saveTimeBlock(planDay, request.startTime(), request.endTime(), request.type());
 		PlanMember addedBy = planMemberService.findMemberByUserId(planId, user.getId());
 
-		Block block = createBlockByType(request, timeBlock, addedBy);
+		Block block = createBlockByType(planId, request, timeBlock, addedBy);
 
 		return blockQueryService.toBlockResponse(timeBlock, List.of(block));
 	}
@@ -68,9 +69,9 @@ public class BlockService {
 		TimeBlock timeBlock = blockQueryService.getTimeBlock(planId, timeBlockExternalId);
 		PlanMember addedBy = planMemberService.findMemberByUserId(planId, user.getId());
 
-		// TODO request.collectionPlaceIds()에 있는 것이 정말로 Plan에 등록된 것인지 확인
 		List<CollectionPlace> collectionPlaces = collectionPlaceQueryService.getCollectionPlaces(
 			request.collectionPlaceIds());
+		planCollectionService.verifyPlacesLinkedToPlan(planId, collectionPlaces);
 
 		List<Block> blocks = collectionPlaces.stream()
 			.map(cp -> Block.create(cp.getPlace(), cp.getSocialMedia(), timeBlock, null, addedBy))
@@ -85,15 +86,16 @@ public class BlockService {
 		return timeBlockRepository.save(timeBlock);
 	}
 
-	private Block createBlockByType(BlockCreateRequest request, TimeBlock timeBlock, PlanMember addedBy) {
+	private Block createBlockByType(Long planId, BlockCreateRequest request, TimeBlock timeBlock, PlanMember addedBy) {
 		if (request.type() == TimeBlockType.PLACE) {
-			return createPlaceBlock(request, timeBlock, addedBy);
+			return createPlaceBlock(planId, request, timeBlock, addedBy);
 		}
 		return createFreeBlock(request, timeBlock, addedBy);
 	}
 
-	private Block createPlaceBlock(BlockCreateRequest request, TimeBlock timeBlock, PlanMember addedBy) {
+	private Block createPlaceBlock(Long planId, BlockCreateRequest request, TimeBlock timeBlock, PlanMember addedBy) {
 		CollectionPlace collectionPlace = collectionPlaceQueryService.getCollectionPlace(request.collectionPlaceId());
+		planCollectionService.verifyPlacesLinkedToPlan(planId, List.of(collectionPlace));
 		return blockRepository.save(
 			Block.create(collectionPlace.getPlace(), collectionPlace.getSocialMedia(), timeBlock, request.memo(),
 				addedBy)
