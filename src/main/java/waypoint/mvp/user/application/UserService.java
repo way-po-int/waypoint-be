@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.user.application.dto.SocialUserProfile;
@@ -14,6 +15,7 @@ import waypoint.mvp.user.domain.User;
 import waypoint.mvp.user.error.UserError;
 import waypoint.mvp.user.infrastructure.persistence.UserRepository;
 
+@Slf4j
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
@@ -47,11 +49,26 @@ public class UserService implements UserFinder {
 
 		var result = userProfileImageService.presignProfileUpload(me.getExternalId(), contentType);
 
-		if (!result.pictureUrl().equals(me.getPicture())) {
-			me.changePicture(result.pictureUrl());
-		}
+		me.changePicture(result.pictureUrl());
 
 		return PresignedUrlResponse.from(result.presignedUrl());
+	}
+
+	@Transactional
+	public void deleteProfilePicture(UserPrincipal user) {
+		User me = findById(user.id());
+
+		String old = me.getPicture();
+		me.changePicture("");
+
+		if (old == null || old.isBlank()) {
+			return;
+		}
+		try {
+			userProfileImageService.deleteProfileImageIfManaged(me.getExternalId(), old);
+		} catch (Exception e) {
+			log.warn("Failed to delete profile image from S3. userId={}, url={}", user.id(), old, e);
+		}
 	}
 
 	public UserResponse findMe(UserPrincipal user) {
