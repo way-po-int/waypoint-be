@@ -37,20 +37,26 @@ public class Place extends ExternalIdEntity {
 	@Embedded
 	private PlaceDetail detail;
 
+	@Column(nullable = false)
+	private Long categoryId;
+
 	@Builder(access = AccessLevel.PRIVATE)
-	private Place(String name, String address, Point location, PlaceDetail detail) {
+	private Place(String name, String address, Point location, PlaceDetail detail, Long categoryId) {
 		this.name = name;
 		this.address = address;
 		this.location = location;
 		this.detail = detail;
+		this.categoryId = categoryId;
 	}
 
-	public static Place create(String name, String address, Point location, PlaceDetail detail) {
+	public static Place create(String name, String address, Point location, PlaceDetail detail, Long categoryId) {
+
 		return builder()
 			.name(name)
 			.address(address)
 			.location(location)
 			.detail(detail)
+			.categoryId(categoryId)
 			.build();
 	}
 }

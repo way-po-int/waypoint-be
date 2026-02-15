@@ -31,6 +31,7 @@ public class PlaceSearchService {
 	private final GooglePlacesClient googlePlacesClient;
 	private final PlaceService placeService;
 	private final PlacePhotoService placePhotoService;
+	private final PlaceCategoryService placeCategoryService;
 
 	public List<PlaceResponse> search(String query) {
 		String q = (query == null) ? "" : query.trim();
@@ -46,7 +47,11 @@ public class PlaceSearchService {
 		return placeIds.stream()
 			.map(this::loadOrCreatePlace)
 			.flatMap(Optional::stream)
-			.map(place -> PlaceResponse.from(place, placePhotoService.resolveRepresentativePhotoUris(place)))
+			.map(place -> PlaceResponse.from(
+				place,
+				placeCategoryService.toCategoryResponse(place.getCategoryId()),
+				placePhotoService.resolveRepresentativePhotoUris(place))
+			)
 			.toList();
 	}
 
@@ -80,6 +85,12 @@ public class PlaceSearchService {
 			dto.getFirstPhotoName()
 		);
 
-		return Place.create(dto.getName(), dto.formattedAddress(), location, detail);
+		return Place.create(
+			dto.getName(),
+			dto.formattedAddress(),
+			location,
+			detail,
+			placeCategoryService.getCategoryId(dto.primaryType())
+		);
 	}
 }

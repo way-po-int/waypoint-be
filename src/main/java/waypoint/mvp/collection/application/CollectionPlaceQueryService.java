@@ -30,6 +30,7 @@ import waypoint.mvp.collection.infrastructure.persistence.CollectionPlaceReposit
 import waypoint.mvp.collection.infrastructure.persistence.CollectionRepository;
 import waypoint.mvp.global.common.SliceResponse;
 import waypoint.mvp.global.error.exception.BusinessException;
+import waypoint.mvp.place.application.PlaceCategoryService;
 import waypoint.mvp.place.application.PlacePhotoService;
 import waypoint.mvp.place.application.dto.PlaceResponse;
 import waypoint.mvp.place.domain.Place;
@@ -52,10 +53,12 @@ import waypoint.mvp.plan.domain.Plan;
 @Transactional(readOnly = true)
 public class CollectionPlaceQueryService {
 
+	private final PlaceCategoryService placeCategoryService;
+	private final PlacePhotoService placePhotoService;
+
 	private final CollectionRepository collectionRepository;
 	private final CollectionPlaceRepository collectionPlaceRepository;
 	private final CollectionPlacePreferenceRepository preferenceRepository;
-	private final PlacePhotoService placePhotoService;
 
 	/**
 	 * CollectionPlace 정보 조회 (권한 검증 없음)
@@ -85,7 +88,11 @@ public class CollectionPlaceQueryService {
 	 * Place 정보를 PlaceResponse로 변환 (사진 포함)
 	 */
 	public PlaceResponse toPlaceResponse(Place place) {
-		return PlaceResponse.from(place, placePhotoService.resolveRepresentativePhotoUris(place));
+		return PlaceResponse.from(
+			place,
+			placeCategoryService.toCategoryResponse(place.getCategoryId()),
+			placePhotoService.resolveRepresentativePhotoUris(place)
+		);
 	}
 
 	/**

@@ -12,12 +12,13 @@ public record PlaceResponse(
 	String googlePlaceId,
 	String name,
 	String address,
-	String category,
+	PlaceCategoryResponse category,
+	String primaryType,
 	String googleMapsUri,
 	List<String> photos,
 	PointResponse point
 ) {
-	public static PlaceResponse from(Place place, List<String> photos) {
+	public static PlaceResponse from(Place place, PlaceCategoryResponse category, List<String> photos) {
 		PlaceDetail detail = place.getDetail();
 		Point location = place.getLocation();
 
@@ -29,6 +30,7 @@ public record PlaceResponse(
 			(detail != null) ? detail.getPlaceId() : null,
 			place.getName(),
 			place.getAddress(),
+			category,
 			(detail != null) ? detail.getPrimaryType() : null,
 			(detail != null) ? detail.getGoogleMapsUri() : null,
 			photos,
