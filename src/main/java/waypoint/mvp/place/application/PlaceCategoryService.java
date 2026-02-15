@@ -5,6 +5,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.util.ObjectUtils;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -58,6 +59,11 @@ public class PlaceCategoryService {
 
 	public PlaceCategoryResponse toCategoryResponse(Long categoryId) {
 		PlaceCategoryDto leaf = idToCategoryMap.getOrDefault(categoryId, idToCategoryMap.get(ETC_CATEGORY_ID));
+		if (ObjectUtils.isEmpty(leaf)) {
+			log.error("기타(ETC) 카테고리(ID: {})가 존재하지 않습니다. 데이터 초기화 로직을 확인해주세요.", ETC_CATEGORY_ID);
+			return new PlaceCategoryResponse(null, null, null);
+		}
+
 		PlaceCategoryDto[] byLevel = new PlaceCategoryDto[4];
 
 		leaf.pathIds()
