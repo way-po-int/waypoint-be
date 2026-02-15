@@ -77,6 +77,13 @@ public class CollectionPlaceQueryService {
 	}
 
 	/**
+	 * CollectionPlace 목록 조회 - externalId 목록 기반 (권한 검증 없음)
+	 */
+	public List<CollectionPlace> getCollectionPlaces(List<String> collectionPlaceIds) {
+		return collectionPlaceRepository.findAllByExternalIds(collectionPlaceIds);
+	}
+
+	/**
 	 * CollectionPlace 정보 조회 - Long id 기반 (권한 검증 없음)
 	 */
 	public CollectionPlace getCollectionPlace(Long collectionPlaceId) {
