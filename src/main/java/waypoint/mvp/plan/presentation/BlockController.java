@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -22,6 +23,7 @@ import waypoint.mvp.global.auth.annotations.Authorize;
 import waypoint.mvp.global.common.SliceResponse;
 import waypoint.mvp.plan.application.BlockService;
 import waypoint.mvp.plan.application.dto.request.BlockCreateRequest;
+import waypoint.mvp.plan.application.dto.request.BlockUpdateRequest;
 import waypoint.mvp.plan.application.dto.response.BlockDetailResponse;
 import waypoint.mvp.plan.application.dto.response.BlockResponse;
 
@@ -64,6 +66,18 @@ public class BlockController {
 		@AuthenticationPrincipal AuthPrincipal user
 	) {
 		BlockDetailResponse response = blockService.findBlockDetail(planId, blockId, user);
+		return ResponseEntity.ok(response);
+	}
+
+	@Authorize(level = AuthLevel.AUTHENTICATED)
+	@PatchMapping("/{blockId}")
+	public ResponseEntity<BlockDetailResponse> updateBlock(
+		@PathVariable String planId,
+		@PathVariable String blockId,
+		@RequestBody @Valid BlockUpdateRequest request,
+		@AuthenticationPrincipal UserPrincipal user
+	) {
+		BlockDetailResponse response = blockService.updateBlock(planId, blockId, request, user);
 		return ResponseEntity.ok(response);
 	}
 }
