@@ -1,6 +1,7 @@
 package waypoint.mvp.plan.application;
 
 import java.time.LocalTime;
+import java.util.List;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -16,6 +17,7 @@ import waypoint.mvp.global.common.SliceResponse;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.plan.application.dto.request.BlockCreateRequest;
 import waypoint.mvp.plan.application.dto.request.BlockUpdateRequest;
+import waypoint.mvp.plan.application.dto.request.CandidateBlockCreateRequest;
 import waypoint.mvp.plan.application.dto.response.BlockDetailResponse;
 import waypoint.mvp.plan.application.dto.response.BlockResponse;
 import waypoint.mvp.plan.domain.Block;
@@ -54,7 +56,28 @@ public class BlockService {
 
 		Block block = createBlockByType(request, timeBlock, addedBy);
 
-		return BlockResponse.from(timeBlock, block, blockQueryService.toPlaceResponse(block));
+		return blockQueryService.toBlockResponse(timeBlock, List.of(block));
+	}
+
+	@Transactional
+	public BlockResponse addCandidates(String planExternalId, String timeBlockExternalId,
+		CandidateBlockCreateRequest request, UserPrincipal user) {
+		Plan plan = getPlanAuthor(planExternalId, user);
+		Long planId = plan.getId();
+
+		TimeBlock timeBlock = blockQueryService.getTimeBlock(planId, timeBlockExternalId);
+		PlanMember addedBy = planMemberService.findMemberByUserId(planId, user.getId());
+
+		// TODO request.collectionPlaceIds()에 있는 것이 정말로 Plan에 등록된 것인지 확인
+		List<CollectionPlace> collectionPlaces = collectionPlaceQueryService.getCollectionPlaces(
+			request.collectionPlaceIds());
+
+		List<Block> blocks = collectionPlaces.stream()
+			.map(cp -> Block.create(cp.getPlace(), cp.getSocialMedia(), timeBlock, null, addedBy))
+			.toList();
+		List<Block> savedBlocks = blockRepository.saveAll(blocks);
+
+		return blockQueryService.toBlockResponse(timeBlock, savedBlocks);
 	}
 
 	private TimeBlock saveTimeBlock(PlanDay planDay, LocalTime startTime, LocalTime endTime, TimeBlockType type) {
@@ -124,7 +147,7 @@ public class BlockService {
 			block.updateMemo(request.memo());
 		}
 
-		return BlockDetailResponse.from(block, blockQueryService.toPlaceResponse(block));
+		return blockQueryService.toBlockDetailResponse(block, planId);
 	}
 
 }
