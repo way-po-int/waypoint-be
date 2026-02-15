@@ -24,6 +24,7 @@ import waypoint.mvp.global.common.SliceResponse;
 import waypoint.mvp.plan.application.BlockService;
 import waypoint.mvp.plan.application.dto.request.BlockCreateRequest;
 import waypoint.mvp.plan.application.dto.request.BlockUpdateRequest;
+import waypoint.mvp.plan.application.dto.request.CandidateBlockCreateRequest;
 import waypoint.mvp.plan.application.dto.response.BlockDetailResponse;
 import waypoint.mvp.plan.application.dto.response.BlockResponse;
 
@@ -44,6 +45,18 @@ public class BlockController {
 
 		URI location = URI.create("/plans/" + planId + "/blocks/" + response.timeBlockId());
 		return ResponseEntity.created(location).body(response);
+	}
+
+	@Authorize(level = AuthLevel.AUTHENTICATED)
+	@PostMapping("/{timeBlockId}/candidates")
+	public ResponseEntity<BlockResponse> addCandidates(
+		@PathVariable String planId,
+		@PathVariable String timeBlockId,
+		@RequestBody @Valid CandidateBlockCreateRequest request,
+		@AuthenticationPrincipal UserPrincipal user
+	) {
+		BlockResponse response = blockService.addCandidates(planId, timeBlockId, request, user);
+		return ResponseEntity.ok(response);
 	}
 
 	@Authorize(level = AuthLevel.GUEST_OR_MEMBER)
