@@ -58,14 +58,14 @@ public class PlaceCategoryService {
 
 	public PlaceCategoryResponse toCategoryResponse(Long categoryId) {
 		PlaceCategoryDto leaf = idToCategoryMap.getOrDefault(categoryId, idToCategoryMap.get(ETC_CATEGORY_ID));
-		PlaceCategoryDto[] byDepth = new PlaceCategoryDto[4];
+		PlaceCategoryDto[] byLevel = new PlaceCategoryDto[4];
 
 		leaf.pathIds()
 			.stream()
 			.map(idToCategoryMap::get)
 			.filter(Objects::nonNull)
-			.forEach(c -> byDepth[c.depth()] = c);
+			.forEach(c -> byLevel[c.level()] = c);
 
-		return new PlaceCategoryResponse(byDepth[1], byDepth[2], byDepth[3]);
+		return new PlaceCategoryResponse(byLevel[1], byLevel[2], byLevel[3]);
 	}
 }

@@ -27,7 +27,7 @@ public class PlaceCategory {
 	private String name;
 
 	@Column
-	private Integer depth;
+	private Integer level;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn
@@ -36,13 +36,13 @@ public class PlaceCategory {
 	public List<Long> getCategoryPathIds() {
 		List<Long> pathIds = new ArrayList<>();
 
-		if (this.depth >= 1) {
+		if (this.level >= 1) {
 			pathIds.add((this.id / 100000) * 100000);
 		}
-		if (this.depth >= 2) {
+		if (this.level >= 2) {
 			pathIds.add((this.id / 1000) * 1000);
 		}
-		if (this.depth >= 3) {
+		if (this.level >= 3) {
 			pathIds.add(this.id);
 		}
 		return pathIds;

@@ -1,8 +1,8 @@
 -- ============================================
--- [1] 대분류 (Depth 1)
+-- [1] 대분류 (Level 1)
 -- ============================================
 
-INSERT INTO place_categories (id, name, depth, parent_id)
+INSERT INTO place_categories (id, name, level, parent_id)
 VALUES (100000, 'F&B', 1, NULL),
        (200000, '후식', 1, NULL),
        (300000, '관광', 1, NULL),
@@ -13,21 +13,21 @@ VALUES (100000, 'F&B', 1, NULL),
 
 
 -- ============================================
--- [2] 중분류 (Depth 2)
+-- [2] 중분류 (Level 2)
 -- ============================================
 
 -- F&B 중분류
-INSERT INTO place_categories (id, name, depth, parent_id)
+INSERT INTO place_categories (id, name, level, parent_id)
 VALUES (101000, '식당', 2, 100000),
        (102000, '주점', 2, 100000);
 
 -- 후식 중분류
-INSERT INTO place_categories (id, name, depth, parent_id)
+INSERT INTO place_categories (id, name, level, parent_id)
 VALUES (201000, '카페', 2, 200000),
        (202000, '디저트', 2, 200000);
 
 -- 관광 중분류
-INSERT INTO place_categories (id, name, depth, parent_id)
+INSERT INTO place_categories (id, name, level, parent_id)
 VALUES (301000, '관광명소', 2, 300000),
        (302000, '문화예술', 2, 300000),
        (303000, '공원', 2, 300000),
@@ -38,15 +38,15 @@ VALUES (301000, '관광명소', 2, 300000),
        (308000, '유흥', 2, 300000);
 
 -- 숙소 중분류
-INSERT INTO place_categories (id, name, depth, parent_id)
+INSERT INTO place_categories (id, name, level, parent_id)
 VALUES (401000, '숙소', 2, 400000);
 
 -- 쇼핑 중분류
-INSERT INTO place_categories (id, name, depth, parent_id)
+INSERT INTO place_categories (id, name, level, parent_id)
 VALUES (501000, '쇼핑', 2, 500000);
 
 -- 일반 중분류
-INSERT INTO place_categories (id, name, depth, parent_id)
+INSERT INTO place_categories (id, name, level, parent_id)
 VALUES (901000, '액티비티', 2, 900000),
        (902000, '스파', 2, 900000),
        (903000, '교통', 2, 900000),
@@ -56,11 +56,11 @@ VALUES (901000, '액티비티', 2, 900000),
 
 
 -- ============================================
--- F&B 소분류 (Depth 3)
+-- F&B 소분류 (Level 3)
 -- ============================================
 
 -- 식당 하위
-INSERT INTO place_categories (id, name, depth, parent_id)
+INSERT INTO place_categories (id, name, level, parent_id)
 VALUES (101001, '음식점', 3, 101000),
        (101002, '한식', 3, 101000),
        (101003, '중식', 3, 101000),
@@ -83,24 +83,24 @@ VALUES (101001, '음식점', 3, 101000),
        (101020, '포장 전문', 3, 101000);
 
 -- 주점 하위
-INSERT INTO place_categories (id, name, depth, parent_id)
+INSERT INTO place_categories (id, name, level, parent_id)
 VALUES (102001, '주점', 3, 102000);
 
 
 
 -- ============================================
--- 후식 소분류 (Depth 3)
+-- 후식 소분류 (Level 3)
 -- ============================================
 
 -- 카페 하위
-INSERT INTO place_categories (id, name, depth, parent_id)
+INSERT INTO place_categories (id, name, level, parent_id)
 VALUES (201001, '카페', 3, 201000),
        (201002, '음료', 3, 201000),
        (201003, '찻집', 3, 201000),
        (201004, '동물 카페', 3, 201000);
 
 -- 디저트 하위
-INSERT INTO place_categories (id, name, depth, parent_id)
+INSERT INTO place_categories (id, name, level, parent_id)
 VALUES (202001, '제빵', 3, 202000),
        (202002, '디저트 전문점', 3, 202000),
        (202003, '아이스크림', 3, 202000),
@@ -109,11 +109,11 @@ VALUES (202001, '제빵', 3, 202000),
 
 
 -- ============================================
--- 관광 소분류 (Depth 3)
+-- 관광 소분류 (Level 3)
 -- ============================================
 
 -- 관광명소 하위
-INSERT INTO place_categories (id, name, depth, parent_id)
+INSERT INTO place_categories (id, name, level, parent_id)
 VALUES (301001, '명소', 3, 301000),
        (301002, '역사 유적', 3, 301000),
        (301003, '문화 유적', 3, 301000),
@@ -125,14 +125,14 @@ VALUES (301001, '명소', 3, 301000),
        (301009, '묘지', 3, 301000);
 
 -- 문화예술 하위
-INSERT INTO place_categories (id, name, depth, parent_id)
+INSERT INTO place_categories (id, name, level, parent_id)
 VALUES (302001, '공연장', 3, 302000),
        (302002, '문화시설', 3, 302000),
        (302003, '대학교', 3, 302000),
        (302004, '도서관', 3, 302000);
 
 -- 공원 하위
-INSERT INTO place_categories (id, name, depth, parent_id)
+INSERT INTO place_categories (id, name, level, parent_id)
 VALUES (303001, '공원', 3, 303000),
        (303002, '놀이터', 3, 303000),
        (303003, '국립 공원', 3, 303000),
@@ -142,7 +142,7 @@ VALUES (303001, '공원', 3, 303000),
        (303007, '광장', 3, 303000);
 
 -- 자연 하위
-INSERT INTO place_categories (id, name, depth, parent_id)
+INSERT INTO place_categories (id, name, level, parent_id)
 VALUES (304001, '해변', 3, 304000),
        (304002, '항구', 3, 304000),
        (304003, '식물원', 3, 304000),
@@ -154,7 +154,7 @@ VALUES (304001, '해변', 3, 304000),
        (304009, '자연 지형', 3, 304000);
 
 -- 종교시설 하위
-INSERT INTO place_categories (id, name, depth, parent_id)
+INSERT INTO place_categories (id, name, level, parent_id)
 VALUES (305001, '교회', 3, 305000),
        (305002, '사원', 3, 305000),
        (305003, '힌두 사원', 3, 305000),
@@ -162,7 +162,7 @@ VALUES (305001, '교회', 3, 305000),
        (305005, '예배 장소', 3, 305000);
 
 -- 테마파크 하위
-INSERT INTO place_categories (id, name, depth, parent_id)
+INSERT INTO place_categories (id, name, level, parent_id)
 VALUES (306001, '놀이공원', 3, 306000),
        (306002, '오락센터', 3, 306000),
        (306003, '워터파크', 3, 306000),
@@ -170,7 +170,7 @@ VALUES (306001, '놀이공원', 3, 306000),
        (306005, '롤러코스터', 3, 306000);
 
 -- 관람 하위
-INSERT INTO place_categories (id, name, depth, parent_id)
+INSERT INTO place_categories (id, name, level, parent_id)
 VALUES (307001, '영화 극장', 3, 307000),
        (307002, '야외 극장', 3, 307000),
        (307003, '경기장', 3, 307000),
@@ -179,7 +179,7 @@ VALUES (307001, '영화 극장', 3, 307000),
        (307006, '연회장', 3, 307000);
 
 -- 유흥 하위
-INSERT INTO place_categories (id, name, depth, parent_id)
+INSERT INTO place_categories (id, name, level, parent_id)
 VALUES (308001, '오락실', 3, 308000),
        (308002, '클럽', 3, 308000),
        (308003, '노래방', 3, 308000),
@@ -188,10 +188,10 @@ VALUES (308001, '오락실', 3, 308000),
 
 
 -- ============================================
--- 숙소 소분류 (Depth 3)
+-- 숙소 소분류 (Level 3)
 -- ============================================
 
-INSERT INTO place_categories (id, name, depth, parent_id)
+INSERT INTO place_categories (id, name, level, parent_id)
 VALUES (401001, '호텔', 3, 401000),
        (401002, '여관', 3, 401000),
        (401003, '숙박시설', 3, 401000);
@@ -199,10 +199,10 @@ VALUES (401001, '호텔', 3, 401000),
 
 
 -- ============================================
--- 쇼핑 소분류 (Depth 3)
+-- 쇼핑 소분류 (Level 3)
 -- ============================================
 
-INSERT INTO place_categories (id, name, depth, parent_id)
+INSERT INTO place_categories (id, name, level, parent_id)
 VALUES (501001, '백화점', 3, 501000),
        (501002, '마트', 3, 501000),
        (501003, '의류', 3, 501000),
@@ -228,11 +228,11 @@ VALUES (501001, '백화점', 3, 501000),
 
 
 -- ============================================
--- 일반 소분류 (Depth 3)
+-- 일반 소분류 (Level 3)
 -- ============================================
 
 -- 액티비티 하위
-INSERT INTO place_categories (id, name, depth, parent_id)
+INSERT INTO place_categories (id, name, level, parent_id)
 VALUES (901001, '레저', 3, 901000),
        (901002, '하이킹', 3, 901000),
        (901003, '골프', 3, 901000),
@@ -252,7 +252,7 @@ VALUES (901001, '레저', 3, 901000),
        (901017, '어린이캠프', 3, 901000);
 
 -- 스파 하위
-INSERT INTO place_categories (id, name, depth, parent_id)
+INSERT INTO place_categories (id, name, level, parent_id)
 VALUES (902001, '사우나', 3, 902000),
        (902002, '마사지', 3, 902000),
        (902003, '힐링', 3, 902000),
@@ -260,7 +260,7 @@ VALUES (902001, '사우나', 3, 902000),
        (902005, '태닝스튜디오', 3, 902000);
 
 -- 교통 하위
-INSERT INTO place_categories (id, name, depth, parent_id)
+INSERT INTO place_categories (id, name, level, parent_id)
 VALUES (903001, '공항', 3, 903000),
        (903002, '기차', 3, 903000),
        (903003, '버스', 3, 903000),
@@ -283,7 +283,7 @@ VALUES (903001, '공항', 3, 903000),
        (903020, '세차장', 3, 903000);
 
 -- 편의시설 하위
-INSERT INTO place_categories (id, name, depth, parent_id)
+INSERT INTO place_categories (id, name, level, parent_id)
 VALUES (904001, '환전', 3, 904000),
        (904002, '의료', 3, 904000),
        (904003, '세탁시설', 3, 904000),
@@ -296,7 +296,7 @@ VALUES (904001, '환전', 3, 904000),
        (904010, '소방서', 3, 904000);
 
 -- 기타 하위
-INSERT INTO place_categories (id, name, depth, parent_id)
+INSERT INTO place_categories (id, name, level, parent_id)
 VALUES (905001, '구내식당', 3, 905000),
        (905002, '배달음식', 3, 905000),
        (905003, '바베큐장', 3, 905000),

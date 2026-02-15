@@ -11,7 +11,7 @@ public record PlaceCategoryDto(
 	String name,
 
 	@JsonIgnore
-	Integer depth,
+	Integer level,
 
 	@JsonIgnore
 	List<Long> pathIds
@@ -21,7 +21,7 @@ public record PlaceCategoryDto(
 		return new PlaceCategoryDto(
 			String.valueOf(category.getId()),
 			category.getName(),
-			category.getDepth(),
+			category.getLevel(),
 			category.getCategoryPathIds()
 		);
 	}

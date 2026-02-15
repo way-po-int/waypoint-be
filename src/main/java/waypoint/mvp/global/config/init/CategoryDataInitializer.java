@@ -1,6 +1,7 @@
 package waypoint.mvp.global.config.init;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 
 import javax.sql.DataSource;
 
@@ -48,7 +49,7 @@ public class CategoryDataInitializer implements CommandLineRunner {
 			log.info("카테고리 데이터 초기화 완료");
 			placeCategoryService.loadCategory();
 
-		} catch (Exception e) {
+		} catch (SQLException e) {
 			log.error("카테고리 데이터 초기화에 실패했습니다.", e);
 		}
 	}
