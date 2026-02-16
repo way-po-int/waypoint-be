@@ -12,18 +12,17 @@ public record CandidateBlockResponse(
 	PlaceResponse place,
 	boolean selected,
 	PlanAddedBy addedBy,
-	OpinionSummary opinionSummary,
-	List<BlockOpinionResponse> opinions
+	OpinionSummary opinionSummary
 ) {
-	public static CandidateBlockResponse from(Block block, PlaceResponse place, List<BlockOpinion> opinions) {
+	public static CandidateBlockResponse from(Block block, PlaceResponse place, List<BlockOpinion> opinions,
+		Long userId) {
 		return new CandidateBlockResponse(
 			block.getExternalId(),
 			block.getMemo(),
 			place,
 			block.isSelected(),
 			PlanAddedBy.from(block.getAddedBy()),
-			OpinionSummary.from(opinions),
-			opinions.stream().map(BlockOpinionResponse::from).toList()
+			OpinionSummary.from(opinions, userId)
 		);
 	}
 }
