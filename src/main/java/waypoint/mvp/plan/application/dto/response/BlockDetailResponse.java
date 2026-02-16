@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 import waypoint.mvp.collection.application.dto.response.SocialMediaResponse;
 import waypoint.mvp.plan.domain.Block;
-import waypoint.mvp.plan.domain.BlockStatus;
+import waypoint.mvp.plan.domain.Plan;
 import waypoint.mvp.plan.domain.TimeBlock;
 import waypoint.mvp.plan.domain.TimeBlockType;
 
@@ -16,8 +16,7 @@ import waypoint.mvp.plan.domain.TimeBlockType;
 public record BlockDetailResponse(
 	String timeBlockId,
 	TimeBlockType type,
-	BlockStatus blockStatus,
-	int day,
+	DayInfoResponse dayInfo,
 
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
 	LocalTime startTime,
@@ -25,30 +24,27 @@ public record BlockDetailResponse(
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
 	LocalTime endTime,
 
-	Integer candidateCount,
-	List<CandidateBlockResponse> candidates,
-	CandidateBlockResponse selectedBlock,
+	List<BlockOpinionResponse> opinions,
+	CandidateBlockResponse block,
 	SocialMediaResponse socialMedia
 ) {
 
 	public static BlockDetailResponse from(
 		Block block,
-		BlockStatus blockStatus,
-		List<CandidateBlockResponse> candidates,
-		CandidateBlockResponse selectedBlock
+		Plan plan,
+		List<BlockOpinionResponse> opinions,
+		CandidateBlockResponse candidateBlock
 	) {
 		TimeBlock timeBlock = block.getTimeBlock();
 
 		return new BlockDetailResponse(
 			timeBlock.getExternalId(),
 			timeBlock.getType(),
-			blockStatus,
-			timeBlock.getPlanDay().getDay(),
+			DayInfoResponse.from(timeBlock.getPlanDay(), plan),
 			timeBlock.getStartTime(),
 			timeBlock.getEndTime(),
-			candidates != null ? candidates.size() : 0,
-			candidates,
-			selectedBlock,
+			opinions,
+			candidateBlock,
 			block.getSocialMedia() != null ? SocialMediaResponse.from(block.getSocialMedia()) : null
 		);
 	}
