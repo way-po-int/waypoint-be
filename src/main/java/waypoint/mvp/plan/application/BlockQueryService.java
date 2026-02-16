@@ -13,19 +13,22 @@ import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.collection.application.CollectionPlaceQueryService;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
-import waypoint.mvp.global.common.SliceResponse;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.place.application.dto.PlaceResponse;
+import waypoint.mvp.plan.application.dto.BlockAssembly;
 import waypoint.mvp.plan.application.dto.BlockOpinionDto;
-import waypoint.mvp.plan.application.dto.response.BlockAssembly;
+import waypoint.mvp.plan.application.dto.BlockSliceResult;
 import waypoint.mvp.plan.application.dto.response.BlockDetailResponse;
 import waypoint.mvp.plan.application.dto.response.BlockResponse;
 import waypoint.mvp.plan.domain.Block;
 import waypoint.mvp.plan.domain.Plan;
+import waypoint.mvp.plan.domain.PlanDay;
 import waypoint.mvp.plan.domain.TimeBlock;
 import waypoint.mvp.plan.domain.error.TimeBlockError;
 import waypoint.mvp.plan.error.BlockError;
+import waypoint.mvp.plan.error.PlanError;
 import waypoint.mvp.plan.infrastructure.persistence.BlockRepository;
+import waypoint.mvp.plan.infrastructure.persistence.PlanDayRepository;
 import waypoint.mvp.plan.infrastructure.persistence.TimeBlockRepository;
 
 @Service
@@ -37,19 +40,23 @@ public class BlockQueryService {
 	private final ResourceAuthorizer planAuthorizer;
 	private final TimeBlockRepository timeBlockRepository;
 	private final BlockRepository blockRepository;
+	private final PlanDayRepository planDayRepository;
 	private final BlockOpinionQueryService blockOpinionQueryService;
 	private final CollectionPlaceQueryService collectionPlaceQueryService;
 
-	public SliceResponse<BlockResponse> findBlocks(String planExternalId, int day, AuthPrincipal user,
+	public BlockSliceResult findBlocks(String planExternalId, int day, AuthPrincipal user,
 		Pageable pageable) {
 		Plan plan = getPlanWithAccess(planExternalId, user);
 		Long planId = plan.getId();
+
+		PlanDay planDay = planDayRepository.findByPlanIdAndDay(planId, day)
+			.orElseThrow(() -> new BusinessException(PlanError.PLAN_DAY_NOT_FOUND));
 
 		Slice<TimeBlock> timeBlockSlice = timeBlockRepository.findAllByPlanIdAndDay(planId, day, pageable);
 		List<TimeBlock> timeBlocks = timeBlockSlice.getContent();
 
 		if (timeBlocks.isEmpty()) {
-			return SliceResponse.from(timeBlockSlice, List.of());
+			return new BlockSliceResult(plan, planDay, timeBlockSlice, List.of());
 		}
 
 		Map<Long, List<Block>> blocksByTimeBlockId = findBlocksByTimeBlock(planId, timeBlocks);
@@ -60,9 +67,10 @@ public class BlockQueryService {
 			.toList();
 		BlockOpinionDto blockOpinionDto = blockOpinionQueryService.findByBlockIds(allBlockIds);
 
-		List<BlockResponse> contents = mapToBlockResponses(timeBlocks, blocksByTimeBlockId, blockOpinionDto);
+		Long userId = user.getId();
+		List<BlockResponse> contents = mapToBlockResponses(timeBlocks, blocksByTimeBlockId, blockOpinionDto, userId);
 
-		return SliceResponse.from(timeBlockSlice, contents);
+		return new BlockSliceResult(plan, planDay, timeBlockSlice, contents);
 	}
 
 	public BlockDetailResponse findBlockDetail(String planExternalId, String blockId, AuthPrincipal user) {
@@ -71,7 +79,7 @@ public class BlockQueryService {
 
 		Block block = getBlock(planId, blockId);
 
-		return toBlockDetailResponse(block, planId);
+		return toBlockDetailResponse(block, plan, user.getId());
 	}
 
 	public BlockDetailResponse toBlockDetailResponse(Block block, Long planId) {

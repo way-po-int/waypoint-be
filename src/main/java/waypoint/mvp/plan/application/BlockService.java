@@ -13,12 +13,13 @@ import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.collection.application.CollectionPlaceQueryService;
 import waypoint.mvp.collection.domain.CollectionPlace;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
-import waypoint.mvp.global.common.SliceResponse;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.plan.application.dto.request.BlockCreateRequest;
 import waypoint.mvp.plan.application.dto.request.BlockUpdateRequest;
 import waypoint.mvp.plan.application.dto.request.CandidateBlockCreateRequest;
+import waypoint.mvp.plan.application.dto.BlockSliceResult;
 import waypoint.mvp.plan.application.dto.response.BlockDetailResponse;
+import waypoint.mvp.plan.application.dto.response.BlockListResponse;
 import waypoint.mvp.plan.application.dto.response.BlockResponse;
 import waypoint.mvp.plan.domain.Block;
 import waypoint.mvp.plan.domain.Plan;
@@ -57,7 +58,7 @@ public class BlockService {
 
 		Block block = createBlockByType(planId, request, timeBlock, addedBy);
 
-		return blockQueryService.toBlockResponse(timeBlock, List.of(block));
+		return blockQueryService.toBlockResponse(timeBlock, List.of(block), user.getId());
 	}
 
 	@Transactional
@@ -78,7 +79,7 @@ public class BlockService {
 			.toList();
 		List<Block> savedBlocks = blockRepository.saveAll(blocks);
 
-		return blockQueryService.toBlockResponse(timeBlock, savedBlocks);
+		return blockQueryService.toBlockResponse(timeBlock, savedBlocks, user.getId());
 	}
 
 	private TimeBlock saveTimeBlock(PlanDay planDay, LocalTime startTime, LocalTime endTime, TimeBlockType type) {
@@ -121,10 +122,10 @@ public class BlockService {
 		return blockQueryService.findBlockDetail(planId, blockId, user);
 	}
 
-	public SliceResponse<BlockResponse> findBlocks(String planExternalId, int day, AuthPrincipal user,
+	public BlockListResponse findBlocks(String planExternalId, int day, AuthPrincipal user,
 		Pageable pageable) {
-
-		return blockQueryService.findBlocks(planExternalId, day, user, pageable);
+		BlockSliceResult result = blockQueryService.findBlocks(planExternalId, day, user, pageable);
+		return BlockListResponse.from(result.planDay(), result.plan(), result.slice(), result.contents());
 	}
 
 	@Transactional
@@ -149,7 +150,7 @@ public class BlockService {
 			block.updateMemo(request.memo());
 		}
 
-		return blockQueryService.toBlockDetailResponse(block, planId);
+		return blockQueryService.toBlockDetailResponse(block, plan, user.getId());
 	}
 
 }
