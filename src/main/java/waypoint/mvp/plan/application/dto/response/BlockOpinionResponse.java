@@ -9,7 +9,7 @@ public record BlockOpinionResponse(
 	String opinionId,
 	BlockOpinionType type,
 	String comment,
-	List<String> opinionTagIds,
+	List<String> tagIds,
 	PlanAddedBy addedBy
 ) {
 	public static BlockOpinionResponse from(BlockOpinion opinion) {
