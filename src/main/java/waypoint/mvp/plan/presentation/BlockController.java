@@ -20,12 +20,12 @@ import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.global.auth.annotations.AuthLevel;
 import waypoint.mvp.global.auth.annotations.Authorize;
-import waypoint.mvp.global.common.SliceResponse;
 import waypoint.mvp.plan.application.BlockService;
 import waypoint.mvp.plan.application.dto.request.BlockCreateRequest;
 import waypoint.mvp.plan.application.dto.request.BlockUpdateRequest;
 import waypoint.mvp.plan.application.dto.request.CandidateBlockCreateRequest;
 import waypoint.mvp.plan.application.dto.response.BlockDetailResponse;
+import waypoint.mvp.plan.application.dto.response.BlockListResponse;
 import waypoint.mvp.plan.application.dto.response.BlockResponse;
 
 @RestController
@@ -61,13 +61,13 @@ public class BlockController {
 
 	@Authorize(level = AuthLevel.GUEST_OR_MEMBER)
 	@GetMapping
-	public ResponseEntity<SliceResponse<BlockResponse>> getBlocks(
+	public ResponseEntity<BlockListResponse> getBlocks(
 		@PathVariable String planId,
 		@RequestParam int day,
 		@AuthenticationPrincipal AuthPrincipal user,
 		Pageable pageable
 	) {
-		SliceResponse<BlockResponse> response = blockService.findBlocks(planId, day, user, pageable);
+		BlockListResponse response = blockService.findBlocks(planId, day, user, pageable);
 		return ResponseEntity.ok(response);
 	}
 
