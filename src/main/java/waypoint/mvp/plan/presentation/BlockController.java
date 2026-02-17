@@ -96,7 +96,7 @@ public class BlockController {
 	}
 
 	@Authorize(level = AuthLevel.AUTHENTICATED)
-	@PatchMapping("/{timeBlockId}/fix}")
+	@PatchMapping("/{timeBlockId}/fix")
 	public ResponseEntity<BlockResponse> fixCandidateBlock(
 		@PathVariable String planId,
 		@PathVariable String timeBlockId,
@@ -108,7 +108,7 @@ public class BlockController {
 	}
 
 	@Authorize(level = AuthLevel.AUTHENTICATED)
-	@PatchMapping("/{timeBlockId}/unfix}")
+	@PatchMapping("/{timeBlockId}/unfix")
 	public ResponseEntity<BlockResponse> unfixCandidateBlock(
 		@PathVariable String planId,
 		@PathVariable String timeBlockId,
