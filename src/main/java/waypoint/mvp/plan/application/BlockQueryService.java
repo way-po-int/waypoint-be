@@ -96,6 +96,10 @@ public class BlockQueryService {
 		return BlockDetailResponse.from(block, plan, opinions, candidateBlock);
 	}
 
+	public List<Block> getBlocksByTimeBlock(Long planId, TimeBlock timeBlock) {
+		return blockRepository.findAllByTimeBlockIds(planId, List.of(timeBlock.getId()));
+	}
+
 	public Block getBlock(Long planId, String blockExternalId) {
 		return blockRepository.findByExternalId(planId, blockExternalId)
 			.orElseThrow(() -> new BusinessException(BlockError.BLOCK_NOT_FOUND));

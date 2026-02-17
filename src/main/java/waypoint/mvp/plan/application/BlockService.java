@@ -18,6 +18,7 @@ import waypoint.mvp.plan.application.dto.BlockSliceResult;
 import waypoint.mvp.plan.application.dto.request.BlockCreateRequest;
 import waypoint.mvp.plan.application.dto.request.BlockUpdateRequest;
 import waypoint.mvp.plan.application.dto.request.CandidateBlockCreateRequest;
+import waypoint.mvp.plan.application.dto.request.CandidateBlockSelectRequest;
 import waypoint.mvp.plan.application.dto.response.BlockDetailResponse;
 import waypoint.mvp.plan.application.dto.response.BlockListResponse;
 import waypoint.mvp.plan.application.dto.response.BlockResponse;
@@ -161,6 +162,53 @@ public class BlockService {
 		}
 
 		return blockQueryService.toBlockDetailResponse(block, plan, user.getId());
+	}
+
+	@Transactional
+	public BlockResponse fixCandidate(String planExternalId, String timeBlockId, CandidateBlockSelectRequest request,
+		UserPrincipal user) {
+		Plan plan = getPlanAuthor(planExternalId, user);
+		Long planId = plan.getId();
+
+		Block block = blockQueryService.getBlock(planId, request.blockId());
+		TimeBlock timeBlock = blockQueryService.getTimeBlock(planId, timeBlockId);
+		List<Block> blocks = validateAndGetBlocks(planId, block, timeBlock);
+
+		boolean hasSelected = blocks.stream().anyMatch(Block::isSelected);
+		if (hasSelected) {
+			throw new BusinessException(BlockError.ALREADY_SELECTED);
+		}
+
+		block.select();
+
+		return blockQueryService.toBlockResponse(timeBlock, blocks, user.getId());
+	}
+
+	@Transactional
+	public BlockResponse unfixCandidate(String planExternalId, String timeBlockId,
+		CandidateBlockSelectRequest request,
+		UserPrincipal user) {
+		Plan plan = getPlanAuthor(planExternalId, user);
+		Long planId = plan.getId();
+
+		Block block = blockQueryService.getBlock(planId, request.blockId());
+		TimeBlock timeBlock = blockQueryService.getTimeBlock(planId, timeBlockId);
+		List<Block> candidateBlocks = validateAndGetBlocks(planId, block, timeBlock);
+
+		if (!block.isSelected()) {
+			throw new BusinessException(BlockError.NOT_SELECTED);
+		}
+
+		block.unselect();
+
+		return blockQueryService.toBlockResponse(timeBlock, candidateBlocks, user.getId());
+	}
+
+	private List<Block> validateAndGetBlocks(Long planId, Block block, TimeBlock timeBlock) {
+		if (!block.getTimeBlock().getId().equals(timeBlock.getId())) {
+			throw new BusinessException(BlockError.BLOCK_NOT_IN_TIME_BLOCK);
+		}
+		return blockQueryService.getBlocksByTimeBlock(planId, timeBlock);
 	}
 
 }
