@@ -1,5 +1,6 @@
 package waypoint.mvp.collection.infrastructure.persistence;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Pageable;
@@ -31,4 +32,10 @@ public interface CollectionPlaceRepository extends JpaRepository<CollectionPlace
 	@Query("select distinct cp from CollectionPlace cp join fetch cp.place where cp.collection.id = :collectionId and cp.addedBy.externalId = :addedByMemberExternalId")
 	Slice<CollectionPlace> findAllByCollectionIdAndAddedByExternalId(@Param("collectionId") Long collectionId,
 		@Param("addedByMemberExternalId") String addedByMemberExternalId, Pageable pageable);
+
+	@Query("SELECT cp FROM CollectionPlace cp "
+		+ "LEFT JOIN FETCH cp.place "
+		+ "LEFT JOIN FETCH cp.socialMedia "
+		+ "WHERE cp.externalId IN :externalIds")
+	List<CollectionPlace> findAllByExternalIds(@Param("externalIds") List<String> externalIds);
 }

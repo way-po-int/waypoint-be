@@ -1,6 +1,8 @@
 package waypoint.mvp.plan.application;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -14,6 +16,7 @@ import waypoint.mvp.collection.application.CollectionService;
 import waypoint.mvp.collection.application.dto.response.CollectionPlaceDetailResponse;
 import waypoint.mvp.collection.application.dto.response.CollectionPlaceResponse;
 import waypoint.mvp.collection.domain.Collection;
+import waypoint.mvp.collection.domain.CollectionPlace;
 import waypoint.mvp.collection.domain.PlaceSortType;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
 import waypoint.mvp.global.common.SliceResponse;
@@ -109,6 +112,20 @@ public class PlanCollectionService {
 		return collectionPlaceQueryService.getPlaceDetail(
 			collectionId, collectionPlaceId
 		);
+	}
+
+	// TODO 검증로직을 Service에 둘지 의논 필요(우선 순위 낮음)
+	public void verifyPlacesLinkedToPlan(Long planId, List<CollectionPlace> collectionPlaces) {
+		Set<Long> linkedCollectionIds = new HashSet<>(
+			planCollectionRepository.findCollectionIdsByPlanId(planId)
+		);
+
+		boolean hasInvalidPlace = collectionPlaces.stream()
+			.anyMatch(cp -> !linkedCollectionIds.contains(cp.getCollection().getId()));
+
+		if (hasInvalidPlace) {
+			throw new BusinessException(PlanCollectionError.PLAN_COLLECTION_NOT_FOUND);
+		}
 	}
 
 	@Transactional

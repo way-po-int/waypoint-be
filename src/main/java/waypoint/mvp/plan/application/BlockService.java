@@ -1,6 +1,7 @@
 package waypoint.mvp.plan.application;
 
 import java.time.LocalTime;
+import java.util.List;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -12,11 +13,13 @@ import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.collection.application.CollectionPlaceQueryService;
 import waypoint.mvp.collection.domain.CollectionPlace;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
-import waypoint.mvp.global.common.SliceResponse;
 import waypoint.mvp.global.error.exception.BusinessException;
+import waypoint.mvp.plan.application.dto.BlockSliceResult;
 import waypoint.mvp.plan.application.dto.request.BlockCreateRequest;
 import waypoint.mvp.plan.application.dto.request.BlockUpdateRequest;
+import waypoint.mvp.plan.application.dto.request.CandidateBlockCreateRequest;
 import waypoint.mvp.plan.application.dto.response.BlockDetailResponse;
+import waypoint.mvp.plan.application.dto.response.BlockListResponse;
 import waypoint.mvp.plan.application.dto.response.BlockResponse;
 import waypoint.mvp.plan.domain.Block;
 import waypoint.mvp.plan.domain.Plan;
@@ -24,6 +27,7 @@ import waypoint.mvp.plan.domain.PlanDay;
 import waypoint.mvp.plan.domain.PlanMember;
 import waypoint.mvp.plan.domain.TimeBlock;
 import waypoint.mvp.plan.domain.TimeBlockType;
+import waypoint.mvp.plan.error.BlockError;
 import waypoint.mvp.plan.error.PlanError;
 import waypoint.mvp.plan.infrastructure.persistence.BlockRepository;
 import waypoint.mvp.plan.infrastructure.persistence.PlanDayRepository;
@@ -41,6 +45,7 @@ public class BlockService {
 	private final PlanDayRepository planDayRepository;
 	private final TimeBlockRepository timeBlockRepository;
 	private final BlockRepository blockRepository;
+	private final PlanCollectionService planCollectionService;
 	private final CollectionPlaceQueryService collectionPlaceQueryService;
 
 	@Transactional
@@ -52,9 +57,39 @@ public class BlockService {
 		TimeBlock timeBlock = saveTimeBlock(planDay, request.startTime(), request.endTime(), request.type());
 		PlanMember addedBy = planMemberService.findMemberByUserId(planId, user.getId());
 
-		Block block = createBlockByType(request, timeBlock, addedBy);
+		Block block = createBlockByType(planId, request, timeBlock, addedBy);
+		block.select();
 
-		return BlockResponse.from(timeBlock, block, blockQueryService.toPlaceResponse(block));
+		return blockQueryService.toBlockResponse(timeBlock, List.of(block), user.getId());
+	}
+
+	@Transactional
+	public BlockResponse addCandidates(String planExternalId, String timeBlockExternalId,
+		CandidateBlockCreateRequest request, UserPrincipal user) {
+		Plan plan = getPlanAuthor(planExternalId, user);
+		Long planId = plan.getId();
+
+		TimeBlock timeBlock = blockQueryService.getTimeBlock(planId, timeBlockExternalId);
+		PlanMember addedBy = planMemberService.findMemberByUserId(planId, user.getId());
+
+		if (!timeBlock.getType().isPlace()) {
+			throw new BusinessException(BlockError.CANNOT_ADD_CANDIDATE_TO_FREE_BLOCK);
+		}
+
+		List<Block> existingBlocks = blockRepository.findAllByTimeBlockIds(planId, List.of(timeBlock.getId()));
+		existingBlocks.stream().filter(Block::isSelected).forEach(Block::unselect);
+
+		List<CollectionPlace> collectionPlaces = collectionPlaceQueryService.getCollectionPlaces(
+			request.collectionPlaceIds());
+		planCollectionService.verifyPlacesLinkedToPlan(planId, collectionPlaces);
+
+		List<Block> newBlocks = collectionPlaces.stream()
+			.map(cp -> Block.create(cp.getPlace(), cp.getSocialMedia(), timeBlock, null, addedBy))
+			.toList();
+		blockRepository.saveAll(newBlocks);
+
+		List<Block> allBlocks = blockRepository.findAllByTimeBlockIds(planId, List.of(timeBlock.getId()));
+		return blockQueryService.toBlockResponse(timeBlock, allBlocks, user.getId());
 	}
 
 	private TimeBlock saveTimeBlock(PlanDay planDay, LocalTime startTime, LocalTime endTime, TimeBlockType type) {
@@ -62,15 +97,16 @@ public class BlockService {
 		return timeBlockRepository.save(timeBlock);
 	}
 
-	private Block createBlockByType(BlockCreateRequest request, TimeBlock timeBlock, PlanMember addedBy) {
+	private Block createBlockByType(Long planId, BlockCreateRequest request, TimeBlock timeBlock, PlanMember addedBy) {
 		if (request.type() == TimeBlockType.PLACE) {
-			return createPlaceBlock(request, timeBlock, addedBy);
+			return createPlaceBlock(planId, request, timeBlock, addedBy);
 		}
 		return createFreeBlock(request, timeBlock, addedBy);
 	}
 
-	private Block createPlaceBlock(BlockCreateRequest request, TimeBlock timeBlock, PlanMember addedBy) {
+	private Block createPlaceBlock(Long planId, BlockCreateRequest request, TimeBlock timeBlock, PlanMember addedBy) {
 		CollectionPlace collectionPlace = collectionPlaceQueryService.getCollectionPlace(request.collectionPlaceId());
+		planCollectionService.verifyPlacesLinkedToPlan(planId, List.of(collectionPlace));
 		return blockRepository.save(
 			Block.create(collectionPlace.getPlace(), collectionPlace.getSocialMedia(), timeBlock, request.memo(),
 				addedBy)
@@ -96,10 +132,10 @@ public class BlockService {
 		return blockQueryService.findBlockDetail(planId, blockId, user);
 	}
 
-	public SliceResponse<BlockResponse> findBlocks(String planExternalId, int day, AuthPrincipal user,
+	public BlockListResponse findBlocks(String planExternalId, int day, AuthPrincipal user,
 		Pageable pageable) {
-
-		return blockQueryService.findBlocks(planExternalId, day, user, pageable);
+		BlockSliceResult result = blockQueryService.findBlocks(planExternalId, day, user, pageable);
+		return BlockListResponse.from(result.planDay(), result.plan(), result.slice(), result.contents());
 	}
 
 	@Transactional
@@ -124,7 +160,7 @@ public class BlockService {
 			block.updateMemo(request.memo());
 		}
 
-		return BlockDetailResponse.from(block, blockQueryService.toPlaceResponse(block));
+		return blockQueryService.toBlockDetailResponse(block, plan, user.getId());
 	}
 
 }

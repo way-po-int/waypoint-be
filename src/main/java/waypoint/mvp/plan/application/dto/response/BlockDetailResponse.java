@@ -1,13 +1,14 @@
 package waypoint.mvp.plan.application.dto.response;
 
 import java.time.LocalTime;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import waypoint.mvp.collection.application.dto.response.SocialMediaResponse;
-import waypoint.mvp.place.application.dto.PlaceResponse;
 import waypoint.mvp.plan.domain.Block;
+import waypoint.mvp.plan.domain.Plan;
 import waypoint.mvp.plan.domain.TimeBlock;
 import waypoint.mvp.plan.domain.TimeBlockType;
 
@@ -15,7 +16,7 @@ import waypoint.mvp.plan.domain.TimeBlockType;
 public record BlockDetailResponse(
 	String timeBlockId,
 	TimeBlockType type,
-	int day,// BlockResponse에 없음
+	DayInfoResponse dayInfo,
 
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
 	LocalTime startTime,
@@ -23,24 +24,27 @@ public record BlockDetailResponse(
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
 	LocalTime endTime,
 
-	String memo,
-	PlaceResponse place,
+	List<BlockOpinionResponse> opinions,
+	CandidateBlockResponse block,
 	SocialMediaResponse socialMedia
-
-	// TODO 의견 API 작업시 Opinion 추가
 ) {
 
-	public static BlockDetailResponse from(Block block, PlaceResponse place) {
+	public static BlockDetailResponse from(
+		Block block,
+		Plan plan,
+		List<BlockOpinionResponse> opinions,
+		CandidateBlockResponse candidateBlock
+	) {
 		TimeBlock timeBlock = block.getTimeBlock();
 
 		return new BlockDetailResponse(
 			timeBlock.getExternalId(),
 			timeBlock.getType(),
-			timeBlock.getPlanDay().getDay(),
+			DayInfoResponse.from(timeBlock.getPlanDay(), plan),
 			timeBlock.getStartTime(),
 			timeBlock.getEndTime(),
-			block.getMemo(),
-			place,
+			opinions,
+			candidateBlock,
 			block.getSocialMedia() != null ? SocialMediaResponse.from(block.getSocialMedia()) : null
 		);
 	}

@@ -27,4 +27,7 @@ public interface PlanCollectionRepository extends JpaRepository<PlanCollection, 
 
 	@Query("SELECT pc FROM PlanCollection pc JOIN FETCH pc.collection JOIN FETCH pc.member WHERE pc.plan.externalId = :planExternalId")
 	List<PlanCollection> findAllByPlanId(@Param("planExternalId") String planExternalId);
+
+	@Query("SELECT pc.collection.id FROM PlanCollection pc WHERE pc.plan.id = :planId")
+	List<Long> findCollectionIdsByPlanId(@Param("planId") Long planId);
 }

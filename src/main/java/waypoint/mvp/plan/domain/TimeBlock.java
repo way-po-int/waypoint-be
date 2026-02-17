@@ -1,6 +1,9 @@
 package waypoint.mvp.plan.domain;
 
+import static waypoint.mvp.plan.domain.BlockStatus.*;
+
 import java.time.LocalTime;
+import java.util.List;
 
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -66,6 +69,14 @@ public class TimeBlock extends ExternalIdEntity {
 			.endTime(endTime)
 			.type(type)
 			.build();
+	}
+
+	public static BlockStatus determine(TimeBlockType type, Block selectedBlock, List<Block> blocks) {
+		if (type == TimeBlockType.FREE)
+			return NOTHING;
+		if (selectedBlock != null)
+			return blocks.size() >= 2 ? BlockStatus.FIXED : BlockStatus.DIRECT;
+		return PENDING;
 	}
 
 	public void updatePlanDay(PlanDay planDay) {
