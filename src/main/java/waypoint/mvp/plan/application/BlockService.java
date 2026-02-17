@@ -14,10 +14,10 @@ import waypoint.mvp.collection.application.CollectionPlaceQueryService;
 import waypoint.mvp.collection.domain.CollectionPlace;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
 import waypoint.mvp.global.error.exception.BusinessException;
+import waypoint.mvp.plan.application.dto.BlockSliceResult;
 import waypoint.mvp.plan.application.dto.request.BlockCreateRequest;
 import waypoint.mvp.plan.application.dto.request.BlockUpdateRequest;
 import waypoint.mvp.plan.application.dto.request.CandidateBlockCreateRequest;
-import waypoint.mvp.plan.application.dto.BlockSliceResult;
 import waypoint.mvp.plan.application.dto.response.BlockDetailResponse;
 import waypoint.mvp.plan.application.dto.response.BlockListResponse;
 import waypoint.mvp.plan.application.dto.response.BlockResponse;
@@ -27,6 +27,7 @@ import waypoint.mvp.plan.domain.PlanDay;
 import waypoint.mvp.plan.domain.PlanMember;
 import waypoint.mvp.plan.domain.TimeBlock;
 import waypoint.mvp.plan.domain.TimeBlockType;
+import waypoint.mvp.plan.error.BlockError;
 import waypoint.mvp.plan.error.PlanError;
 import waypoint.mvp.plan.infrastructure.persistence.BlockRepository;
 import waypoint.mvp.plan.infrastructure.persistence.PlanDayRepository;
@@ -69,6 +70,10 @@ public class BlockService {
 
 		TimeBlock timeBlock = blockQueryService.getTimeBlock(planId, timeBlockExternalId);
 		PlanMember addedBy = planMemberService.findMemberByUserId(planId, user.getId());
+
+		if (!timeBlock.getType().isPlace()) {
+			throw new BusinessException(BlockError.CANNOT_ADD_CANDIDATE_TO_FREE_BLOCK);
+		}
 
 		List<CollectionPlace> collectionPlaces = collectionPlaceQueryService.getCollectionPlaces(
 			request.collectionPlaceIds());
