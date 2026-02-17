@@ -24,6 +24,7 @@ import waypoint.mvp.plan.application.BlockService;
 import waypoint.mvp.plan.application.dto.request.BlockCreateRequest;
 import waypoint.mvp.plan.application.dto.request.BlockUpdateRequest;
 import waypoint.mvp.plan.application.dto.request.CandidateBlockCreateRequest;
+import waypoint.mvp.plan.application.dto.request.CandidateBlockSelectRequest;
 import waypoint.mvp.plan.application.dto.response.BlockDetailResponse;
 import waypoint.mvp.plan.application.dto.response.BlockListResponse;
 import waypoint.mvp.plan.application.dto.response.BlockResponse;
@@ -91,6 +92,30 @@ public class BlockController {
 		@AuthenticationPrincipal UserPrincipal user
 	) {
 		BlockDetailResponse response = blockService.updateBlock(planId, blockId, request, user);
+		return ResponseEntity.ok(response);
+	}
+
+	@Authorize(level = AuthLevel.AUTHENTICATED)
+	@PatchMapping("/{timeBlockId}/fix}")
+	public ResponseEntity<BlockResponse> fixCandidateBlock(
+		@PathVariable String planId,
+		@PathVariable String timeBlockId,
+		@RequestBody @Valid CandidateBlockSelectRequest request,
+		@AuthenticationPrincipal UserPrincipal user
+	) {
+		BlockResponse response = blockService.fixCandidate(planId, timeBlockId, request, user);
+		return ResponseEntity.ok(response);
+	}
+
+	@Authorize(level = AuthLevel.AUTHENTICATED)
+	@PatchMapping("/{timeBlockId}/unfix}")
+	public ResponseEntity<BlockResponse> unfixCandidateBlock(
+		@PathVariable String planId,
+		@PathVariable String timeBlockId,
+		@RequestBody @Valid CandidateBlockSelectRequest request,
+		@AuthenticationPrincipal UserPrincipal user
+	) {
+		BlockResponse response = blockService.unfixCandidate(planId, timeBlockId, request, user);
 		return ResponseEntity.ok(response);
 	}
 }
