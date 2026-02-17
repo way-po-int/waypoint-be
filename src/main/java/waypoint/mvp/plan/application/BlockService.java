@@ -58,6 +58,7 @@ public class BlockService {
 		PlanMember addedBy = planMemberService.findMemberByUserId(planId, user.getId());
 
 		Block block = createBlockByType(planId, request, timeBlock, addedBy);
+		block.select();
 
 		return blockQueryService.toBlockResponse(timeBlock, List.of(block), user.getId());
 	}
@@ -75,16 +76,20 @@ public class BlockService {
 			throw new BusinessException(BlockError.CANNOT_ADD_CANDIDATE_TO_FREE_BLOCK);
 		}
 
+		List<Block> existingBlocks = blockRepository.findAllByTimeBlockIds(planId, List.of(timeBlock.getId()));
+		existingBlocks.stream().filter(Block::isSelected).forEach(Block::unselect);
+
 		List<CollectionPlace> collectionPlaces = collectionPlaceQueryService.getCollectionPlaces(
 			request.collectionPlaceIds());
 		planCollectionService.verifyPlacesLinkedToPlan(planId, collectionPlaces);
 
-		List<Block> blocks = collectionPlaces.stream()
+		List<Block> newBlocks = collectionPlaces.stream()
 			.map(cp -> Block.create(cp.getPlace(), cp.getSocialMedia(), timeBlock, null, addedBy))
 			.toList();
-		List<Block> savedBlocks = blockRepository.saveAll(blocks);
+		blockRepository.saveAll(newBlocks);
 
-		return blockQueryService.toBlockResponse(timeBlock, savedBlocks, user.getId());
+		List<Block> allBlocks = blockRepository.findAllByTimeBlockIds(planId, List.of(timeBlock.getId()));
+		return blockQueryService.toBlockResponse(timeBlock, allBlocks, user.getId());
 	}
 
 	private TimeBlock saveTimeBlock(PlanDay planDay, LocalTime startTime, LocalTime endTime, TimeBlockType type) {

@@ -75,8 +75,8 @@ public class TimeBlock extends ExternalIdEntity {
 		if (type == TimeBlockType.FREE)
 			return NOTHING;
 		if (selectedBlock != null)
-			return FIXED;
-		return blocks.isEmpty() ? DIRECT : PENDING;
+			return blocks.size() >= 2 ? BlockStatus.FIXED : BlockStatus.DIRECT;
+		return PENDING;
 	}
 
 	public void updatePlanDay(PlanDay planDay) {

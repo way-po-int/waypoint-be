@@ -84,6 +84,10 @@ public class Block extends ExternalIdEntity {
 		this.selected = true;
 	}
 
+	public void unselect() {
+		this.selected = false;
+	}
+
 	public void updateMemo(String memo) {
 		this.memo = memo;
 	}

@@ -28,7 +28,6 @@ public record BlockAssembly(
 			.filter(CandidateBlockResponse::selected)
 			.findFirst()
 			.orElse(null);
-
 		return new BlockAssembly(status, candidates, selected);
 	}
 }
