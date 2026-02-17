@@ -121,7 +121,8 @@ public class BlockQueryService {
 
 	public BlockResponse toBlockResponse(TimeBlock timeBlock, List<Block> candidateBlocks,
 		BlockOpinionDto candidateOpinionDto, Long userId) {
-		BlockAssembly assembly = BlockAssembly.of(candidateBlocks, candidateOpinionDto, this::toPlaceResponse, userId);
+		BlockAssembly assembly = BlockAssembly.of(timeBlock, candidateBlocks, candidateOpinionDto,
+			this::toPlaceResponse, userId);
 		return BlockResponse.from(timeBlock, assembly.status(), assembly.candidates(), assembly.selectedBlock());
 	}
 

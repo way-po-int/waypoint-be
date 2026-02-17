@@ -14,10 +14,10 @@ public record BlockAssembly(
 	List<CandidateBlockResponse> candidates,
 	CandidateBlockResponse selectedBlock
 ) {
-	public static BlockAssembly of(List<Block> blocks, BlockOpinionDto blockOpinionDto,
+	public static BlockAssembly of(TimeBlock block, List<Block> blocks, BlockOpinionDto blockOpinionDto,
 		Function<Block, PlaceResponse> placeMapper, Long userId) {
 		Block selectedBlock = blocks.stream().filter(Block::isSelected).findFirst().orElse(null);
-		BlockStatus status = TimeBlock.determine(selectedBlock, blocks);
+		BlockStatus status = TimeBlock.determine(block.getType(), selectedBlock, blocks);
 
 		List<CandidateBlockResponse> candidates = blocks.stream()
 			.map(b -> CandidateBlockResponse.from(b, placeMapper.apply(b), blockOpinionDto.getOpinions(b.getId()),

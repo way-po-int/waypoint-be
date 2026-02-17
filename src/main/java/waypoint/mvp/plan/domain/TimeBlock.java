@@ -71,10 +71,11 @@ public class TimeBlock extends ExternalIdEntity {
 			.build();
 	}
 
-	public static BlockStatus determine(Block selectedBlock, List<Block> blocks) {
-		if (selectedBlock != null) {
+	public static BlockStatus determine(TimeBlockType type, Block selectedBlock, List<Block> blocks) {
+		if (type == TimeBlockType.FREE)
+			return NOTHING;
+		if (selectedBlock != null)
 			return FIXED;
-		}
 		return blocks.isEmpty() ? DIRECT : PENDING;
 	}
 
