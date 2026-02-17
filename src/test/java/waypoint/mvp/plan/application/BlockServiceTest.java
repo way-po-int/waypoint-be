@@ -31,6 +31,7 @@ import waypoint.mvp.place.domain.PlaceDetail;
 import waypoint.mvp.place.infrastructure.persistence.PlaceRepository;
 import waypoint.mvp.plan.application.dto.request.BlockCreateRequest;
 import waypoint.mvp.plan.application.dto.request.CandidateBlockCreateRequest;
+import waypoint.mvp.plan.application.dto.request.CandidateBlockSelectRequest;
 import waypoint.mvp.plan.application.dto.response.BlockResponse;
 import waypoint.mvp.plan.domain.Block;
 import waypoint.mvp.plan.domain.BlockStatus;
@@ -39,8 +40,8 @@ import waypoint.mvp.plan.domain.PlanCollection;
 import waypoint.mvp.plan.domain.PlanDay;
 import waypoint.mvp.plan.domain.PlanMember;
 import waypoint.mvp.plan.domain.PlanRole;
-import waypoint.mvp.plan.domain.TimeBlock;
 import waypoint.mvp.plan.domain.TimeBlockType;
+import waypoint.mvp.plan.error.BlockError;
 import waypoint.mvp.plan.infrastructure.persistence.BlockRepository;
 import waypoint.mvp.plan.infrastructure.persistence.PlanCollectionRepository;
 import waypoint.mvp.plan.infrastructure.persistence.PlanDayRepository;
@@ -157,6 +158,18 @@ class BlockServiceTest {
 			plan.getExternalId(), timeBlockExternalId, request, userPrincipal);
 	}
 
+	private BlockResponse selectCandidate(String timeBlockExternalId, String blockId) {
+		CandidateBlockSelectRequest request = new CandidateBlockSelectRequest(blockId);
+		return blockService.fixCandidate(
+			plan.getExternalId(), timeBlockExternalId, request, userPrincipal);
+	}
+
+	private BlockResponse unselectCandidate(String timeBlockExternalId, String blockId) {
+		CandidateBlockSelectRequest request = new CandidateBlockSelectRequest(blockId);
+		return blockService.unfixCandidate(
+			plan.getExternalId(), timeBlockExternalId, request, userPrincipal);
+	}
+
 	// -- DB Helpers --
 
 	private List<Block> findBlocksByTimeBlockExternalId(String timeBlockExternalId) {
@@ -268,23 +281,160 @@ class BlockServiceTest {
 			CollectionPlace cp2 = createCollectionPlace("종로 서점");
 			BlockResponse pendingResponse = addCandidates(
 				createResponse.timeBlockId(), List.of(cp2.getExternalId()));
-			assertThat(pendingResponse.blockStatus()).isEqualTo(BlockStatus.PENDING);
 
-			// when
-			List<Block> allBlocks = findBlocksByTimeBlockExternalId(pendingResponse.timeBlockId());
-			Block firstBlock = allBlocks.get(0);
-			firstBlock.select();
-			blockRepository.flush();
+			// 확정 전 상태 검증
+			assertThatBlock(pendingResponse)
+				.hasStatus(BlockStatus.PENDING)
+				.hasNoSelectedBlock()
+				.allCandidatesUnselected();
 
-			// then
-			Block selectedBlock = allBlocks.stream()
-				.filter(Block::isSelected)
-				.findFirst()
-				.orElse(null);
-			BlockStatus status = TimeBlock.determine(TimeBlockType.PLACE, selectedBlock, allBlocks);
+			// when - 첫 번째 후보지 확정
+			String blockIdToSelect = pendingResponse.candidates().get(0).blockId();
+			BlockResponse response = selectCandidate(pendingResponse.timeBlockId(), blockIdToSelect);
 
-			assertThat(selectedBlock).isNotNull();
-			assertThat(status).isEqualTo(BlockStatus.FIXED);
+			// then - 확정 후 상태 검증
+			assertThatBlock(response)
+				.hasStatus(BlockStatus.FIXED)
+				.hasSelectedBlock()
+				.hasCandidateCount(2);
+
+			assertThatCandidate(response.selectedBlock())
+				.isSelected();
+
+			// DB 검증
+			List<Block> blocks = findBlocksByTimeBlockExternalId(response.timeBlockId());
+			long selectedCount = blocks.stream().filter(Block::isSelected).count();
+			assertThat(selectedCount).isEqualTo(1);
+		}
+
+		@Test
+		@DisplayName("이미 확정된 후보지가 있으면 예외 발생")
+		void selectCandidate_alreadySelected_throwsException() {
+			// given
+			CollectionPlace cp1 = createCollectionPlace("강남역 카페");
+			CollectionPlace cp2 = createCollectionPlace("역삼역 카페");
+
+			BlockResponse createResponse = createBlock(placeBlockRequest(cp1.getExternalId(), null));
+			BlockResponse pendingResponse = addCandidates(
+				createResponse.timeBlockId(), List.of(cp2.getExternalId()));
+
+			// 첫 번째 후보지 확정
+			String firstBlockId = pendingResponse.candidates().get(0).blockId();
+			selectCandidate(pendingResponse.timeBlockId(), firstBlockId);
+
+			// when & then - 두 번째 후보지 확정 시도 시 예외 발생
+			String secondBlockId = pendingResponse.candidates().get(1).blockId();
+			assertThatThrownBy(() ->
+				selectCandidate(pendingResponse.timeBlockId(), secondBlockId)
+			).hasMessageContaining(BlockError.ALREADY_SELECTED.getMessage());
+		}
+	}
+
+	@Nested
+	@DisplayName("후보지 확정 취소")
+	class UnselectCandidate {
+
+		@Test
+		@DisplayName("확정된 후보지를 취소하면 blockStatus=PENDING으로 변경")
+		void unselectCandidate_statusPending() {
+			// given - 후보지 2개 생성 후 하나 확정
+			CollectionPlace cp1 = createCollectionPlace("신촌 맛집");
+			CollectionPlace cp2 = createCollectionPlace("홍대 맛집");
+
+			BlockResponse createResponse = createBlock(placeBlockRequest(cp1.getExternalId(), null));
+			BlockResponse pendingResponse = addCandidates(
+				createResponse.timeBlockId(), List.of(cp2.getExternalId()));
+
+			String blockIdToSelect = pendingResponse.candidates().get(0).blockId();
+			BlockResponse selectedResponse = selectCandidate(pendingResponse.timeBlockId(), blockIdToSelect);
+
+			// 확정 상태 검증
+			assertThatBlock(selectedResponse)
+				.hasStatus(BlockStatus.FIXED)
+				.hasSelectedBlock();
+
+			assertThatCandidate(selectedResponse.selectedBlock())
+				.isSelected();
+
+			// when - 확정 취소
+			BlockResponse response = unselectCandidate(
+				selectedResponse.timeBlockId(),
+				selectedResponse.selectedBlock().blockId());
+
+			// then - 취소 후 상태 검증
+			assertThatBlock(response)
+				.hasStatus(BlockStatus.PENDING)
+				.hasNoSelectedBlock()
+				.allCandidatesUnselected()
+				.hasCandidateCount(2);
+
+			// DB 검증
+			List<Block> blocks = findBlocksByTimeBlockExternalId(response.timeBlockId());
+			boolean anySelected = blocks.stream().anyMatch(Block::isSelected);
+			assertThat(anySelected).isFalse();
+		}
+
+		@Test
+		@DisplayName("확정되지 않은 후보지를 취소하면 예외 발생")
+		void unselectCandidate_notSelected_throwsException() {
+			// given
+			CollectionPlace cp1 = createCollectionPlace("서울역 카페");
+			CollectionPlace cp2 = createCollectionPlace("용산역 카페");
+
+			BlockResponse createResponse = createBlock(placeBlockRequest(cp1.getExternalId(), null));
+			BlockResponse pendingResponse = addCandidates(
+				createResponse.timeBlockId(), List.of(cp2.getExternalId()));
+
+			// 확정하지 않은 상태
+			assertThatBlock(pendingResponse)
+				.hasStatus(BlockStatus.PENDING)
+				.allCandidatesUnselected();
+
+			// when & then - 확정되지 않은 후보지 취소 시도 시 예외 발생
+			String blockId = pendingResponse.candidates().get(0).blockId();
+			assertThatThrownBy(() ->
+				unselectCandidate(pendingResponse.timeBlockId(), blockId)
+			).hasMessageContaining(BlockError.NOT_SELECTED.getMessage());
+		}
+
+		@Test
+		@DisplayName("확정 후 취소 후 다시 확정하면 blockStatus=FIXED")
+		void selectAfterUnselect_statusFixed() {
+			// given - 후보지 생성 및 확정
+			CollectionPlace cp1 = createCollectionPlace("판교 레스토랑");
+			CollectionPlace cp2 = createCollectionPlace("분당 레스토랑");
+
+			BlockResponse createResponse = createBlock(placeBlockRequest(cp1.getExternalId(), null));
+			BlockResponse pendingResponse = addCandidates(
+				createResponse.timeBlockId(), List.of(cp2.getExternalId()));
+
+			String firstBlockId = pendingResponse.candidates().get(0).blockId();
+			BlockResponse selectedResponse = selectCandidate(pendingResponse.timeBlockId(), firstBlockId);
+
+			// 확정 취소
+			BlockResponse unselectedResponse = unselectCandidate(
+				selectedResponse.timeBlockId(),
+				selectedResponse.selectedBlock().blockId());
+
+			assertThatBlock(unselectedResponse)
+				.hasStatus(BlockStatus.PENDING)
+				.hasNoSelectedBlock();
+
+			// when - 다른 후보지 확정
+			String secondBlockId = unselectedResponse.candidates().get(1).blockId();
+			BlockResponse reselectedResponse = selectCandidate(
+				unselectedResponse.timeBlockId(), secondBlockId);
+
+			// then - 다시 FIXED 상태
+			assertThatBlock(reselectedResponse)
+				.hasStatus(BlockStatus.FIXED)
+				.hasSelectedBlock();
+
+			assertThatCandidate(reselectedResponse.selectedBlock())
+				.isSelected();
+
+			// 선택된 블록이 두 번째 블록인지 확인
+			assertThat(reselectedResponse.selectedBlock().blockId()).isEqualTo(secondBlockId);
 		}
 	}
 }
