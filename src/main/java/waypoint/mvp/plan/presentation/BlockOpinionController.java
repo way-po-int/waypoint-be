@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -79,5 +80,17 @@ public class BlockOpinionController {
 	) {
 		BlockOpinionResponse response = blockOpinionService.updateOpinion(planId, blockId, opinionId, request, user);
 		return ResponseEntity.ok(response);
+	}
+
+	@Authorize(level = AuthLevel.AUTHENTICATED)
+	@DeleteMapping("/{opinionId}")
+	public ResponseEntity<Void> deleteOpinion(
+		@PathVariable String planId,
+		@PathVariable String blockId,
+		@PathVariable String opinionId,
+		@AuthenticationPrincipal UserPrincipal user
+	) {
+		blockOpinionService.deleteOpinion(planId, blockId, opinionId, user);
+		return ResponseEntity.noContent().build();
 	}
 }

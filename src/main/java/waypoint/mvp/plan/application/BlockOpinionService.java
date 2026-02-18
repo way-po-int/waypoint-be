@@ -113,6 +113,23 @@ public class BlockOpinionService {
 		return BlockOpinionResponse.from(opinion);
 	}
 
+	@Transactional
+	public void deleteOpinion(
+		String planExternalId,
+		String blockExternalId,
+		String opinionExternalId,
+		UserPrincipal user
+	) {
+		Plan plan = planService.getPlan(planExternalId);
+		planAuthorizer.verifyMember(user, plan.getId());
+
+		Block block = blockQueryService.getBlock(plan.getId(), blockExternalId);
+		BlockOpinion opinion = getOpinion(block.getId(), opinionExternalId);
+
+		opinion.verifyAddedBy(user.getId());
+		blockOpinionRepository.delete(opinion);
+	}
+
 	private BlockOpinion getOpinion(Long blockId, String opinionExternalId) {
 		return blockOpinionRepository.findByBlockIdAndExternalId(blockId, opinionExternalId)
 			.orElseThrow(() -> new BusinessException(BlockOpinionError.BLOCK_OPINION_NOT_FOUND));
