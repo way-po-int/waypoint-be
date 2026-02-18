@@ -41,6 +41,12 @@ public class BlockOpinionService {
 		Block block = blockQueryService.getBlock(plan.getId(), blockExternalId);
 		PlanMember addedBy = planMemberService.findMemberByUserId(plan.getId(), user.getId());
 
+		// 블록 타입이 장소 블록이 아닌 경우 예외 발생
+		if (!block.getTimeBlock().getType().isPlace()) {
+			throw new BusinessException(BlockOpinionError.BLOCK_NOT_PLACE_TYPE);
+		}
+
+		// 이미 해당 블록에 대한 의견이 작성된 경우 예외 발생
 		if (blockOpinionRepository.existsByBlockIdAndAddedById(block.getId(), addedBy.getId())) {
 			throw new BusinessException(BlockOpinionError.BLOCK_OPINION_ALREADY_EXISTS);
 		}
