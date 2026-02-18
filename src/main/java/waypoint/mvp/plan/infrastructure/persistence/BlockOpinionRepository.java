@@ -1,6 +1,7 @@
 package waypoint.mvp.plan.infrastructure.persistence;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -21,6 +22,12 @@ public interface BlockOpinionRepository extends JpaRepository<BlockOpinion, Long
 		+ " JOIN FETCH bo.addedBy LEFT JOIN FETCH bo.opinionTagIds"
 		+ " WHERE bo.block.id = :blockId ORDER BY bo.id ASC")
 	List<BlockOpinion> findAllByBlockId(@Param("blockId") Long blockId);
+
+	@Query("SELECT bo FROM BlockOpinion bo"
+		+ " JOIN FETCH bo.addedBy LEFT JOIN FETCH bo.opinionTagIds"
+		+ " WHERE bo.block.id = :blockId AND bo.externalId = :externalId")
+	Optional<BlockOpinion> findByBlockIdAndExternalId(
+		@Param("blockId") Long blockId, @Param("externalId") String externalId);
 
 	boolean existsByBlockIdAndAddedById(Long blockId, Long addedById);
 }

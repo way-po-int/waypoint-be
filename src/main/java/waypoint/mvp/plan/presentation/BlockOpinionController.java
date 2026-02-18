@@ -53,4 +53,16 @@ public class BlockOpinionController {
 		List<BlockOpinionResponse> responses = blockOpinionService.findOpinions(planId, blockId, user);
 		return ResponseEntity.ok(responses);
 	}
+
+	@Authorize(level = AuthLevel.GUEST_OR_MEMBER)
+	@GetMapping("/{opinionId}")
+	public ResponseEntity<BlockOpinionResponse> findOpinion(
+		@PathVariable String planId,
+		@PathVariable String blockId,
+		@PathVariable String opinionId,
+		@AuthenticationPrincipal AuthPrincipal user
+	) {
+		BlockOpinionResponse response = blockOpinionService.findOpinion(planId, blockId, opinionId, user);
+		return ResponseEntity.ok(response);
+	}
 }
