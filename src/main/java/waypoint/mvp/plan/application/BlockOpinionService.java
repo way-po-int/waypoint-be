@@ -11,6 +11,7 @@ import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.plan.application.dto.request.BlockOpinionCreateRequest;
+import waypoint.mvp.plan.application.dto.request.BlockOpinionUpdateRequest;
 import waypoint.mvp.plan.application.dto.response.BlockOpinionResponse;
 import waypoint.mvp.plan.domain.Block;
 import waypoint.mvp.plan.domain.BlockOpinion;
@@ -88,6 +89,26 @@ public class BlockOpinionService {
 
 		Block block = blockQueryService.getBlock(plan.getId(), blockExternalId);
 		BlockOpinion opinion = getOpinion(block.getId(), opinionExternalId);
+
+		return BlockOpinionResponse.from(opinion);
+	}
+
+	@Transactional
+	public BlockOpinionResponse updateOpinion(
+		String planExternalId,
+		String blockExternalId,
+		String opinionExternalId,
+		BlockOpinionUpdateRequest request,
+		UserPrincipal user
+	) {
+		Plan plan = planService.getPlan(planExternalId);
+		planAuthorizer.verifyMember(user, plan.getId());
+
+		Block block = blockQueryService.getBlock(plan.getId(), blockExternalId);
+		BlockOpinion opinion = getOpinion(block.getId(), opinionExternalId);
+
+		opinion.verifyAddedBy(user.getId());
+		opinion.update(request.type(), request.comment(), request.tagIds());
 
 		return BlockOpinionResponse.from(opinion);
 	}
