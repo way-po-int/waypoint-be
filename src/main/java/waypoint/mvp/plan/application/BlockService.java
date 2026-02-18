@@ -14,7 +14,11 @@ import waypoint.mvp.collection.application.CollectionPlaceQueryService;
 import waypoint.mvp.collection.domain.CollectionPlace;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
 import waypoint.mvp.global.error.exception.BusinessException;
+import waypoint.mvp.place.application.PlaceService;
+import waypoint.mvp.place.domain.Place;
+import waypoint.mvp.plan.application.dto.BlockCreateCommand;
 import waypoint.mvp.plan.application.dto.BlockSliceResult;
+import waypoint.mvp.plan.application.dto.request.BlockCreateByPlaceRequest;
 import waypoint.mvp.plan.application.dto.request.BlockCreateRequest;
 import waypoint.mvp.plan.application.dto.request.BlockUpdateRequest;
 import waypoint.mvp.plan.application.dto.request.CandidateBlockCreateRequest;
@@ -48,17 +52,27 @@ public class BlockService {
 	private final BlockRepository blockRepository;
 	private final PlanCollectionService planCollectionService;
 	private final CollectionPlaceQueryService collectionPlaceQueryService;
+	private final PlaceService placeService;
 
 	@Transactional
 	public BlockResponse createBlock(String planExternalId, BlockCreateRequest request, UserPrincipal user) {
+		return createBlock(planExternalId, request.toCommand(), user);
+	}
+
+	@Transactional
+	public BlockResponse createBlock(String planExternalId, BlockCreateByPlaceRequest request, UserPrincipal user) {
+		return createBlock(planExternalId, request.toCommand(), user);
+	}
+
+	private BlockResponse createBlock(String planExternalId, BlockCreateCommand command, UserPrincipal user) {
 		Plan plan = getPlanAuthor(planExternalId, user);
 		Long planId = plan.getId();
 
-		PlanDay planDay = findPlanDay(planId, request.day());
-		TimeBlock timeBlock = saveTimeBlock(planDay, request.startTime(), request.endTime(), request.type());
+		PlanDay planDay = findPlanDay(planId, command.day());
+		TimeBlock timeBlock = saveTimeBlock(planDay, command.startTime(), command.endTime(), command.blockType());
 		PlanMember addedBy = planMemberService.findMemberByUserId(planId, user.getId());
 
-		Block block = createBlockByType(planId, request, timeBlock, addedBy);
+		Block block = createBlockByType(planId, command, timeBlock, addedBy);
 		block.select();
 
 		return blockQueryService.toBlockResponse(timeBlock, List.of(block), user.getId());
@@ -98,24 +112,45 @@ public class BlockService {
 		return timeBlockRepository.save(timeBlock);
 	}
 
-	private Block createBlockByType(Long planId, BlockCreateRequest request, TimeBlock timeBlock, PlanMember addedBy) {
-		if (request.type() == TimeBlockType.PLACE) {
-			return createPlaceBlock(planId, request, timeBlock, addedBy);
+	private Block createBlockByType(Long planId, BlockCreateCommand command, TimeBlock timeBlock, PlanMember addedBy) {
+		if (command.isPlaceBlock()) {
+			return createPlaceBlock(planId, command, timeBlock, addedBy);
 		}
-		return createFreeBlock(request, timeBlock, addedBy);
+		return createFreeBlock(command, timeBlock, addedBy);
 	}
 
-	private Block createPlaceBlock(Long planId, BlockCreateRequest request, TimeBlock timeBlock, PlanMember addedBy) {
-		CollectionPlace collectionPlace = collectionPlaceQueryService.getCollectionPlace(request.collectionPlaceId());
+	private Block createPlaceBlock(Long planId, BlockCreateCommand command, TimeBlock timeBlock, PlanMember addedBy) {
+		if (command.createType() == BlockCreateCommand.CreateType.COLLECT_PLACE) {
+			return createBlockFromCollectionPlace(planId, timeBlock, command, addedBy);
+		}
+		if (command.createType() == BlockCreateCommand.CreateType.PLACE) {
+			return createBlockFromPlace(timeBlock, command, addedBy);
+		}
+		throw new IllegalArgumentException("Place block must have either collectionPlaceId or googlePlaceId");
+	}
+
+	private Block createBlockFromCollectionPlace(Long planId, TimeBlock timeBlock, BlockCreateCommand command,
+		PlanMember addedBy) {
+		CollectionPlace collectionPlace = collectionPlaceQueryService.getCollectionPlace(command.collectionPlaceId());
 		planCollectionService.verifyPlacesLinkedToPlan(planId, List.of(collectionPlace));
+
 		return blockRepository.save(
-			Block.create(collectionPlace.getPlace(), collectionPlace.getSocialMedia(), timeBlock, request.memo(),
+			Block.create(collectionPlace.getPlace(), collectionPlace.getSocialMedia(), timeBlock, command.memo(),
 				addedBy)
 		);
 	}
 
-	private Block createFreeBlock(BlockCreateRequest request, TimeBlock timeBlock, PlanMember addedBy) {
-		return blockRepository.save(Block.createFree(timeBlock, request.memo(), addedBy));
+	private Block createBlockFromPlace(TimeBlock timeBlock, BlockCreateCommand command,
+		PlanMember addedBy) {
+		Place place = placeService.getById(command.placeId());
+
+		return blockRepository.save(
+			Block.create(place, null, timeBlock, command.memo(), addedBy)
+		);
+	}
+
+	private Block createFreeBlock(BlockCreateCommand command, TimeBlock timeBlock, PlanMember addedBy) {
+		return blockRepository.save(Block.createFree(timeBlock, command.memo(), addedBy));
 	}
 
 	private PlanDay findPlanDay(Long planId, int day) {

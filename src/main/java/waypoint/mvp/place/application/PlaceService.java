@@ -25,6 +25,11 @@ public class PlaceService {
 			.orElseThrow(() -> new BusinessException(PlaceError.PLACE_NOT_FOUND));
 	}
 
+	public Place getById(String placeId) {
+		return placeRepository.findByExternalId(placeId)
+			.orElseThrow(() -> new BusinessException(PlaceError.PLACE_NOT_FOUND));
+	}
+
 	public Optional<Place> getPlace(String googlePlaceId) {
 		return placeRepository.findByDetailPlaceId(googlePlaceId);
 	}
@@ -38,7 +43,7 @@ public class PlaceService {
 				.orElseThrow(() -> new BusinessException(PlaceError.PLACE_NOT_FOUND));
 		}
 	}
-	
+
 	@Transactional
 	public void cachePhotoUri(String googlePlaceId, String photoUri) {
 		if (!StringUtils.hasText(googlePlaceId) || !StringUtils.hasText(photoUri)) {

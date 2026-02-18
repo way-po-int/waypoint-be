@@ -15,9 +15,9 @@ import waypoint.mvp.global.validation.annotation.MemoPolicy;
 import waypoint.mvp.plan.application.dto.BlockCreateCommand;
 import waypoint.mvp.plan.domain.TimeBlockType;
 
-public record BlockCreateRequest(
+public record BlockCreateByPlaceRequest(
 
-	String collectionPlaceId,
+	String placeId,
 
 	@NotNull(message = "블록 타입은 필수입니다.")
 	TimeBlockType type,
@@ -40,10 +40,10 @@ public record BlockCreateRequest(
 ) {
 
 	@JsonIgnore
-	@AssertTrue(message = "장소 블록에는 collection_place_id가 필수입니다.")
-	public boolean isCollectionPlaceIdValid() {
+	@AssertTrue(message = "장소 블록에는 place_id가 필수입니다.")
+	public boolean isPlaceIdValid() {
 		if (type == TimeBlockType.PLACE) {
-			return collectionPlaceId != null && !collectionPlaceId.isBlank();
+			return placeId != null && !placeId.isBlank();
 		}
 		return true;
 	}
