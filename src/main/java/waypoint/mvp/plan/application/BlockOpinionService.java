@@ -76,4 +76,24 @@ public class BlockOpinionService {
 			.map(BlockOpinionResponse::from)
 			.toList();
 	}
+
+	public BlockOpinionResponse findOpinion(
+		String planExternalId,
+		String blockExternalId,
+		String opinionExternalId,
+		AuthPrincipal user
+	) {
+		Plan plan = planService.getPlan(planExternalId);
+		planAuthorizer.verifyAccess(user, plan.getId());
+
+		Block block = blockQueryService.getBlock(plan.getId(), blockExternalId);
+		BlockOpinion opinion = getOpinion(block.getId(), opinionExternalId);
+
+		return BlockOpinionResponse.from(opinion);
+	}
+
+	private BlockOpinion getOpinion(Long blockId, String opinionExternalId) {
+		return blockOpinionRepository.findByBlockIdAndExternalId(blockId, opinionExternalId)
+			.orElseThrow(() -> new BusinessException(BlockOpinionError.BLOCK_OPINION_NOT_FOUND));
+	}
 }
