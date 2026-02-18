@@ -8,6 +8,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -20,6 +21,7 @@ import waypoint.mvp.global.auth.annotations.AuthLevel;
 import waypoint.mvp.global.auth.annotations.Authorize;
 import waypoint.mvp.plan.application.BlockOpinionService;
 import waypoint.mvp.plan.application.dto.request.BlockOpinionCreateRequest;
+import waypoint.mvp.plan.application.dto.request.BlockOpinionUpdateRequest;
 import waypoint.mvp.plan.application.dto.response.BlockOpinionResponse;
 
 @RestController
@@ -63,6 +65,19 @@ public class BlockOpinionController {
 		@AuthenticationPrincipal AuthPrincipal user
 	) {
 		BlockOpinionResponse response = blockOpinionService.findOpinion(planId, blockId, opinionId, user);
+		return ResponseEntity.ok(response);
+	}
+
+	@Authorize(level = AuthLevel.AUTHENTICATED)
+	@PutMapping("/{opinionId}")
+	public ResponseEntity<BlockOpinionResponse> updateOpinion(
+		@PathVariable String planId,
+		@PathVariable String blockId,
+		@PathVariable String opinionId,
+		@RequestBody @Valid BlockOpinionUpdateRequest request,
+		@AuthenticationPrincipal UserPrincipal user
+	) {
+		BlockOpinionResponse response = blockOpinionService.updateOpinion(planId, blockId, opinionId, request, user);
 		return ResponseEntity.ok(response);
 	}
 }
