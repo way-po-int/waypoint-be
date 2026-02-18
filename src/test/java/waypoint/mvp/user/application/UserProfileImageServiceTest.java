@@ -196,7 +196,7 @@ class UserProfileImageServiceTest {
 			presigner, s3Client, BUCKET, REGION, URL_FORMAT
 		);
 
-		String otherUser = "externalId123";
+		String otherUser = "otherUser123";
 		String url = "https://way-point-bucket.s3.ap-northeast-2.amazonaws.com/users/"
 			+ otherUser + "/profile/" + UUID.randomUUID() + ".png";
 
