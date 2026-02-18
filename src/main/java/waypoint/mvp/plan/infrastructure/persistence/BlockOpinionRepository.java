@@ -17,5 +17,10 @@ public interface BlockOpinionRepository extends JpaRepository<BlockOpinion, Long
 		+ "WHERE bo.block.id IN :blockIds")
 	List<BlockOpinion> findAllByBlockIds(@Param("blockIds") List<Long> blockIds);
 
+	@Query("SELECT bo FROM BlockOpinion bo"
+		+ " JOIN FETCH bo.addedBy LEFT JOIN FETCH bo.opinionTagIds"
+		+ " WHERE bo.block.id = :blockId ORDER BY bo.id ASC")
+	List<BlockOpinion> findAllByBlockId(@Param("blockId") Long blockId);
+
 	boolean existsByBlockIdAndAddedById(Long blockId, Long addedById);
 }

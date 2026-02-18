@@ -1,9 +1,12 @@
 package waypoint.mvp.plan.application;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
+import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
 import waypoint.mvp.global.error.exception.BusinessException;
@@ -56,5 +59,21 @@ public class BlockOpinionService {
 		blockOpinionRepository.save(opinion);
 
 		return BlockOpinionResponse.from(opinion);
+	}
+
+	public List<BlockOpinionResponse> findOpinions(
+		String planExternalId,
+		String blockExternalId,
+		AuthPrincipal user
+	) {
+		Plan plan = planService.getPlan(planExternalId);
+		planAuthorizer.verifyAccess(user, plan.getId());
+
+		Block block = blockQueryService.getBlock(plan.getId(), blockExternalId);
+		List<BlockOpinion> opinions = blockOpinionRepository.findAllByBlockId(block.getId());
+
+		return opinions.stream()
+			.map(BlockOpinionResponse::from)
+			.toList();
 	}
 }
