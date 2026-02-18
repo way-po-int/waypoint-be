@@ -3,6 +3,7 @@ package waypoint.mvp.user.presentation;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -54,5 +55,14 @@ public class UserController {
 		@RequestParam @NotBlank String contentType
 	) {
 		return ResponseEntity.ok(userService.updateProfilePicture(user, contentType));
+	}
+
+	@Authorize(level = AuthLevel.AUTHENTICATED)
+	@DeleteMapping("/me/picture")
+	public ResponseEntity<Void> deleteProfileImage(
+		@AuthenticationPrincipal UserPrincipal user
+	) {
+		userService.deleteProfilePicture(user);
+		return ResponseEntity.noContent().build();
 	}
 }
