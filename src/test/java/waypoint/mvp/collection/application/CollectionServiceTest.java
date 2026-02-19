@@ -55,6 +55,17 @@ class CollectionServiceTest {
 		baseUser = userRepository.save(user);
 	}
 
+	private String extractInviteCode(String url) {
+		if (url == null || url.isBlank()) {
+			return url;
+		}
+
+		int idx = url.lastIndexOf('/');
+		String code = (idx >= 0) ? url.substring(idx + 1) : url;
+
+		return code;
+	}
+
 	@Test
 	@DisplayName("컬렉션을 생성하면, 생성자가 소유주인 멤버로 함께 등록된다.")
 	void createCollection_withMember_success() {
@@ -98,14 +109,14 @@ class CollectionServiceTest {
 		// Case 1: 소유자가 생성
 		ShareLinkResponse ownerResponse = collectionService.createInvitation(collection.getExternalId(),
 			ownerPrincipal);
-		Optional<ShareLink> ownerLink = shareLinkRepository.findByCode(ownerResponse.code());
+		Optional<ShareLink> ownerLink = shareLinkRepository.findByCode(extractInviteCode(ownerResponse.url()));
 		assertThat(ownerLink).isPresent();
 		assertThat(ownerLink.get().getHostUserId()).isEqualTo(ownerPrincipal.getId());
 
 		// Case 2: 일반 멤버가 생성
 		ShareLinkResponse memberResponse = collectionService.createInvitation(collection.getExternalId(),
 			anotherPrincipal);
-		Optional<ShareLink> memberLink = shareLinkRepository.findByCode(memberResponse.code());
+		Optional<ShareLink> memberLink = shareLinkRepository.findByCode(extractInviteCode(memberResponse.url()));
 		assertThat(memberLink).isPresent();
 		assertThat(memberLink.get().getHostUserId()).isEqualTo(anotherUser.getId());
 	}
@@ -231,8 +242,9 @@ class CollectionServiceTest {
 		collectionService.withdrawCollectionMember(collection.getExternalId(), member); // 멤버 탈퇴
 
 		// when 재초대
-		ShareLink shareLink = shareLinkRepository.findByCode(
-			collectionService.createInvitation(collection.getExternalId(), host).code()).get();
+		ShareLink shareLink = shareLinkRepository
+			.findByCode(extractInviteCode(collectionService.createInvitation(collection.getExternalId(), host).url()))
+			.orElseThrow();
 		collectionService.addMemberFromShareLink(shareLink, member.getId());
 
 		// then
@@ -246,8 +258,9 @@ class CollectionServiceTest {
 	private Collection createCollectionAndInvitedMember(String title, UserPrincipal owner, UserPrincipal member) {
 		Collection collection = createCollection(title, owner);
 
-		ShareLink shareLink = shareLinkRepository.findByCode(
-			collectionService.createInvitation(collection.getExternalId(), owner).code()).orElseThrow();
+		ShareLink shareLink = shareLinkRepository
+			.findByCode(extractInviteCode(collectionService.createInvitation(collection.getExternalId(), owner).url()))
+			.orElseThrow();
 		collectionService.addMemberFromShareLink(shareLink, member.getId());
 
 		return findCollectionById(collection.getId()); // 멤버 추가 후 최신 상태의 컬렉션을 반환

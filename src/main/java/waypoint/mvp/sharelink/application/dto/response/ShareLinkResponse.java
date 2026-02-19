@@ -6,14 +6,16 @@ import waypoint.mvp.sharelink.domain.ShareLink.ShareLinkType;
 public record ShareLinkResponse(
 	ShareLinkType type,
 	String referenceId,
-	String code,
+	String url,
 	String ttl
 ) {
+	private static final String INVITE_PATH_PREFIX = "/invite/";
+
 	public static ShareLinkResponse from(ShareLink shareLink) {
 		return new ShareLinkResponse(
 			shareLink.getTargetType(),
 			shareLink.getTargetExternalId(),
-			shareLink.getCode(),
+			INVITE_PATH_PREFIX + shareLink.getCode(),
 			shareLink.getExpiresAt().toString()
 		);
 	}
