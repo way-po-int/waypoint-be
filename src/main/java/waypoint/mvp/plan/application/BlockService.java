@@ -120,13 +120,14 @@ public class BlockService {
 	}
 
 	private Block createPlaceBlock(Long planId, BlockCreateCommand command, TimeBlock timeBlock, PlanMember addedBy) {
-		if (command.createType() == BlockCreateCommand.CreateType.COLLECT_PLACE) {
-			return createBlockFromCollectionPlace(planId, timeBlock, command, addedBy);
-		}
-		if (command.createType() == BlockCreateCommand.CreateType.PLACE) {
-			return createBlockFromPlace(timeBlock, command, addedBy);
-		}
-		throw new IllegalArgumentException("Place block must have either collectionPlaceId or googlePlaceId");
+		return switch (command.createType()) {
+			case COLLECT_PLACE -> createBlockFromCollectionPlace(planId, timeBlock, command, addedBy);
+
+			case PLACE -> createBlockFromPlace(timeBlock, command, addedBy);
+
+			case MANUAL -> throw new IllegalStateException("MANUAL은 아직 사용하지 못 합니다.");
+		};
+
 	}
 
 	private Block createBlockFromCollectionPlace(Long planId, TimeBlock timeBlock, BlockCreateCommand command,
