@@ -31,6 +31,8 @@ import waypoint.mvp.place.application.PlacePhotoService;
 import waypoint.mvp.place.domain.Place;
 import waypoint.mvp.place.error.PlaceError;
 import waypoint.mvp.place.infrastructure.persistence.PlaceRepository;
+import waypoint.mvp.notification.application.NotificationPublisher;
+import waypoint.mvp.notification.domain.NotificationEventType;
 
 @Service
 @RequiredArgsConstructor
@@ -47,6 +49,7 @@ public class CollectionPlaceService {
 	private final CollectionPlacePreferenceRepository preferenceRepository;
 
 	private final PlacePhotoService placePhotoService;
+	private final NotificationPublisher notificationPublisher;
 
 	@Transactional
 	public CollectionPlaceResponse addPlace(
@@ -70,6 +73,21 @@ public class CollectionPlaceService {
 		if (collection.isThumbnailEmpty()) {
 			updateCollectionThumbnail(collection, place);
 		}
+
+		String actorNickname = notificationPublisher.getUserNickname(principal.getId());
+		String message = NotificationEventType.PLACE_ADDED_TO_COLLECTION.buildMessage(
+			actorNickname,
+			collection.getTitle(),
+			place.getName()
+		);
+
+		notificationPublisher.publishCollectionTeamNotification(
+			collection.getId(),
+			collection.getExternalId(),
+			principal.getId(),
+			NotificationEventType.PLACE_ADDED_TO_COLLECTION,
+			message
+		);
 
 		return CollectionPlaceResponse.of(
 			saved,
