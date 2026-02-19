@@ -13,14 +13,10 @@ import jakarta.validation.constraints.Size;
 import waypoint.mvp.global.util.TimeUtils;
 import waypoint.mvp.global.validation.annotation.MemoPolicy;
 import waypoint.mvp.plan.application.dto.BlockCreateCommand;
-import waypoint.mvp.plan.domain.TimeBlockType;
 
 public record BlockCreateByPlaceRequest(
 
 	String placeId,
-
-	@NotNull(message = "블록 타입은 필수입니다.")
-	TimeBlockType type,
 
 	@NotNull(message = "일차는 필수입니다.")
 	@Range(min = 1, max = 30, message = "일차는 1~30 사이여야 합니다.")
@@ -38,15 +34,6 @@ public record BlockCreateByPlaceRequest(
 	@MemoPolicy
 	String memo
 ) {
-
-	@JsonIgnore
-	@AssertTrue(message = "장소 블록에는 place_id가 필수입니다.")
-	public boolean isPlaceIdValid() {
-		if (type == TimeBlockType.PLACE) {
-			return placeId != null && !placeId.isBlank();
-		}
-		return true;
-	}
 
 	@JsonIgnore
 	@AssertTrue(message = "종료 시간은 시작 시간보다 이후여야 합니다.")

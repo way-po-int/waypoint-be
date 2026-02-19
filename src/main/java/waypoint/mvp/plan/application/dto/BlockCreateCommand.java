@@ -1,5 +1,7 @@
 package waypoint.mvp.plan.application.dto;
 
+import static waypoint.mvp.plan.application.dto.BlockCreateCommandMessages.*;
+
 import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -11,8 +13,6 @@ import waypoint.mvp.plan.application.dto.request.BlockCreateByPlaceRequest;
 import waypoint.mvp.plan.application.dto.request.BlockCreateRequest;
 import waypoint.mvp.plan.domain.TimeBlockType;
 import waypoint.mvp.plan.error.BlockError;
-
-import static waypoint.mvp.plan.application.dto.BlockCreateCommandMessages.*;
 
 /**
  * Block 생성을 위한 내부 커맨드 객체
@@ -95,7 +95,7 @@ public record BlockCreateCommand(
 
 	public static BlockCreateCommand from(BlockCreateByPlaceRequest request) {
 		return new BlockCreateCommand(
-			request.type(),
+			TimeBlockType.PLACE,
 			CreateType.PLACE,
 			request.day(),
 			request.startTime(),
