@@ -19,8 +19,8 @@ public final class ValidationPatterns {
 		Pattern.compile("^[\\p{L}\\p{N}' _\\p{So}\\p{Sk}\\p{Sm}\\p{Sc}\\p{Cs}]*$");
 
 	/**
-	 * 한글, 영문, 숫자, 줄바꿈, 이모지 및 특수기호(!@#$%^&*()-_+=[]{},.?/) 허용
+	 * 한글, 영문, 숫자, 줄바꿈, 공백, 이모지 및 특수기호(!@#$%^&*()-_+=[]{},.?/) 허용
 	 */
 	public static final Pattern ALPHANUMERIC_WITH_EMOJI_EXTENDED =
-		Pattern.compile("^[\\p{L}\\p{N}\\r\\n!@#$%^&*()\\-_=+\\[\\]{},.?/\\p{So}\\p{Sk}\\p{Sm}\\p{Sc}\\p{Cs}]*$");
+		Pattern.compile("^[\\p{L}\\p{N} \\r\\n!@#$%^&*()\\-_=+\\[\\]{},.?/\\p{So}\\p{Sk}\\p{Sm}\\p{Sc}\\p{Cs}]*$");
 }
