@@ -8,6 +8,7 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.UUID;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,14 +38,17 @@ class UserProfileImageServiceTest {
 	@Mock
 	private S3Client s3Client;
 
+	private UserProfileImageService service;
+
+	@BeforeEach
+	void setUp() {
+		service = new UserProfileImageService(presigner, s3Client, BUCKET, REGION, URL_FORMAT);
+	}
+
 	@Test
 	@DisplayName("업로드 URL 생성 시 파일명을 UUID로 정규화하여 경로를 생성한다.")
 	void presignProfileUpload_success_generatesUuidKeyAndUrls() throws Exception {
 		// given
-		UserProfileImageService service = new UserProfileImageService(
-			presigner, s3Client, BUCKET, REGION, URL_FORMAT
-		);
-
 		PresignedPutObjectRequest presigned = mock(PresignedPutObjectRequest.class);
 		given(presigned.url()).willReturn(URI.create("https://presigned.test/put").toURL());
 		given(presigner.presignPutObject(any(PutObjectPresignRequest.class))).willReturn(presigned);
@@ -82,11 +86,6 @@ class UserProfileImageServiceTest {
 	@Test
 	@DisplayName("지원하지 않는 콘텐츠 타입이면 UNSUPPORTED_IMAGE_CONTENT_TYPE 예외가 발생한다.")
 	void presignProfileUpload_fail_unsupportedContentType() {
-		// given
-		UserProfileImageService service = new UserProfileImageService(
-			presigner, s3Client, BUCKET, REGION, URL_FORMAT
-		);
-
 		// when & then
 		assertThatThrownBy(() -> service.presignProfileUpload(EXTERNAL_ID, "image/gif"))
 			.isInstanceOf(BusinessException.class)
@@ -97,11 +96,6 @@ class UserProfileImageServiceTest {
 	@Test
 	@DisplayName("콘텐츠 타입이 없으면 UNSUPPORTED_IMAGE_CONTENT_TYPE 예외가 발생한다.")
 	void presignProfileUpload_fail_nullContentType() {
-		// given
-		UserProfileImageService service = new UserProfileImageService(
-			presigner, s3Client, BUCKET, REGION, URL_FORMAT
-		);
-
 		// when & then
 		assertThatThrownBy(() -> service.presignProfileUpload(EXTERNAL_ID, null))
 			.isInstanceOf(BusinessException.class)
@@ -113,10 +107,6 @@ class UserProfileImageServiceTest {
 	@DisplayName("관리 대상 경로의 URL인 경우 S3 오브젝트 삭제를 요청한다.")
 	void deleteProfileImageIfManaged_success_callsDeleteObject() {
 		// given
-		UserProfileImageService service = new UserProfileImageService(
-			presigner, s3Client, BUCKET, REGION, URL_FORMAT
-		);
-
 		String url = "https://way-point-bucket.s3.ap-northeast-2.amazonaws.com/users/"
 			+ EXTERNAL_ID + "/profile/" + UUID.randomUUID() + ".png";
 
@@ -139,10 +129,6 @@ class UserProfileImageServiceTest {
 	@DisplayName("레거시 고정 키 형식의 URL도 삭제를 시도한다.")
 	void deleteProfileImageIfManaged_success_legacyFixedKey() {
 		// given
-		UserProfileImageService service = new UserProfileImageService(
-			presigner, s3Client, BUCKET, REGION, URL_FORMAT
-		);
-
 		String url = "https://way-point-bucket.s3.ap-northeast-2.amazonaws.com/users/" + EXTERNAL_ID + "/profile";
 
 		ArgumentCaptor<DeleteObjectRequest> captor =
@@ -159,11 +145,6 @@ class UserProfileImageServiceTest {
 	@Test
 	@DisplayName("이미지 URL이 비어있으면 아무 작업도 하지 않는다.")
 	void deleteProfileImageIfManaged_noop_whenBlank() {
-		// given
-		UserProfileImageService service = new UserProfileImageService(
-			presigner, s3Client, BUCKET, REGION, URL_FORMAT
-		);
-
 		// when
 		service.deleteProfileImageIfManaged(EXTERNAL_ID, null);
 		service.deleteProfileImageIfManaged(EXTERNAL_ID, "");
@@ -176,11 +157,6 @@ class UserProfileImageServiceTest {
 	@Test
 	@DisplayName("유효하지 않은 URL은 무시하고 삭제하지 않는다.")
 	void deleteProfileImageIfManaged_noop_whenInvalidUrl() {
-		// given
-		UserProfileImageService service = new UserProfileImageService(
-			presigner, s3Client, BUCKET, REGION, URL_FORMAT
-		);
-
 		// when
 		service.deleteProfileImageIfManaged(EXTERNAL_ID, "not_a_url");
 
@@ -192,10 +168,6 @@ class UserProfileImageServiceTest {
 	@DisplayName("타인이나 잘못된 경로의 이미지는 삭제하지 않는다.")
 	void deleteProfileImageIfManaged_noop_whenNotManagedPath() {
 		// given
-		UserProfileImageService service = new UserProfileImageService(
-			presigner, s3Client, BUCKET, REGION, URL_FORMAT
-		);
-
 		String otherUser = "otherUser123";
 		String url = "https://way-point-bucket.s3.ap-northeast-2.amazonaws.com/users/"
 			+ otherUser + "/profile/" + UUID.randomUUID() + ".png";
@@ -211,10 +183,6 @@ class UserProfileImageServiceTest {
 	@DisplayName("Path-style URL은 관리 대상에서 제외하고 삭제하지 않는다.")
 	void deleteProfileImageIfManaged_noop_whenPathStyleUrl() {
 		// given
-		UserProfileImageService service = new UserProfileImageService(
-			presigner, s3Client, BUCKET, REGION, URL_FORMAT
-		);
-
 		String url = "https://s3.ap-northeast-2.amazonaws.com/" + BUCKET
 			+ "/users/" + EXTERNAL_ID + "/profile/" + UUID.randomUUID() + ".png";
 
