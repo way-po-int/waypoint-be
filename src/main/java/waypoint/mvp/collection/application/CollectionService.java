@@ -23,6 +23,7 @@ import waypoint.mvp.collection.domain.CollectionMember;
 import waypoint.mvp.collection.domain.CollectionRole;
 import waypoint.mvp.collection.domain.event.CollectionCreatedEvent;
 import waypoint.mvp.collection.error.CollectionError;
+import waypoint.mvp.collection.infrastructure.persistence.CollectionPlaceRepository;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionRepository;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
 import waypoint.mvp.global.common.SliceResponse;
@@ -45,6 +46,7 @@ public class CollectionService {
 	private final ShareLinkRepository shareLinkRepository;
 	private final UserFinder userFinder;
 	private final ResourceAuthorizer collectionAuthorizer;
+	private final CollectionPlaceRepository collectionPlaceRepository;
 
 	@Value("${waypoint.invitation.expiration-hours}")
 	private long invitationExpirationHours;
@@ -56,7 +58,7 @@ public class CollectionService {
 
 		eventPublisher.publishEvent(CollectionCreatedEvent.of(savedCollection.getId(), user)); // 이벤트는 실제 유저만 발생시키므로 캐스팅
 
-		return CollectionResponse.from(savedCollection);
+		return CollectionResponse.from(savedCollection, 0);
 	}
 
 	public Collection getCollection(Long collectionId) {
@@ -71,7 +73,7 @@ public class CollectionService {
 
 	public SliceResponse<CollectionResponse> findCollections(UserPrincipal user, Pageable pageable) {
 		Slice<CollectionResponse> collections = collectionRepository.findAllByUserId(user.id(), pageable)
-			.map(CollectionResponse::from);
+			.map(this::toCollectionResponse);
 
 		return SliceResponse.from(collections);
 	}
@@ -81,14 +83,14 @@ public class CollectionService {
 		collectionAuthorizer.verifyAccess(user, collectionId);
 		Collection collection = getCollection(collectionId);
 
-		return CollectionResponse.from(collection);
+		return toCollectionResponse(collection);
 	}
 
 	public CollectionResponse findCollectionByExternalId(String externalId, AuthPrincipal user) {
 		Collection collection = getCollection(externalId);
 		collectionAuthorizer.verifyAccess(user, collection.getId());
 
-		return CollectionResponse.from(collection);
+		return toCollectionResponse(collection);
 	}
 
 	@Transactional
@@ -97,7 +99,7 @@ public class CollectionService {
 		collectionAuthorizer.verifyMember(user, collection.getId());
 		collection.update(request.title());
 
-		return CollectionResponse.from(collection);
+		return toCollectionResponse(collection);
 	}
 
 	@Transactional
@@ -189,6 +191,11 @@ public class CollectionService {
 		shareLink.increaseUseCount();
 
 		return collection.getId();
+	}
+
+	private CollectionResponse toCollectionResponse(Collection collection) {
+		long placeCount = collectionPlaceRepository.countByCollectionId(collection.getId());
+		return CollectionResponse.from(collection, (int)placeCount);
 	}
 
 }
