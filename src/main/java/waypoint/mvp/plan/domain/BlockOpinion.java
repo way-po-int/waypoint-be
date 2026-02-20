@@ -23,6 +23,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import waypoint.mvp.global.common.ExternalIdEntity;
+import waypoint.mvp.global.error.exception.BusinessException;
+import waypoint.mvp.plan.error.BlockOpinionError;
 
 @Entity
 @Table(
@@ -32,6 +34,7 @@ import waypoint.mvp.global.common.ExternalIdEntity;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class BlockOpinion extends ExternalIdEntity {
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
@@ -78,5 +81,18 @@ public class BlockOpinion extends ExternalIdEntity {
 			.comment(Objects.requireNonNullElse(comment, ""))
 			.opinionTagIds(Objects.requireNonNullElse(opinionTagIds, List.of()))
 			.build();
+	}
+
+	public void update(BlockOpinionType type, String comment, List<String> opinionTagIds) {
+		this.type = type;
+		this.comment = Objects.requireNonNullElse(comment, "");
+		this.opinionTagIds = Objects.requireNonNullElse(opinionTagIds, List.of());
+	}
+
+	public void verifyAddedBy(Long userId) {
+		Long addedById = this.addedBy.getUser().getId();
+		if (!addedById.equals(userId)) {
+			throw new BusinessException(BlockOpinionError.BLOCK_OPINION_FORBIDDEN);
+		}
 	}
 }
