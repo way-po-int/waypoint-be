@@ -2,6 +2,7 @@ package waypoint.mvp.collection.application;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
@@ -71,11 +72,33 @@ public class CollectionService {
 			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
 	}
 
-	public SliceResponse<CollectionResponse> findCollections(UserPrincipal user, Pageable pageable) {
-		Slice<CollectionResponse> collections = collectionRepository.findAllByUserId(user.id(), pageable)
-			.map(this::toCollectionResponse);
+	public List<Collection> getCollections(List<String> externalIds) {
+		return collectionRepository.findAllByExternalIdIn(externalIds);
+	}
 
-		return SliceResponse.from(collections);
+	public SliceResponse<CollectionResponse> findCollections(UserPrincipal user, Pageable pageable) {
+		Slice<Collection> collectionsSlice = collectionRepository.findAllByUserId(user.id(), pageable);
+
+		List<Long> collectionIds = collectionsSlice.getContent().stream()
+			.map(Collection::getId)
+			.toList();
+
+		if (collectionIds.isEmpty()) {
+			return SliceResponse.from(collectionsSlice.map(c -> CollectionResponse.from(c, 0)));
+		}
+
+		Map<Long, Integer> placeCounts = collectionPlaceRepository.countPlacesByCollectionIds(collectionIds).stream()
+			.collect(java.util.stream.Collectors.toMap(
+				row -> (Long)row[0],
+				row -> ((Number)row[1]).intValue()
+			));
+
+		Slice<CollectionResponse> responses = collectionsSlice.map(collection -> {
+			int placeCount = placeCounts.getOrDefault(collection.getId(), 0);
+			return CollectionResponse.from(collection, placeCount);
+		});
+
+		return SliceResponse.from(responses);
 	}
 
 	/** Guest or Member 사용 가능한 메서드 */
