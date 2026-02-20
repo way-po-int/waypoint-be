@@ -14,6 +14,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import jakarta.validation.constraints.AssertTrue;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -114,6 +115,21 @@ public class Block extends ExternalIdEntity {
 
 	public void unselect() {
 		this.selected = false;
+	}
+
+	@Transient
+	public boolean isPlaceBlock() {
+		return place != null;
+	}
+
+	@Transient
+	public boolean isManualPlaceBlock() {
+		return manualPlace != null;
+	}
+
+	@Transient
+	public boolean isFreeBlock() {
+		return place == null && manualPlace == null;
 	}
 
 	public void updateMemo(String memo) {
