@@ -37,6 +37,13 @@ public record BlockDetailResponse(
 	) {
 		TimeBlock timeBlock = block.getTimeBlock();
 
+		SocialMediaResponse socialMediaResponse = null;
+		if (block.isPlaceBlock()) {
+			socialMediaResponse = SocialMediaResponse.from(block.getSocialMedia());
+		} else if (block.isManualPlaceBlock() && block.getManualPlace().getSocialMediaUrl() != null) {
+			socialMediaResponse = SocialMediaResponse.fromManual(block.getManualPlace());
+		}
+
 		return new BlockDetailResponse(
 			timeBlock.getExternalId(),
 			timeBlock.getType(),
@@ -45,7 +52,7 @@ public record BlockDetailResponse(
 			timeBlock.getEndTime(),
 			opinions,
 			candidateBlock,
-			block.getSocialMedia() != null ? SocialMediaResponse.from(block.getSocialMedia()) : null
+			socialMediaResponse
 		);
 	}
 }

@@ -106,10 +106,19 @@ public class BlockQueryService {
 	}
 
 	private PlaceResponse toPlaceResponse(Block block) {
-		if (block == null || block.getPlace() == null) {
+		if (block == null) {
 			return null;
 		}
-		return collectionPlaceQueryService.toPlaceResponse(block.getPlace());
+
+		if (block.getManualPlace() != null) {
+			return PlaceResponse.fromManual(block.getManualPlace());
+		}
+
+		if (block.getPlace() != null) {
+			return collectionPlaceQueryService.toPlaceResponse(block.getPlace());
+		}
+
+		return null;
 	}
 
 	public TimeBlock getTimeBlock(Long planId, String timeBlockId) {
