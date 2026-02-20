@@ -51,30 +51,48 @@ public class PlanCollectionService {
 		CreatePlanCollectionRequest request,
 		UserPrincipal user
 	) {
-
 		Plan plan = planService.getPlan(planExternalId);
-
 		planAuthorizer.verifyMember(user, plan.getId());
 
 		PlanMember member = planMemberService.findMemberByUserId(plan.getId(), user.getId());
 
-		List<PlanCollectionResponse> responses = new ArrayList<>();
+		List<String> collectionExternalIds = request.collectionIds().stream()
+			.distinct()
+			.toList();
 
-		List<String> collectionIds = request.collectionIds().stream().distinct().toList();
-
-		for (String collectionExternalId : collectionIds) {
-			if (planCollectionRepository.existsByPlanIdAndCollectionId(planExternalId, collectionExternalId)) {
-				throw new BusinessException(PlanCollectionError.PLAN_COLLECTION_ALREADY_EXISTS);
-			}
-
-			Collection collection = collectionService.getCollection(collectionExternalId);
-			collectionAuthorizer.verifyMember(user, collection.getId());
-
-			PlanCollection planCollection = PlanCollection.create(plan, collection, member);
-			responses.add(PlanCollectionResponse.from(planCollectionRepository.save(planCollection)));
+		List<String> existing = planCollectionRepository.findExistingCollectionExternalIds(
+			planExternalId, collectionExternalIds
+		);
+		if (!existing.isEmpty()) {
+			throw new BusinessException(PlanCollectionError.PLAN_COLLECTION_ALREADY_EXISTS);
 		}
 
-		return responses;
+		List<Collection> collections = collectionService.getCollections(collectionExternalIds);
+
+		if (collections.size() != collectionExternalIds.size()) {
+			throw new BusinessException(PlanCollectionError.PLAN_COLLECTION_NOT_FOUND);
+		}
+
+		java.util.Map<String, Collection> byExternalId = collections.stream()
+			.collect(java.util.stream.Collectors.toMap(
+				Collection::getExternalId,
+				c -> c
+			));
+
+		List<PlanCollection> entities = new ArrayList<>(collectionExternalIds.size());
+		for (String collectionExternalId : collectionExternalIds) {
+			Collection collection = byExternalId.get(collectionExternalId);
+
+			collectionAuthorizer.verifyMember(user, collection.getId());
+
+			entities.add(PlanCollection.create(plan, collection, member));
+		}
+
+		List<PlanCollection> saved = planCollectionRepository.saveAll(entities);
+
+		return saved.stream()
+			.map(PlanCollectionResponse::from)
+			.toList();
 	}
 
 	public PlanCollection getPlanCollection(String planId, String collectionId) {

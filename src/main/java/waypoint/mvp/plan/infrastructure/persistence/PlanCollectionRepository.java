@@ -30,4 +30,19 @@ public interface PlanCollectionRepository extends JpaRepository<PlanCollection, 
 
 	@Query("SELECT pc.collection.id FROM PlanCollection pc WHERE pc.plan.id = :planId")
 	List<Long> findCollectionIdsByPlanId(@Param("planId") Long planId);
+
+	@Query("SELECT pc FROM PlanCollection pc "
+		+ "JOIN FETCH pc.plan p "
+		+ "LEFT JOIN FETCH pc.collection c "
+		+ "WHERE p.externalId IN :planExternalIds")
+	List<PlanCollection> findAllByPlanExternalIdIn(@Param("planExternalIds") List<String> planExternalIds);
+
+	@Query("SELECT DISTINCT c.externalId FROM PlanCollection pc "
+		+ "JOIN pc.collection c "
+		+ "WHERE pc.plan.externalId = :planExternalId "
+		+ "AND c.externalId IN :collectionExternalIds")
+	List<String> findExistingCollectionExternalIds(
+		@Param("planExternalId") String planExternalId,
+		@Param("collectionExternalIds") List<String> collectionExternalIds
+	);
 }
