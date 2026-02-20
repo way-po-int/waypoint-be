@@ -1,5 +1,6 @@
 package waypoint.mvp.collection.infrastructure.persistence;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Pageable;
@@ -18,6 +19,8 @@ public interface CollectionRepository extends JpaRepository<Collection, Long> {
 	Slice<Collection> findAllByUserId(@Param("userId") Long userId, Pageable pageable);
 
 	Optional<Collection> findByExternalId(String externalId);
+
+	List<Collection> findAllByExternalIdIn(List<String> externalIds);
 
 	@Modifying
 	@Query("UPDATE Collection c SET c.thumbnail = :url WHERE c.id = :id AND (c.thumbnail IS NULL OR c.thumbnail = '')")

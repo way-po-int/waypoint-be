@@ -44,7 +44,7 @@ public class ShareLinkController {
 		InvitationResult result = shareLinkService.processInvitationLink(code, user);
 
 		return switch (result) {
-			case InvitationResult.GuestInvitation(var shareLinkCode, var redirectUrl) -> {
+			case InvitationResult.GuestInvitation(var redirectUrl, var shareLinkCode) -> {
 				ResponseCookie cookie = cookieUtils.createCookie(guestCookieName, shareLinkCode,
 					guestCookieMaxAgeSeconds);
 				yield ResponseEntity.status(HttpStatus.FOUND)

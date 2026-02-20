@@ -2,6 +2,7 @@ package waypoint.mvp.collection.application;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
@@ -23,6 +24,7 @@ import waypoint.mvp.collection.domain.CollectionMember;
 import waypoint.mvp.collection.domain.CollectionRole;
 import waypoint.mvp.collection.domain.event.CollectionCreatedEvent;
 import waypoint.mvp.collection.error.CollectionError;
+import waypoint.mvp.collection.infrastructure.persistence.CollectionPlaceRepository;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionRepository;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
 import waypoint.mvp.global.common.SliceResponse;
@@ -45,6 +47,7 @@ public class CollectionService {
 	private final ShareLinkRepository shareLinkRepository;
 	private final UserFinder userFinder;
 	private final ResourceAuthorizer collectionAuthorizer;
+	private final CollectionPlaceRepository collectionPlaceRepository;
 
 	@Value("${waypoint.invitation.expiration-hours}")
 	private long invitationExpirationHours;
@@ -56,7 +59,7 @@ public class CollectionService {
 
 		eventPublisher.publishEvent(CollectionCreatedEvent.of(savedCollection.getId(), user)); // 이벤트는 실제 유저만 발생시키므로 캐스팅
 
-		return CollectionResponse.from(savedCollection);
+		return CollectionResponse.from(savedCollection, 0);
 	}
 
 	public Collection getCollection(Long collectionId) {
@@ -69,11 +72,33 @@ public class CollectionService {
 			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
 	}
 
-	public SliceResponse<CollectionResponse> findCollections(UserPrincipal user, Pageable pageable) {
-		Slice<CollectionResponse> collections = collectionRepository.findAllByUserId(user.id(), pageable)
-			.map(CollectionResponse::from);
+	public List<Collection> getCollections(List<String> externalIds) {
+		return collectionRepository.findAllByExternalIdIn(externalIds);
+	}
 
-		return SliceResponse.from(collections);
+	public SliceResponse<CollectionResponse> findCollections(UserPrincipal user, Pageable pageable) {
+		Slice<Collection> collectionsSlice = collectionRepository.findAllByUserId(user.id(), pageable);
+
+		List<Long> collectionIds = collectionsSlice.getContent().stream()
+			.map(Collection::getId)
+			.toList();
+
+		if (collectionIds.isEmpty()) {
+			return SliceResponse.from(collectionsSlice.map(c -> CollectionResponse.from(c, 0)));
+		}
+
+		Map<Long, Integer> placeCounts = collectionPlaceRepository.countPlacesByCollectionIds(collectionIds).stream()
+			.collect(java.util.stream.Collectors.toMap(
+				row -> (Long)row[0],
+				row -> ((Number)row[1]).intValue()
+			));
+
+		Slice<CollectionResponse> responses = collectionsSlice.map(collection -> {
+			int placeCount = placeCounts.getOrDefault(collection.getId(), 0);
+			return CollectionResponse.from(collection, placeCount);
+		});
+
+		return SliceResponse.from(responses);
 	}
 
 	/** Guest or Member 사용 가능한 메서드 */
@@ -81,14 +106,14 @@ public class CollectionService {
 		collectionAuthorizer.verifyAccess(user, collectionId);
 		Collection collection = getCollection(collectionId);
 
-		return CollectionResponse.from(collection);
+		return toCollectionResponse(collection);
 	}
 
 	public CollectionResponse findCollectionByExternalId(String externalId, AuthPrincipal user) {
 		Collection collection = getCollection(externalId);
 		collectionAuthorizer.verifyAccess(user, collection.getId());
 
-		return CollectionResponse.from(collection);
+		return toCollectionResponse(collection);
 	}
 
 	@Transactional
@@ -97,7 +122,7 @@ public class CollectionService {
 		collectionAuthorizer.verifyMember(user, collection.getId());
 		collection.update(request.title());
 
-		return CollectionResponse.from(collection);
+		return toCollectionResponse(collection);
 	}
 
 	@Transactional
@@ -189,6 +214,11 @@ public class CollectionService {
 		shareLink.increaseUseCount();
 
 		return collection.getId();
+	}
+
+	private CollectionResponse toCollectionResponse(Collection collection) {
+		long placeCount = collectionPlaceRepository.countByCollectionId(collection.getId());
+		return CollectionResponse.from(collection, (int)placeCount);
 	}
 
 }

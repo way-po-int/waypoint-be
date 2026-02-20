@@ -36,12 +36,12 @@ public class PlanCollectionController {
 
 	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@PostMapping
-	public ResponseEntity<PlanCollectionResponse> connectCollection(
+	public ResponseEntity<List<PlanCollectionResponse>> connectCollection(
 		@PathVariable String planId,
 		@RequestBody @Valid CreatePlanCollectionRequest request,
 		@AuthenticationPrincipal UserPrincipal user
 	) {
-		PlanCollectionResponse response = planCollectionService.createPlanCollection(planId, request, user);
+		List<PlanCollectionResponse> response = planCollectionService.createPlanCollection(planId, request, user);
 
 		URI location = URI.create("/plans/" + planId + "/collections");
 		return ResponseEntity.created(location).body(response);
