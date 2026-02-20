@@ -2,6 +2,7 @@ package waypoint.mvp.plan.application;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -81,10 +82,27 @@ public class PlanService {
 	}
 
 	public SliceResponse<PlanResponse> findPlans(UserPrincipal user, Pageable pageable) {
-		Slice<PlanResponse> plans = planRepository.findAllByUserId(user.id(), pageable)
-			.map(this::toPlanResponse);
+		Slice<Plan> plansSlice = planRepository.findAllByUserId(user.id(), pageable);
 
-		return SliceResponse.from(plans);
+		List<String> planExternalIds = plansSlice.getContent().stream()
+			.map(Plan::getExternalId)
+			.toList();
+
+		if (planExternalIds.isEmpty()) {
+			return SliceResponse.from(plansSlice.map(p -> PlanResponse.from(p, "", 0)));
+		}
+
+		List<PlanCollection> pcs = planCollectionRepository.findAllByPlanExternalIdIn(planExternalIds);
+
+		Map<String, List<PlanCollection>> pcsByPlanExternalId = pcs.stream()
+			.collect(java.util.stream.Collectors.groupingBy(pc -> pc.getPlan().getExternalId()));
+
+		Slice<PlanResponse> responses = plansSlice.map(plan -> {
+			List<PlanCollection> planPcs = pcsByPlanExternalId.getOrDefault(plan.getExternalId(), List.of());
+			return toPlanResponse(plan, planPcs);
+		});
+
+		return SliceResponse.from(responses);
 	}
 
 	public PlanResponse findPlanById(Long planId, AuthPrincipal user) {
@@ -224,7 +242,10 @@ public class PlanService {
 
 	private PlanResponse toPlanResponse(Plan plan) {
 		List<PlanCollection> pcs = planCollectionRepository.findAllByPlanId(plan.getExternalId());
+		return toPlanResponse(plan, pcs);
+	}
 
+	private PlanResponse toPlanResponse(Plan plan, List<PlanCollection> pcs) {
 		int collectionCount = (int)pcs.stream()
 			.map(pc -> pc.getCollection() == null ? null : pc.getCollection().getId())
 			.filter(Objects::nonNull)
