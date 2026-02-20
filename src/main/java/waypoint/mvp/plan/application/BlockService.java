@@ -39,6 +39,7 @@ import waypoint.mvp.plan.infrastructure.persistence.PlanDayRepository;
 import waypoint.mvp.plan.infrastructure.persistence.TimeBlockRepository;
 import waypoint.mvp.notification.application.NotificationPublisher;
 import waypoint.mvp.notification.domain.NotificationEventType;
+import waypoint.mvp.notification.domain.event.NotificationEvent;
 
 @Service
 @Transactional(readOnly = true)
@@ -79,19 +80,13 @@ public class BlockService {
 		block.select();
 
 		String placeName = block.getPlace() != null ? block.getPlace().getName() : "자유 일정";
-		String actorNickname = notificationPublisher.getUserNickname(user.id());
-		String message = NotificationEventType.PLACE_ADDED_TO_PLAN.buildMessage(
-			actorNickname,
-			plan.getTitle(),
-			placeName
-		);
 
 		notificationPublisher.publishPlanTeamNotification(
 			planId,
 			planExternalId,
 			user.id(),
 			NotificationEventType.PLACE_ADDED_TO_PLAN,
-			message
+			NotificationEvent.createMetadata(plan.getTitle(), placeName)
 		);
 
 		return blockQueryService.toBlockResponse(timeBlock, List.of(block), user.getId());

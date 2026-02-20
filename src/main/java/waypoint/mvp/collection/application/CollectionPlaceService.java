@@ -33,6 +33,7 @@ import waypoint.mvp.place.error.PlaceError;
 import waypoint.mvp.place.infrastructure.persistence.PlaceRepository;
 import waypoint.mvp.notification.application.NotificationPublisher;
 import waypoint.mvp.notification.domain.NotificationEventType;
+import waypoint.mvp.notification.domain.event.NotificationEvent;
 
 @Service
 @RequiredArgsConstructor
@@ -74,19 +75,12 @@ public class CollectionPlaceService {
 			updateCollectionThumbnail(collection, place);
 		}
 
-		String actorNickname = notificationPublisher.getUserNickname(principal.getId());
-		String message = NotificationEventType.PLACE_ADDED_TO_COLLECTION.buildMessage(
-			actorNickname,
-			collection.getTitle(),
-			place.getName()
-		);
-
 		notificationPublisher.publishCollectionTeamNotification(
 			collection.getId(),
 			collection.getExternalId(),
 			principal.getId(),
 			NotificationEventType.PLACE_ADDED_TO_COLLECTION,
-			message
+			NotificationEvent.createMetadata(collection.getTitle(), place.getName())
 		);
 
 		return CollectionPlaceResponse.of(
