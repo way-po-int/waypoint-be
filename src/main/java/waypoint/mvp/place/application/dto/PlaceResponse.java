@@ -4,10 +4,14 @@ import java.util.List;
 
 import org.locationtech.jts.geom.Point;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import waypoint.mvp.place.domain.ManualPlace;
 import waypoint.mvp.place.domain.Place;
 import waypoint.mvp.place.domain.PlaceDetail;
 
 public record PlaceResponse(
+	PlaceType placeType,
 	String placeId,
 	String googlePlaceId,
 	String name,
@@ -18,6 +22,14 @@ public record PlaceResponse(
 	List<String> photos,
 	PointResponse point
 ) {
+
+	@Getter
+	@RequiredArgsConstructor
+	public enum PlaceType {
+		NORMAL,
+		MANUAL;
+	}
+
 	public static PlaceResponse from(Place place, PlaceCategoryResponse category, List<String> photos) {
 		PlaceDetail detail = place.getDetail();
 		Point location = place.getLocation();
@@ -26,6 +38,7 @@ public record PlaceResponse(
 		Double longitude = (location != null) ? location.getX() : null;
 
 		return new PlaceResponse(
+			PlaceType.NORMAL,
 			place.getExternalId(),
 			(detail != null) ? detail.getPlaceId() : null,
 			place.getName(),
@@ -35,6 +48,21 @@ public record PlaceResponse(
 			(detail != null) ? detail.getGoogleMapsUri() : null,
 			photos,
 			PointResponse.of(latitude, longitude)
+		);
+	}
+
+	public static PlaceResponse fromManual(ManualPlace manualPlace) {
+		return new PlaceResponse(
+			PlaceType.MANUAL,
+			null,
+			null,
+			manualPlace.getName(),
+			manualPlace.getAddress(),
+			null, // TODO category 나중에 추가
+			null,
+			null,
+			null,
+			null
 		);
 	}
 }

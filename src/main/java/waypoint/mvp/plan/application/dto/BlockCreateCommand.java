@@ -9,8 +9,10 @@ import java.util.stream.Collectors;
 import org.springframework.util.Assert;
 
 import waypoint.mvp.global.error.exception.BusinessException;
+import waypoint.mvp.place.application.dto.ManualPlaceInfo;
 import waypoint.mvp.plan.application.dto.request.BlockCreateByPlaceRequest;
 import waypoint.mvp.plan.application.dto.request.BlockCreateRequest;
+import waypoint.mvp.plan.application.dto.request.BlockManualCreateRequest;
 import waypoint.mvp.plan.domain.TimeBlockType;
 import waypoint.mvp.plan.error.BlockError;
 
@@ -26,7 +28,8 @@ public record BlockCreateCommand(
 	LocalTime endTime,
 	String memo,
 	String collectionPlaceId,
-	String placeId
+	String placeId,
+	ManualPlaceInfo placeInfo
 ) {
 
 	public BlockCreateCommand {
@@ -39,14 +42,15 @@ public record BlockCreateCommand(
 		Assert.isTrue(day >= 1, DAY_MIN_VALUE);
 		Assert.isTrue(startTime.isBefore(endTime), START_TIME_BEFORE_END_TIME);
 
-		validateBlockConstraints(blockType, createType, collectionPlaceId, placeId);
+		validateBlockConstraints(blockType, createType, collectionPlaceId, placeId, placeInfo);
 	}
 
 	private void validateBlockConstraints(TimeBlockType type, CreateType createType, String collectionPlaceId,
-		String placeId) {
+		String placeId, ManualPlaceInfo placeInfo) {
 		if (type == TimeBlockType.FREE) {
 			Assert.isNull(collectionPlaceId, FREE_BLOCK_NO_COLLECTION_PLACE);
 			Assert.isNull(placeId, FREE_BLOCK_NO_PLACE);
+			Assert.isNull(placeInfo, "FREE 블록에는 placeInfo가 없어야 합니다.");
 			return;
 		}
 
@@ -55,13 +59,17 @@ public record BlockCreateCommand(
 			case COLLECT_PLACE -> {
 				Assert.hasText(collectionPlaceId, COLLECT_PLACE_REQUIRES_COLLECTION_PLACE_ID);
 				Assert.isNull(placeId, COLLECT_PLACE_NO_PLACE_ID);
+				Assert.isNull(placeInfo, "COLLECT_PLACE에는 placeInfo가 없어야 합니다.");
 			}
 			case PLACE -> {
 				Assert.hasText(placeId, PLACE_REQUIRES_PLACE_ID);
 				Assert.isNull(collectionPlaceId, PLACE_NO_COLLECTION_PLACE_ID);
+				Assert.isNull(placeInfo, "PLACE에는 placeInfo가 없어야 합니다.");
 			}
 			case MANUAL -> {
-				Assert.hasText(placeId, MANUAL_NOT_SUPPORTED);
+				Assert.notNull(placeInfo, "MANUAL에는 placeInfo가 필수입니다.");
+				Assert.isNull(collectionPlaceId, "MANUAL에는 collectionPlaceId가 없어야 합니다.");
+				Assert.isNull(placeId, "MANUAL에는 placeId가 없어야 합니다.");
 			}
 
 			default -> throw new BusinessException(
@@ -89,6 +97,7 @@ public record BlockCreateCommand(
 			request.endTime(),
 			request.memo(),
 			request.collectionPlaceId(),
+			null,
 			null
 		);
 	}
@@ -102,7 +111,22 @@ public record BlockCreateCommand(
 			request.endTime(),
 			request.memo(),
 			null,
-			request.placeId()
+			request.placeId(),
+			null
+		);
+	}
+
+	public static BlockCreateCommand fromManual(BlockManualCreateRequest request) {
+		return new BlockCreateCommand(
+			TimeBlockType.PLACE,
+			CreateType.MANUAL,
+			request.day(),
+			request.startTime(),
+			request.endTime(),
+			request.memo(),
+			null,
+			null,
+			request.manualPlaceInfo()
 		);
 	}
 
