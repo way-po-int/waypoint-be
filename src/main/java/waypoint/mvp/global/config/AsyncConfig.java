@@ -24,4 +24,11 @@ public class AsyncConfig {
 		executor.setVirtualThreads(true);
 		return executor;
 	}
+
+	@Bean(name = "notificationTaskExecutor")
+	public Executor notificationTaskExecutor() {
+		SimpleAsyncTaskExecutor executor = new SimpleAsyncTaskExecutor("vt-notification-");
+		executor.setVirtualThreads(true);
+		return executor;
+	}
 }

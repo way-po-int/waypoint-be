@@ -37,6 +37,9 @@ import waypoint.mvp.plan.error.PlanError;
 import waypoint.mvp.plan.infrastructure.persistence.BlockRepository;
 import waypoint.mvp.plan.infrastructure.persistence.PlanDayRepository;
 import waypoint.mvp.plan.infrastructure.persistence.TimeBlockRepository;
+import waypoint.mvp.notification.application.NotificationPublisher;
+import waypoint.mvp.notification.domain.NotificationEventType;
+import waypoint.mvp.notification.domain.event.NotificationEvent;
 
 @Service
 @Transactional(readOnly = true)
@@ -53,6 +56,7 @@ public class BlockService {
 	private final PlanCollectionService planCollectionService;
 	private final CollectionPlaceQueryService collectionPlaceQueryService;
 	private final PlaceService placeService;
+	private final NotificationPublisher notificationPublisher;
 
 	@Transactional
 	public BlockResponse createBlock(String planExternalId, BlockCreateRequest request, UserPrincipal user) {
@@ -74,6 +78,16 @@ public class BlockService {
 
 		Block block = createBlockByType(planId, command, timeBlock, addedBy);
 		block.select();
+
+		String placeName = block.getPlace() != null ? block.getPlace().getName() : "자유 일정";
+
+		notificationPublisher.publishPlanTeamNotification(
+			planId,
+			planExternalId,
+			user.id(),
+			NotificationEventType.PLACE_ADDED_TO_PLAN,
+			NotificationEvent.createMetadata(plan.getTitle(), placeName)
+		);
 
 		return blockQueryService.toBlockResponse(timeBlock, List.of(block), user.getId());
 	}
