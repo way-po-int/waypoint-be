@@ -66,7 +66,9 @@ class PlanServiceTest {
 
 		// then
 		// 1. 응답 값 검증
-		PlanResponse expectedResponse = new PlanResponse(null, title, startDate, endDate, 1);
+		int durationDays = 12;
+
+		PlanResponse expectedResponse = new PlanResponse(null, title, "", startDate, endDate, durationDays, 1, 0);
 		assertPlanResponseMatches(response, expectedResponse);
 
 		// 2. DB 데이터 검증 (Side Effect 검증)
