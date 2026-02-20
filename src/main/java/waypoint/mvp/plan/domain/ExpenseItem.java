@@ -16,6 +16,8 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import waypoint.mvp.global.error.exception.BusinessException;
+import waypoint.mvp.plan.error.ExpenseError;
 
 @Entity
 @Table(name = "expense_items")
@@ -46,6 +48,7 @@ public class ExpenseItem {
 	}
 
 	public static ExpenseItem create(Expense expense, String name, Long cost) {
+		validateCost(cost);
 		return builder()
 			.expense(expense)
 			.name(name)
@@ -54,7 +57,14 @@ public class ExpenseItem {
 	}
 
 	public void update(String name, Long cost) {
+		validateCost(cost);
 		this.name = name;
 		this.cost = cost;
+	}
+
+	private static void validateCost(Long cost) {
+		if (cost == null || cost < 0) {
+			throw new BusinessException(ExpenseError.INVALID_ITEM_COST);
+		}
 	}
 }

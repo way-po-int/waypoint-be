@@ -13,6 +13,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import waypoint.mvp.global.common.ExternalIdEntity;
+import waypoint.mvp.global.error.exception.BusinessException;
+import waypoint.mvp.plan.error.BudgetError;
 
 @Entity
 @Table(name = "budgets")
@@ -49,20 +51,35 @@ public class Budget extends ExternalIdEntity {
 	}
 
 	public void updateBudgetType(Long totalBudget, Integer travelerCount) {
+		validateTotalBudget(totalBudget);
+		validateTravelerCount(travelerCount);
 		this.type = BudgetType.BUDGET;
 		this.totalBudget = totalBudget;
 		this.travelerCount = travelerCount;
 	}
 
 	public void updateExpenseType(Integer travelerCount) {
+		validateTravelerCount(travelerCount);
 		this.type = BudgetType.EXPENSE;
 		this.travelerCount = travelerCount;
 	}
 
 	public Long getCostPerPerson() {
-		if (travelerCount == null || travelerCount == 0) {
+		if (travelerCount == null) {
 			return totalBudget;
 		}
 		return Math.round((double)totalBudget / travelerCount);
+	}
+
+	private void validateTotalBudget(Long totalBudget) {
+		if (totalBudget == null || totalBudget < 0) {
+			throw new BusinessException(BudgetError.INVALID_TOTAL_BUDGET);
+		}
+	}
+
+	private void validateTravelerCount(Integer travelerCount) {
+		if (travelerCount != null && travelerCount <= 0) {
+			throw new BusinessException(BudgetError.INVALID_TRAVELER_COUNT);
+		}
 	}
 }
