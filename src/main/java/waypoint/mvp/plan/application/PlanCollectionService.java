@@ -1,5 +1,6 @@
 package waypoint.mvp.plan.application;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -45,26 +46,35 @@ public class PlanCollectionService {
 	 * plan에 collection추가는 collection의 멤버만 추가할 수 있다.
 	 * */
 	@Transactional
-	public PlanCollectionResponse createPlanCollection(
+	public List<PlanCollectionResponse> createPlanCollection(
 		String planExternalId,
 		CreatePlanCollectionRequest request,
 		UserPrincipal user
 	) {
 
-		if (planCollectionRepository.existsByPlanIdAndCollectionId(planExternalId, request.collectionId())) {
-			throw new BusinessException(PlanCollectionError.PLAN_COLLECTION_ALREADY_EXISTS);
-		}
-
 		Plan plan = planService.getPlan(planExternalId);
-		Collection collection = collectionService.getCollection(request.collectionId());
 
 		planAuthorizer.verifyMember(user, plan.getId());
-		collectionAuthorizer.verifyMember(user, collection.getId());
 
 		PlanMember member = planMemberService.findMemberByUserId(plan.getId(), user.getId());
-		PlanCollection planCollection = PlanCollection.create(plan, collection, member);
 
-		return PlanCollectionResponse.from(planCollectionRepository.save(planCollection));
+		List<PlanCollectionResponse> responses = new ArrayList<>();
+
+		List<String> collectionIds = request.collectionIds().stream().distinct().toList();
+
+		for (String collectionExternalId : collectionIds) {
+			if (planCollectionRepository.existsByPlanIdAndCollectionId(planExternalId, collectionExternalId)) {
+				throw new BusinessException(PlanCollectionError.PLAN_COLLECTION_ALREADY_EXISTS);
+			}
+
+			Collection collection = collectionService.getCollection(collectionExternalId);
+			collectionAuthorizer.verifyMember(user, collection.getId());
+
+			PlanCollection planCollection = PlanCollection.create(plan, collection, member);
+			responses.add(PlanCollectionResponse.from(planCollectionRepository.save(planCollection)));
+		}
+
+		return responses;
 	}
 
 	public PlanCollection getPlanCollection(String planId, String collectionId) {
