@@ -23,6 +23,7 @@ import waypoint.mvp.global.auth.annotations.Authorize;
 import waypoint.mvp.plan.application.BlockService;
 import waypoint.mvp.plan.application.dto.request.BlockCreateByPlaceRequest;
 import waypoint.mvp.plan.application.dto.request.BlockCreateRequest;
+import waypoint.mvp.plan.application.dto.request.BlockManualCreateRequest;
 import waypoint.mvp.plan.application.dto.request.BlockUpdateRequest;
 import waypoint.mvp.plan.application.dto.request.CandidateBlockCreateRequest;
 import waypoint.mvp.plan.application.dto.request.CandidateBlockSelectRequest;
@@ -54,6 +55,19 @@ public class BlockController {
 	public ResponseEntity<BlockResponse> createBlockByPlace(
 		@PathVariable String planId,
 		@RequestBody @Valid BlockCreateByPlaceRequest request,
+		@AuthenticationPrincipal UserPrincipal user
+	) {
+		BlockResponse response = blockService.createBlock(planId, request, user);
+
+		URI location = URI.create("/plans/" + planId + "/blocks/" + response.timeBlockId());
+		return ResponseEntity.created(location).body(response);
+	}
+
+	@Authorize(level = AuthLevel.AUTHENTICATED)
+	@PostMapping("/manual")
+	public ResponseEntity<BlockResponse> createBlockManually(
+		@PathVariable String planId,
+		@RequestBody @Valid BlockManualCreateRequest request,
 		@AuthenticationPrincipal UserPrincipal user
 	) {
 		BlockResponse response = blockService.createBlock(planId, request, user);
