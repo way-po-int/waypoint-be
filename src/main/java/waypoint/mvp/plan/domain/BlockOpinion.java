@@ -2,6 +2,7 @@ package waypoint.mvp.plan.domain;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -16,6 +17,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -23,7 +25,10 @@ import lombok.NoArgsConstructor;
 import waypoint.mvp.global.common.ExternalIdEntity;
 
 @Entity
-@Table(name = "place_block_opinions")
+@Table(
+	name = "place_block_opinions",
+	uniqueConstraints = @UniqueConstraint(columnNames = {"block_id", "added_by_id"})
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class BlockOpinion extends ExternalIdEntity {
@@ -70,8 +75,8 @@ public class BlockOpinion extends ExternalIdEntity {
 			.block(block)
 			.addedBy(addedBy)
 			.type(type)
-			.comment(comment)
-			.opinionTagIds(opinionTagIds)
+			.comment(Objects.requireNonNullElse(comment, ""))
+			.opinionTagIds(Objects.requireNonNullElse(opinionTagIds, List.of()))
 			.build();
 	}
 }
