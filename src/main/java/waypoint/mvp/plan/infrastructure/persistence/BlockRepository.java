@@ -22,10 +22,11 @@ public interface BlockRepository extends JpaRepository<Block, Long> {
 
 	@Query("SELECT b FROM Block b "
 		+ "JOIN FETCH b.timeBlock tb "
-		+ "JOIN FETCH tb.planDay "
+		+ "JOIN FETCH tb.planDay pd "
+		+ "JOIN FETCH pd.plan "
 		+ "LEFT JOIN FETCH b.place "
 		+ "LEFT JOIN FETCH b.socialMedia "
-		+ "WHERE b.externalId = :blockId AND tb.planDay.plan.id = :planId")
+		+ "WHERE b.externalId = :blockId AND pd.plan.id = :planId")
 	Optional<Block> findByExternalId(@Param("planId") Long planId, @Param("blockId") String blockId);
 
 }
