@@ -57,6 +57,9 @@ public class PlanService {
 	@Value("${waypoint.invitation.expiration-hours}")
 	private long invitationExpirationHours;
 
+	@Value("${waypoint.sharelink.base-url}")
+	private String shareLinkBaseUrl;
+
 	@Transactional
 	public PlanResponse createPlan(PlanCreateRequest request, UserPrincipal user) {
 		Plan plan = Plan.create(request.title(), request.startDate(), request.endDate());
@@ -191,7 +194,8 @@ public class PlanService {
 
 		shareLinkRepository.save(shareLink);
 
-		return ShareLinkResponse.from(shareLink);
+		String url = buildShareLinkUrl(shareLink.getCode());
+		return ShareLinkResponse.from(shareLink, url);
 	}
 
 	@Transactional
@@ -259,5 +263,13 @@ public class PlanService {
 			.orElse("");
 
 		return PlanResponse.from(plan, thumbnail, collectionCount);
+	}
+
+	private String buildShareLinkUrl(String code) {
+		String baseUrl = shareLinkBaseUrl.endsWith("/")
+			? shareLinkBaseUrl.substring(0, shareLinkBaseUrl.length() - 1)
+			: shareLinkBaseUrl;
+
+		return baseUrl + "/" + code;
 	}
 }

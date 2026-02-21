@@ -9,13 +9,12 @@ public record ShareLinkResponse(
 	String url,
 	String ttl
 ) {
-	private static final String INVITE_PATH_PREFIX = "/invite/";
 
-	public static ShareLinkResponse from(ShareLink shareLink) {
+	public static ShareLinkResponse from(ShareLink shareLink, String url) {
 		return new ShareLinkResponse(
 			shareLink.getTargetType(),
 			shareLink.getTargetExternalId(),
-			INVITE_PATH_PREFIX + shareLink.getCode(),
+			url,
 			shareLink.getExpiresAt().toString()
 		);
 	}
