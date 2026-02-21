@@ -16,6 +16,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import waypoint.mvp.global.common.ExternalIdEntity;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.plan.error.ExpenseError;
 
@@ -23,7 +24,7 @@ import waypoint.mvp.plan.error.ExpenseError;
 @Table(name = "expense_items")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class ExpenseItem {
+public class ExpenseItem extends ExternalIdEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
