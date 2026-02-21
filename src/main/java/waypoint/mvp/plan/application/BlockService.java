@@ -94,17 +94,40 @@ public class BlockService {
 		List<Block> existingBlocks = blockRepository.findAllByTimeBlockIds(planId, List.of(timeBlock.getId()));
 		existingBlocks.stream().filter(Block::isSelected).forEach(Block::unselect);
 
-		List<CollectionPlace> collectionPlaces = collectionPlaceQueryService.getCollectionPlaces(
-			request.collectionPlaceIds());
-		planCollectionService.verifyPlacesLinkedToPlan(planId, collectionPlaces);
-
-		List<Block> newBlocks = collectionPlaces.stream()
-			.map(cp -> Block.create(cp.getPlace(), cp.getSocialMedia(), timeBlock, null, addedBy))
-			.toList();
+		List<Block> newBlocks = createCandidateBlocks(planId, request, timeBlock, addedBy);
 		blockRepository.saveAll(newBlocks);
 
 		List<Block> allBlocks = blockRepository.findAllByTimeBlockIds(planId, List.of(timeBlock.getId()));
 		return blockQueryService.toBlockResponse(timeBlock, allBlocks, user.getId());
+	}
+
+	private List<Block> createCandidateBlocks(Long planId, CandidateBlockCreateRequest request, TimeBlock timeBlock,
+		PlanMember addedBy) {
+		boolean hasCollectionPlaceIds = request.collectionPlaceIds() != null && !request.collectionPlaceIds().isEmpty();
+
+		if (hasCollectionPlaceIds) {
+			return createBlocksFromCollectionPlaces(planId, request.collectionPlaceIds(), timeBlock, addedBy);
+		}
+
+		return createBlocksFromPlaces(request.placeIds(), timeBlock, addedBy);
+	}
+
+	private List<Block> createBlocksFromCollectionPlaces(Long planId, List<String> collectionPlaceIds,
+		TimeBlock timeBlock, PlanMember addedBy) {
+		List<CollectionPlace> collectionPlaces = collectionPlaceQueryService.getCollectionPlaces(collectionPlaceIds);
+		planCollectionService.verifyPlacesLinkedToPlan(planId, collectionPlaces);
+
+		return collectionPlaces.stream()
+			.map(cp -> Block.create(cp.getPlace(), cp.getSocialMedia(), timeBlock, null, addedBy))
+			.toList();
+	}
+
+	private List<Block> createBlocksFromPlaces(List<String> placeIds, TimeBlock timeBlock, PlanMember addedBy) {
+		List<Place> places = placeService.getByIds(placeIds);
+
+		return places.stream()
+			.map(place -> Block.create(place, null, timeBlock, null, addedBy))
+			.toList();
 	}
 
 	private TimeBlock saveTimeBlock(PlanDay planDay, LocalTime startTime, LocalTime endTime, TimeBlockType type) {
