@@ -4,9 +4,12 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -26,6 +29,10 @@ public class Budget extends ExternalIdEntity {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
+	@OneToOne(fetch = FetchType.LAZY)
+	@JoinColumn(unique = true, nullable = false)
+	private Plan plan;
+
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
 	private BudgetType type;
@@ -37,14 +44,16 @@ public class Budget extends ExternalIdEntity {
 	private Integer travelerCount;
 
 	@Builder(access = AccessLevel.PRIVATE)
-	private Budget(BudgetType type, Long totalBudget, Integer travelerCount) {
+	private Budget(Plan plan, BudgetType type, Long totalBudget, Integer travelerCount) {
+		this.plan = plan;
 		this.type = type;
 		this.totalBudget = totalBudget;
 		this.travelerCount = travelerCount;
 	}
 
-	public static Budget create() {
+	public static Budget create(Plan plan) {
 		return builder()
+			.plan(plan)
 			.type(BudgetType.BUDGET)
 			.totalBudget(0L)
 			.build();

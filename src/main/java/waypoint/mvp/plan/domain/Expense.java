@@ -19,12 +19,13 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import waypoint.mvp.global.common.ExternalIdEntity;
 
 @Entity
 @Table(name = "expenses")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Expense {
+public class Expense extends ExternalIdEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,7 +41,7 @@ public class Expense {
 	private PlanDay planDay;
 
 	@OneToOne(fetch = FetchType.LAZY)
-	@JoinColumn
+	@JoinColumn(unique = true)
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Block block;
 
