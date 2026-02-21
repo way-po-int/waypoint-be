@@ -47,6 +47,7 @@ public class PlanService {
 	private final UserFinder userFinder;
 	private final PlanMemberService planMemberService;
 	private final PlanDayService planDayService;
+	private final BudgetService budgetService;
 	private final ResourceAuthorizer planAuthorizer;
 
 	@Value("${waypoint.invitation.expiration-hours}")
@@ -58,6 +59,7 @@ public class PlanService {
 		Plan savedPlan = planRepository.save(plan);
 
 		planDayService.initPlanDays(savedPlan);
+		budgetService.createBudget(savedPlan);
 
 		eventPublisher.publishEvent(
 			PlanCreateEvent.of(savedPlan.getId(), user)
@@ -109,7 +111,7 @@ public class PlanService {
 		);
 
 		// 1. 경고가 있고, 실제로 영향을 받는 날짜(일정이 있는 날)가 존재할 때만 컨펌 요구
-		if (syncResult.hasWarnings()){
+		if (syncResult.hasWarnings()) {
 			return PlanUpdateResponse.confirmRequired(syncResult.affectedDays());
 		}
 
