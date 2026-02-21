@@ -22,6 +22,7 @@ import waypoint.mvp.collection.application.dto.response.CollectionResponse;
 import waypoint.mvp.collection.domain.Collection;
 import waypoint.mvp.collection.domain.CollectionMember;
 import waypoint.mvp.collection.domain.CollectionRole;
+import waypoint.mvp.collection.domain.CollectionSortType;
 import waypoint.mvp.collection.domain.event.CollectionCreatedEvent;
 import waypoint.mvp.collection.error.CollectionError;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionPlaceRepository;
@@ -51,6 +52,8 @@ public class CollectionService {
 
 	@Value("${waypoint.invitation.expiration-hours}")
 	private long invitationExpirationHours;
+	@Value("${waypoint.sharelink.base-url}")
+	private String shareLinkBaseUrl;
 
 	@Transactional
 	public CollectionResponse createCollection(CollectionCreateRequest request, UserPrincipal user) {
@@ -76,8 +79,15 @@ public class CollectionService {
 		return collectionRepository.findAllByExternalIdIn(externalIds);
 	}
 
-	public SliceResponse<CollectionResponse> findCollections(UserPrincipal user, Pageable pageable) {
-		Slice<Collection> collectionsSlice = collectionRepository.findAllByUserId(user.id(), pageable);
+	public SliceResponse<CollectionResponse> findCollections(
+		UserPrincipal user,
+		CollectionSortType sortType,
+		Pageable pageable
+	) {
+		Slice<Collection> collectionsSlice = switch (sortType) {
+			case LATEST -> collectionRepository.findAllByUserIdOrderByAddedLatest(user.id(), pageable);
+			case OLDEST -> collectionRepository.findAllByUserIdOrderByAddedOldest(user.id(), pageable);
+		};
 
 		List<Long> collectionIds = collectionsSlice.getContent().stream()
 			.map(Collection::getId)
@@ -89,7 +99,7 @@ public class CollectionService {
 
 		Map<Long, Integer> placeCounts = collectionPlaceRepository.countPlacesByCollectionIds(collectionIds).stream()
 			.collect(java.util.stream.Collectors.toMap(
-				row -> (Long)row[0],
+				row -> ((Number)row[0]).longValue(),
 				row -> ((Number)row[1]).intValue()
 			));
 
@@ -198,7 +208,8 @@ public class CollectionService {
 
 		shareLinkRepository.save(shareLink);
 
-		return ShareLinkResponse.from(shareLink);
+		String url = buildShareLinkUrl(shareLink.getCode());
+		return ShareLinkResponse.from(shareLink, url);
 	}
 
 	@Transactional
@@ -219,6 +230,14 @@ public class CollectionService {
 	private CollectionResponse toCollectionResponse(Collection collection) {
 		long placeCount = collectionPlaceRepository.countByCollectionId(collection.getId());
 		return CollectionResponse.from(collection, (int)placeCount);
+	}
+
+	private String buildShareLinkUrl(String code) {
+		String baseUrl = shareLinkBaseUrl.endsWith("/")
+			? shareLinkBaseUrl.substring(0, shareLinkBaseUrl.length() - 1)
+			: shareLinkBaseUrl;
+
+		return baseUrl + "/" + code;
 	}
 
 }

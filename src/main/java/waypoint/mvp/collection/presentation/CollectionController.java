@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
@@ -25,6 +26,7 @@ import waypoint.mvp.collection.application.dto.request.CollectionCreateRequest;
 import waypoint.mvp.collection.application.dto.request.CollectionUpdateRequest;
 import waypoint.mvp.collection.application.dto.response.CollectionMemberGroupResponse;
 import waypoint.mvp.collection.application.dto.response.CollectionResponse;
+import waypoint.mvp.collection.domain.CollectionSortType;
 import waypoint.mvp.global.auth.annotations.AuthLevel;
 import waypoint.mvp.global.auth.annotations.Authorize;
 import waypoint.mvp.global.common.SliceResponse;
@@ -53,9 +55,10 @@ public class CollectionController {
 	@GetMapping
 	public ResponseEntity<SliceResponse<CollectionResponse>> findCollections(
 		@AuthenticationPrincipal UserPrincipal user,
+		@RequestParam(defaultValue = "LATEST") CollectionSortType sortType,
 		Pageable pageable
 	) {
-		SliceResponse<CollectionResponse> collections = collectionService.findCollections(user, pageable);
+		SliceResponse<CollectionResponse> collections = collectionService.findCollections(user, sortType, pageable);
 
 		return ResponseEntity.ok(collections);
 	}
