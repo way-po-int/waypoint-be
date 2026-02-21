@@ -153,7 +153,7 @@ class BlockServiceTest {
 	}
 
 	private BlockResponse addCandidates(String timeBlockExternalId, List<String> collectionPlaceIds) {
-		CandidateBlockCreateRequest request = new CandidateBlockCreateRequest(collectionPlaceIds);
+		CandidateBlockCreateRequest request = CandidateBlockCreateRequest.createCollectionPlaceIds(collectionPlaceIds);
 		return blockService.addCandidates(
 			plan.getExternalId(), timeBlockExternalId, request, userPrincipal);
 	}

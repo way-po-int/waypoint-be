@@ -1,5 +1,6 @@
 package waypoint.mvp.place.application;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -28,6 +29,10 @@ public class PlaceService {
 	public Place getById(String placeId) {
 		return placeRepository.findByExternalId(placeId)
 			.orElseThrow(() -> new BusinessException(PlaceError.PLACE_NOT_FOUND));
+	}
+
+	public List<Place> getByIds(List<String> placeIds) {
+		return placeRepository.findAllByExternalIdIn(placeIds);
 	}
 
 	public Optional<Place> getPlace(String googlePlaceId) {
