@@ -11,7 +11,8 @@ import waypoint.mvp.plan.domain.BlockOpinion;
 public interface BlockOpinionRepository extends JpaRepository<BlockOpinion, Long> {
 
 	@Query("SELECT bo FROM BlockOpinion bo "
-		+ "JOIN FETCH bo.block "
+		+ "JOIN FETCH bo.addedBy "
+		+ "LEFT JOIN FETCH bo.opinionTagIds "
 		+ "JOIN FETCH bo.addedBy "
 		+ "WHERE bo.block.id IN :blockIds")
 	List<BlockOpinion> findAllByBlockIds(@Param("blockIds") List<Long> blockIds);
