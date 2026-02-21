@@ -51,6 +51,7 @@ public class PlanService {
 	private final UserFinder userFinder;
 	private final PlanMemberService planMemberService;
 	private final PlanDayService planDayService;
+	private final BudgetService budgetService;
 	private final ResourceAuthorizer planAuthorizer;
 	private final PlanCollectionRepository planCollectionRepository;
 
@@ -66,6 +67,7 @@ public class PlanService {
 		Plan savedPlan = planRepository.save(plan);
 
 		planDayService.initPlanDays(savedPlan);
+		budgetService.createBudget(savedPlan);
 
 		eventPublisher.publishEvent(
 			PlanCreateEvent.of(savedPlan.getId(), user)
