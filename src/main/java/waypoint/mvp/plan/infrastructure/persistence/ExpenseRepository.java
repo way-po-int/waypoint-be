@@ -1,5 +1,6 @@
 package waypoint.mvp.plan.infrastructure.persistence;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -24,4 +25,7 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
 	@Query("SELECT MIN(e.rank) FROM Expense e WHERE e.timeBlock.id = :timeBlockId AND e.rank > :prevRank")
 	Long findNextRank(@Param("timeBlockId") Long timeBlockId, @Param("prevRank") Long prevRank);
+
+	@Query("SELECT e FROM Expense e WHERE e.timeBlock.id = :timeBlockId ORDER BY e.rank ASC")
+	List<Expense> findByTimeBlockId(Long timeBlockId);
 }

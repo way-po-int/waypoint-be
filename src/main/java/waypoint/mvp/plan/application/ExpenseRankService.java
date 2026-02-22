@@ -1,5 +1,7 @@
 package waypoint.mvp.plan.application;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,8 +29,24 @@ public class ExpenseRankService {
 			return prevExpense.getRank() + RANK_INCREMENT;
 		}
 
+		// 중간에 추가할 수 없다면 재정렬
+		if (nextRank - prevExpense.getRank() <= 1) {
+			rebalance(timeBlock.getId());
+			nextRank = prevExpense.getRank() + RANK_INCREMENT;
+		}
+
 		// 마지막이 아니라면 중간에 추가
 		return generateBetweenRanks(prevExpense.getRank(), nextRank);
+	}
+
+	public void rebalance(Long timeBlockId) {
+		List<Expense> expenses = expenseRepository.findByTimeBlockId(timeBlockId);
+
+		long rank = RANK_INCREMENT;
+		for (Expense expense : expenses) {
+			expense.updateRank(rank);
+			rank += RANK_INCREMENT;
+		}
 	}
 
 	private Long generateBetweenRanks(Long prevRank, Long nextRank) {
