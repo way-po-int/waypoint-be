@@ -35,54 +35,47 @@ public class Expense extends ExternalIdEntity {
 	@JoinColumn(nullable = false)
 	private Budget budget;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(nullable = false)
-	@OnDelete(action = OnDeleteAction.CASCADE)
-	private PlanDay planDay;
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	private ExpenseType type;
 
 	@OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(unique = true)
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Block block;
 
-	@Enumerated(EnumType.STRING)
-	@Column(nullable = false)
-	private ExpenseType type;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	private TimeBlock timeBlock;
 
-	@Column(nullable = false)
+	@Column
 	private Long rank;
 
 	@Builder(access = AccessLevel.PRIVATE)
-	private Expense(Budget budget, PlanDay planDay, Block block, ExpenseType type, Long rank) {
+	private Expense(Budget budget, ExpenseType type, Block block, TimeBlock timeBlock, Long rank) {
 		this.budget = budget;
-		this.planDay = planDay;
 		this.block = block;
+		this.timeBlock = timeBlock;
 		this.type = type;
 		this.rank = rank;
 	}
 
-	public static Expense createAdditional(Budget budget, PlanDay planDay, Long rank) {
+	public static Expense createAdditional(Budget budget, TimeBlock timeBlock, Long rank) {
 		return builder()
 			.budget(budget)
-			.planDay(planDay)
 			.type(ExpenseType.ADDITIONAL)
+			.timeBlock(timeBlock)
 			.rank(rank)
 			.build();
 	}
 
-	public static Expense createBlock(Budget budget, PlanDay planDay, Block block, Long rank) {
+	public static Expense createBlock(Budget budget, Block block) {
 		return builder()
 			.budget(budget)
-			.planDay(planDay)
-			.block(block)
 			.type(ExpenseType.BLOCK)
-			.rank(rank)
+			.block(block)
 			.build();
-	}
-
-	public void updateDay(PlanDay planDay, Long rank) {
-		this.planDay = planDay;
-		updateRank(rank);
 	}
 
 	public void updateRank(Long rank) {
