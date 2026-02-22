@@ -53,6 +53,7 @@ public class BlockService {
 	private final PlanCollectionService planCollectionService;
 	private final CollectionPlaceQueryService collectionPlaceQueryService;
 	private final PlaceService placeService;
+	private final ExpenseService expenseService;
 
 	@Transactional
 	public BlockResponse createBlock(String planExternalId, BlockCreateRequest request, UserPrincipal user) {
@@ -96,6 +97,7 @@ public class BlockService {
 
 		List<Block> newBlocks = createCandidateBlocks(planId, request, timeBlock, addedBy);
 		blockRepository.saveAll(newBlocks);
+		expenseService.createBlockExpenses(planId, newBlocks);
 
 		List<Block> allBlocks = blockRepository.findAllByTimeBlockIds(planId, List.of(timeBlock.getId()));
 		return blockQueryService.toBlockResponse(timeBlock, allBlocks, user.getId());
@@ -143,14 +145,15 @@ public class BlockService {
 	}
 
 	private Block createPlaceBlock(Long planId, BlockCreateCommand command, TimeBlock timeBlock, PlanMember addedBy) {
-		return switch (command.createType()) {
+		Block block = switch (command.createType()) {
 			case COLLECT_PLACE -> createBlockFromCollectionPlace(planId, timeBlock, command, addedBy);
 
 			case PLACE -> createBlockFromPlace(timeBlock, command, addedBy);
 
 			case MANUAL -> throw new IllegalStateException("MANUAL은 아직 사용하지 못 합니다.");
 		};
-
+		expenseService.createBlockExpense(planId, block);
+		return block;
 	}
 
 	private Block createBlockFromCollectionPlace(Long planId, TimeBlock timeBlock, BlockCreateCommand command,
