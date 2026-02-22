@@ -1,22 +1,28 @@
 package waypoint.mvp.plan.presentation;
 
 import java.net.URI;
+import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.global.auth.annotations.AuthLevel;
 import waypoint.mvp.global.auth.annotations.Authorize;
 import waypoint.mvp.plan.application.BlockOpinionService;
 import waypoint.mvp.plan.application.dto.request.BlockOpinionCreateRequest;
+import waypoint.mvp.plan.application.dto.request.BlockOpinionUpdateRequest;
 import waypoint.mvp.plan.application.dto.response.BlockOpinionResponse;
 
 @RestController
@@ -38,5 +44,53 @@ public class BlockOpinionController {
 
 		URI location = URI.create("/plans/" + planId + "/blocks/" + blockId + "/opinions/" + response.opinionId());
 		return ResponseEntity.created(location).body(response);
+	}
+
+	@Authorize(level = AuthLevel.GUEST_OR_MEMBER)
+	@GetMapping
+	public ResponseEntity<List<BlockOpinionResponse>> findOpinions(
+		@PathVariable String planId,
+		@PathVariable String blockId,
+		@AuthenticationPrincipal AuthPrincipal user
+	) {
+		List<BlockOpinionResponse> responses = blockOpinionService.findOpinions(planId, blockId, user);
+		return ResponseEntity.ok(responses);
+	}
+
+	@Authorize(level = AuthLevel.GUEST_OR_MEMBER)
+	@GetMapping("/{opinionId}")
+	public ResponseEntity<BlockOpinionResponse> findOpinion(
+		@PathVariable String planId,
+		@PathVariable String blockId,
+		@PathVariable String opinionId,
+		@AuthenticationPrincipal AuthPrincipal user
+	) {
+		BlockOpinionResponse response = blockOpinionService.findOpinion(planId, blockId, opinionId, user);
+		return ResponseEntity.ok(response);
+	}
+
+	@Authorize(level = AuthLevel.AUTHENTICATED)
+	@PutMapping("/{opinionId}")
+	public ResponseEntity<BlockOpinionResponse> updateOpinion(
+		@PathVariable String planId,
+		@PathVariable String blockId,
+		@PathVariable String opinionId,
+		@RequestBody @Valid BlockOpinionUpdateRequest request,
+		@AuthenticationPrincipal UserPrincipal user
+	) {
+		BlockOpinionResponse response = blockOpinionService.updateOpinion(planId, blockId, opinionId, request, user);
+		return ResponseEntity.ok(response);
+	}
+
+	@Authorize(level = AuthLevel.AUTHENTICATED)
+	@DeleteMapping("/{opinionId}")
+	public ResponseEntity<Void> deleteOpinion(
+		@PathVariable String planId,
+		@PathVariable String blockId,
+		@PathVariable String opinionId,
+		@AuthenticationPrincipal UserPrincipal user
+	) {
+		blockOpinionService.deleteOpinion(planId, blockId, opinionId, user);
+		return ResponseEntity.noContent().build();
 	}
 }
