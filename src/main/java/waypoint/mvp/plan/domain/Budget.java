@@ -1,5 +1,7 @@
 package waypoint.mvp.plan.domain;
 
+import java.util.Objects;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -73,11 +75,16 @@ public class Budget extends ExternalIdEntity {
 		this.travelerCount = travelerCount;
 	}
 
-	public Long getCostPerPerson() {
-		if (travelerCount == null) {
-			return totalBudget;
-		}
-		return Math.round((double)totalBudget / travelerCount);
+	public Integer getTravelerCount() {
+		return Objects.requireNonNullElse(this.travelerCount, plan.getMemberCount());
+	}
+
+	public Long getCostPerPerson(long totalSpent) {
+		long baseAmount = this.type == BudgetType.BUDGET
+			? this.totalBudget
+			: totalSpent;
+
+		return Math.round((double)baseAmount / getTravelerCount());
 	}
 
 	private void validateTotalBudget(Long totalBudget) {
