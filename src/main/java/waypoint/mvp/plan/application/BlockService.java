@@ -270,4 +270,19 @@ public class BlockService {
 		return blockQueryService.getBlocksByTimeBlock(planId, timeBlock);
 	}
 
+	@Transactional
+	public void deleteTimeBlock(String planExternalId, String timeBlockId, UserPrincipal user) {
+		Plan plan = getPlanAuthor(planExternalId, user);
+		Long planId = plan.getId();
+
+		TimeBlock timeBlock = blockQueryService.getTimeBlock(planId, timeBlockId);
+
+		List<Block> relatedBlocks = blockRepository.findAllByTimeBlockIds(planId, List.of(timeBlock.getId()));
+		if (!relatedBlocks.isEmpty()) { // 영속성 컨텍스트의 Block 삭제
+			blockRepository.deleteAll(relatedBlocks);
+		}
+
+		timeBlockRepository.delete(timeBlock);
+	}
+
 }
