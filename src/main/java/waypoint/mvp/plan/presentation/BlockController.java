@@ -145,4 +145,17 @@ public class BlockController {
 
 		return ResponseEntity.noContent().build();
 	}
+
+	@Authorize(level = AuthLevel.AUTHENTICATED)
+	@DeleteMapping("/{timeBlockId}/candidates/{blockId}")
+	public ResponseEntity<Void> deleteBlock(
+		@PathVariable String planId,
+		@PathVariable String timeBlockId,
+		@PathVariable String blockId,
+		@AuthenticationPrincipal UserPrincipal user
+	) {
+		blockService.deleteBlock(planId, timeBlockId, blockId, user);
+
+		return ResponseEntity.noContent().build();
+	}
 }

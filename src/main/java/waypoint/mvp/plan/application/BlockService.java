@@ -285,4 +285,20 @@ public class BlockService {
 		timeBlockRepository.delete(timeBlock);
 	}
 
+	@Transactional
+	public void deleteBlock(String planExternalId, String timeBlockId, String blockId, UserPrincipal user) {
+		Plan plan = getPlanAuthor(planExternalId, user);
+		Long planId = plan.getId();
+
+		TimeBlock timeBlock = blockQueryService.getTimeBlock(planId, timeBlockId);
+		long blockCount = blockRepository.countByTimeBlockId(planId, timeBlock.getId());
+
+		Block targetBlock = blockQueryService.getBlock(planId, blockId);
+		blockRepository.delete(targetBlock);
+
+		if (blockCount <= 1) {  // TimeBlock에 Block이 1개라면 Time과 Block 모두 삭제
+			timeBlockRepository.delete(timeBlock);
+		}
+	}
+
 }
