@@ -277,11 +277,6 @@ public class BlockService {
 
 		TimeBlock timeBlock = blockQueryService.getTimeBlock(planId, timeBlockId);
 
-		List<Block> relatedBlocks = blockRepository.findAllByTimeBlockIds(planId, List.of(timeBlock.getId()));
-		if (!relatedBlocks.isEmpty()) { // 영속성 컨텍스트의 Block 삭제
-			blockRepository.deleteAll(relatedBlocks);
-		}
-
 		timeBlockRepository.delete(timeBlock);
 	}
 
@@ -291,12 +286,15 @@ public class BlockService {
 		Long planId = plan.getId();
 
 		TimeBlock timeBlock = blockQueryService.getTimeBlock(planId, timeBlockId);
-		long blockCount = blockRepository.countByTimeBlockId(planId, timeBlock.getId());
-
 		Block targetBlock = blockQueryService.getBlock(planId, blockId);
-		blockRepository.delete(targetBlock);
 
-		if (blockCount <= 1) {  // TimeBlock에 Block이 1개라면 Time과 Block 모두 삭제
+		blockRepository.delete(targetBlock);
+		blockRepository.flush();
+
+		// 삭제 후 남은 Block 개수를 다시 조회
+		long remainingBlockCount = blockRepository.countByTimeBlockId(planId, timeBlock.getId());
+
+		if (remainingBlockCount == 0) {
 			timeBlockRepository.delete(timeBlock);
 		}
 	}
