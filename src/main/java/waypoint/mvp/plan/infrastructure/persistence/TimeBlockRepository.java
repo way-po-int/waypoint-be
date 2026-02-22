@@ -18,5 +18,5 @@ public interface TimeBlockRepository extends JpaRepository<TimeBlock, Long> {
 	@Query("SELECT tb FROM TimeBlock tb "
 		+ "JOIN FETCH tb.planDay "
 		+ "WHERE tb.externalId = :externalId AND tb.planDay.plan.id = :planId")
-	Optional<TimeBlock> findByPlanId(@Param("planId") Long planId, @Param("externalId") String externalId);
+	Optional<TimeBlock> findByExternalId(@Param("planId") Long planId, @Param("externalId") String externalId);
 }

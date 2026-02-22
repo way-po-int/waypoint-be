@@ -173,7 +173,7 @@ class BlockServiceTest {
 	// -- DB Helpers --
 
 	private List<Block> findBlocksByTimeBlockExternalId(String timeBlockExternalId) {
-		Long timeBlockId = timeBlockRepository.findByPlanId(plan.getId(), timeBlockExternalId)
+		Long timeBlockId = timeBlockRepository.findByExternalId(plan.getId(), timeBlockExternalId)
 			.orElseThrow()
 			.getId();
 		return blockRepository.findAllByTimeBlockIds(plan.getId(), List.of(timeBlockId));
