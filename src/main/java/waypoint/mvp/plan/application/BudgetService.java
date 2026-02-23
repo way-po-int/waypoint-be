@@ -5,7 +5,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.AuthPrincipal;
+import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
+import waypoint.mvp.plan.application.dto.request.BudgetUpdateRequest;
 import waypoint.mvp.plan.application.dto.response.BudgetResponse;
 import waypoint.mvp.plan.domain.Budget;
 import waypoint.mvp.plan.domain.Plan;
@@ -32,6 +34,17 @@ public class BudgetService {
 	public BudgetResponse findBudget(String planExternalId, AuthPrincipal user) {
 		Budget budget = budgetQueryService.getBudget(planExternalId);
 		planAuthorizer.verifyAccess(user, budget.getPlan().getId());
+
+		long totalCost = getTotalCost(budget.getId());
+		return BudgetResponse.of(budget, totalCost);
+	}
+
+	@Transactional
+	public BudgetResponse updateBudget(String planExternalId, BudgetUpdateRequest request, UserPrincipal user) {
+		Budget budget = budgetQueryService.getBudget(planExternalId);
+		planAuthorizer.verifyMember(user, budget.getPlan().getId());
+
+		budget.update(request.type(), request.totalBudget(), request.travelerCount());
 
 		long totalCost = getTotalCost(budget.getId());
 		return BudgetResponse.of(budget, totalCost);
