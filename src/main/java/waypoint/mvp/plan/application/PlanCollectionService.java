@@ -1,5 +1,6 @@
 package waypoint.mvp.plan.application;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -45,26 +46,53 @@ public class PlanCollectionService {
 	 * plan에 collection추가는 collection의 멤버만 추가할 수 있다.
 	 * */
 	@Transactional
-	public PlanCollectionResponse createPlanCollection(
+	public List<PlanCollectionResponse> createPlanCollection(
 		String planExternalId,
 		CreatePlanCollectionRequest request,
 		UserPrincipal user
 	) {
+		Plan plan = planService.getPlan(planExternalId);
+		planAuthorizer.verifyMember(user, plan.getId());
 
-		if (planCollectionRepository.existsByPlanIdAndCollectionId(planExternalId, request.collectionId())) {
+		PlanMember member = planMemberService.findMemberByUserId(plan.getId(), user.getId());
+
+		List<String> collectionExternalIds = request.collectionIds().stream()
+			.distinct()
+			.toList();
+
+		List<String> existing = planCollectionRepository.findExistingCollectionExternalIds(
+			planExternalId, collectionExternalIds
+		);
+		if (!existing.isEmpty()) {
 			throw new BusinessException(PlanCollectionError.PLAN_COLLECTION_ALREADY_EXISTS);
 		}
 
-		Plan plan = planService.getPlan(planExternalId);
-		Collection collection = collectionService.getCollection(request.collectionId());
+		List<Collection> collections = collectionService.getCollections(collectionExternalIds);
 
-		planAuthorizer.verifyMember(user, plan.getId());
-		collectionAuthorizer.verifyMember(user, collection.getId());
+		if (collections.size() != collectionExternalIds.size()) {
+			throw new BusinessException(PlanCollectionError.PLAN_COLLECTION_NOT_FOUND);
+		}
 
-		PlanMember member = planMemberService.findMemberByUserId(plan.getId(), user.getId());
-		PlanCollection planCollection = PlanCollection.create(plan, collection, member);
+		java.util.Map<String, Collection> byExternalId = collections.stream()
+			.collect(java.util.stream.Collectors.toMap(
+				Collection::getExternalId,
+				c -> c
+			));
 
-		return PlanCollectionResponse.from(planCollectionRepository.save(planCollection));
+		List<PlanCollection> entities = new ArrayList<>(collectionExternalIds.size());
+		for (String collectionExternalId : collectionExternalIds) {
+			Collection collection = byExternalId.get(collectionExternalId);
+
+			collectionAuthorizer.verifyMember(user, collection.getId());
+
+			entities.add(PlanCollection.create(plan, collection, member));
+		}
+
+		List<PlanCollection> saved = planCollectionRepository.saveAll(entities);
+
+		return saved.stream()
+			.map(PlanCollectionResponse::from)
+			.toList();
 	}
 
 	public PlanCollection getPlanCollection(String planId, String collectionId) {

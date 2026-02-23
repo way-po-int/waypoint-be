@@ -1,5 +1,6 @@
 package waypoint.mvp.collection.infrastructure.persistence;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Pageable;
@@ -19,7 +20,19 @@ public interface CollectionRepository extends JpaRepository<Collection, Long> {
 
 	Optional<Collection> findByExternalId(String externalId);
 
+	List<Collection> findAllByExternalIdIn(List<String> externalIds);
+
 	@Modifying
 	@Query("UPDATE Collection c SET c.thumbnail = :url WHERE c.id = :id AND (c.thumbnail IS NULL OR c.thumbnail = '')")
 	int updateThumbnailIfBlank(@Param("id") Long id, @Param("url") String url);
+
+	@Query("SELECT c FROM CollectionMember cm JOIN cm.collection c "
+		+ "WHERE cm.user.id = :userId "
+		+ "ORDER BY cm.createdAt DESC")
+	Slice<Collection> findAllByUserIdOrderByAddedLatest(@Param("userId") Long userId, Pageable pageable);
+
+	@Query("SELECT c FROM CollectionMember cm JOIN cm.collection c "
+		+ "WHERE cm.user.id = :userId "
+		+ "ORDER BY cm.createdAt ASC")
+	Slice<Collection> findAllByUserIdOrderByAddedOldest(@Param("userId") Long userId, Pageable pageable);
 }

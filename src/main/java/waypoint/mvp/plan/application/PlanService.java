@@ -2,6 +2,8 @@ package waypoint.mvp.plan.application;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
@@ -24,10 +26,12 @@ import waypoint.mvp.plan.application.dto.response.PlanMemberResponse;
 import waypoint.mvp.plan.application.dto.response.PlanResponse;
 import waypoint.mvp.plan.application.dto.response.PlanUpdateResponse;
 import waypoint.mvp.plan.domain.Plan;
+import waypoint.mvp.plan.domain.PlanCollection;
 import waypoint.mvp.plan.domain.PlanMember;
 import waypoint.mvp.plan.domain.PlanRole;
 import waypoint.mvp.plan.domain.event.PlanCreateEvent;
 import waypoint.mvp.plan.error.PlanError;
+import waypoint.mvp.plan.infrastructure.persistence.PlanCollectionRepository;
 import waypoint.mvp.plan.infrastructure.persistence.PlanRepository;
 import waypoint.mvp.sharelink.application.dto.response.ShareLinkResponse;
 import waypoint.mvp.sharelink.domain.ShareLink;
@@ -48,9 +52,13 @@ public class PlanService {
 	private final PlanMemberService planMemberService;
 	private final PlanDayService planDayService;
 	private final ResourceAuthorizer planAuthorizer;
+	private final PlanCollectionRepository planCollectionRepository;
 
 	@Value("${waypoint.invitation.expiration-hours}")
 	private long invitationExpirationHours;
+
+	@Value("${waypoint.sharelink.base-url}")
+	private String shareLinkBaseUrl;
 
 	@Transactional
 	public PlanResponse createPlan(PlanCreateRequest request, UserPrincipal user) {
@@ -63,7 +71,7 @@ public class PlanService {
 			PlanCreateEvent.of(savedPlan.getId(), user)
 		);
 
-		return PlanResponse.from(savedPlan);
+		return PlanResponse.from(savedPlan, "", 0);
 	}
 
 	public Plan getPlan(Long planId) {
@@ -77,24 +85,41 @@ public class PlanService {
 	}
 
 	public SliceResponse<PlanResponse> findPlans(UserPrincipal user, Pageable pageable) {
-		Slice<PlanResponse> plans = planRepository.findAllByUserId(user.id(), pageable)
-			.map(PlanResponse::from);
+		Slice<Plan> plansSlice = planRepository.findAllByUserId(user.id(), pageable);
 
-		return SliceResponse.from(plans);
+		List<String> planExternalIds = plansSlice.getContent().stream()
+			.map(Plan::getExternalId)
+			.toList();
+
+		if (planExternalIds.isEmpty()) {
+			return SliceResponse.from(plansSlice.map(p -> PlanResponse.from(p, "", 0)));
+		}
+
+		List<PlanCollection> pcs = planCollectionRepository.findAllByPlanExternalIdIn(planExternalIds);
+
+		Map<String, List<PlanCollection>> pcsByPlanExternalId = pcs.stream()
+			.collect(java.util.stream.Collectors.groupingBy(pc -> pc.getPlan().getExternalId()));
+
+		Slice<PlanResponse> responses = plansSlice.map(plan -> {
+			List<PlanCollection> planPcs = pcsByPlanExternalId.getOrDefault(plan.getExternalId(), List.of());
+			return toPlanResponse(plan, planPcs);
+		});
+
+		return SliceResponse.from(responses);
 	}
 
 	public PlanResponse findPlanById(Long planId, AuthPrincipal user) {
 		Plan plan = getPlan(planId);
 		planAuthorizer.verifyAccess(user, plan.getId());
 
-		return PlanResponse.from(plan);
+		return toPlanResponse(plan);
 	}
 
 	public PlanResponse findPlanByExternalId(String externalId, AuthPrincipal user) {
 		Plan plan = getPlan(externalId);
 		planAuthorizer.verifyAccess(user, plan.getId());
 
-		return PlanResponse.from(plan);
+		return toPlanResponse(plan);
 	}
 
 	@Transactional
@@ -109,14 +134,14 @@ public class PlanService {
 		);
 
 		// 1. 경고가 있고, 실제로 영향을 받는 날짜(일정이 있는 날)가 존재할 때만 컨펌 요구
-		if (syncResult.hasWarnings()){
+		if (syncResult.hasWarnings()) {
 			return PlanUpdateResponse.confirmRequired(syncResult.affectedDays());
 		}
 
 		// 2. 그 외의 모든 경우(경고가 없거나, 컨펌을 이미 했거나)에는 바로 업데이트 진행
 		plan.update(request.title(), request.startDate(), request.endDate());
 
-		return PlanUpdateResponse.success(PlanResponse.from(plan));
+		return PlanUpdateResponse.success(toPlanResponse(plan));
 	}
 
 	@Transactional
@@ -169,7 +194,8 @@ public class PlanService {
 
 		shareLinkRepository.save(shareLink);
 
-		return ShareLinkResponse.from(shareLink);
+		String url = buildShareLinkUrl(shareLink.getCode());
+		return ShareLinkResponse.from(shareLink, url);
 	}
 
 	@Transactional
@@ -218,4 +244,32 @@ public class PlanService {
 		return new PlanMemberGroupResponse(isAuthenticated, me, allResponses);
 	}
 
+	private PlanResponse toPlanResponse(Plan plan) {
+		List<PlanCollection> pcs = planCollectionRepository.findAllByPlanId(plan.getExternalId());
+		return toPlanResponse(plan, pcs);
+	}
+
+	private PlanResponse toPlanResponse(Plan plan, List<PlanCollection> pcs) {
+		int collectionCount = (int)pcs.stream()
+			.map(pc -> pc.getCollection() == null ? null : pc.getCollection().getId())
+			.filter(Objects::nonNull)
+			.distinct()
+			.count();
+
+		String thumbnail = pcs.stream()
+			.map(pc -> pc.getCollection() == null ? null : pc.getCollection().getThumbnail())
+			.filter(t -> t != null && !t.isBlank())
+			.findFirst()
+			.orElse("");
+
+		return PlanResponse.from(plan, thumbnail, collectionCount);
+	}
+
+	private String buildShareLinkUrl(String code) {
+		String baseUrl = shareLinkBaseUrl.endsWith("/")
+			? shareLinkBaseUrl.substring(0, shareLinkBaseUrl.length() - 1)
+			: shareLinkBaseUrl;
+
+		return baseUrl + "/" + code;
+	}
 }

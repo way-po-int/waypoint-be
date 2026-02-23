@@ -38,4 +38,18 @@ public interface CollectionPlaceRepository extends JpaRepository<CollectionPlace
 		+ "LEFT JOIN FETCH cp.socialMedia "
 		+ "WHERE cp.externalId IN :externalIds")
 	List<CollectionPlace> findAllByExternalIds(@Param("externalIds") List<String> externalIds);
+
+	@Query("SELECT COUNT(cp) FROM CollectionPlace cp "
+		+ "WHERE cp.collection.id = :collectionId")
+	long countByCollectionId(
+		@Param("collectionId") Long collectionId
+	);
+
+	@Query("SELECT cp.collection.id, COUNT(cp) "
+		+ "FROM CollectionPlace cp "
+		+ "WHERE cp.collection.id IN :collectionIds "
+		+ "GROUP BY cp.collection.id")
+	List<Object[]> countPlacesByCollectionIds(
+		@Param("collectionIds") List<Long> collectionIds
+	);
 }

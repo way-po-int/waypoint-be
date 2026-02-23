@@ -6,10 +6,16 @@ public record CollectionResponse(
 	String collectionId,
 	String title,
 	String thumbnail,
-	int memberCount
+	int memberCount,
+	int placeCount
 ) {
-	public static CollectionResponse from(Collection collection) {
-		return new CollectionResponse(collection.getExternalId(), collection.getTitle(), collection.getThumbnail(),
-			collection.getMemberCount());
+	public static CollectionResponse from(Collection collection, int placeCount) {
+		return new CollectionResponse(
+			collection.getExternalId(),
+			collection.getTitle(),
+			collection.getThumbnail(),
+			collection.getMemberCount(),
+			placeCount
+		);
 	}
 }
