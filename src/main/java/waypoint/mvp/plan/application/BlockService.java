@@ -23,6 +23,7 @@ import waypoint.mvp.plan.application.dto.request.BlockCreateRequest;
 import waypoint.mvp.plan.application.dto.request.BlockUpdateRequest;
 import waypoint.mvp.plan.application.dto.request.CandidateBlockCreateRequest;
 import waypoint.mvp.plan.application.dto.request.CandidateBlockSelectRequest;
+import waypoint.mvp.plan.application.dto.request.UpdateCandidateBlockSelectRequest;
 import waypoint.mvp.plan.application.dto.response.BlockDetailResponse;
 import waypoint.mvp.plan.application.dto.response.BlockListResponse;
 import waypoint.mvp.plan.application.dto.response.BlockResponse;
@@ -230,6 +231,17 @@ public class BlockService {
 		expenseService.relocateExpenses(timeBlock.getId(), prevPlanDay.getId(), prevTimeBlock);
 
 		return blockQueryService.toBlockDetailResponse(block, plan, user.getId());
+	}
+
+	public BlockResponse updateCandidateSelection(String planExternalId, String timeBlockId,
+		UpdateCandidateBlockSelectRequest request, UserPrincipal user) {
+		CandidateBlockSelectRequest privateRequest = new CandidateBlockSelectRequest(request.blockId());
+
+		if (request.fixed() == null || request.fixed()) {
+			return fixCandidate(planExternalId, timeBlockId, privateRequest, user);
+		}
+
+		return unfixCandidate(planExternalId, timeBlockId, privateRequest, user);
 	}
 
 	@Transactional
