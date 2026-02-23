@@ -270,4 +270,32 @@ public class BlockService {
 		return blockQueryService.getBlocksByTimeBlock(planId, timeBlock);
 	}
 
+	@Transactional
+	public void deleteTimeBlock(String planExternalId, String timeBlockId, UserPrincipal user) {
+		Plan plan = getPlanAuthor(planExternalId, user);
+		Long planId = plan.getId();
+
+		TimeBlock timeBlock = blockQueryService.getTimeBlock(planId, timeBlockId);
+
+		timeBlockRepository.delete(timeBlock);
+	}
+
+	@Transactional
+	public void deleteBlock(String planExternalId, String timeBlockId, String blockId, UserPrincipal user) {
+		Plan plan = getPlanAuthor(planExternalId, user);
+		Long planId = plan.getId();
+
+		TimeBlock timeBlock = blockQueryService.getTimeBlock(planId, timeBlockId);
+		Block targetBlock = blockQueryService.getBlock(planId, blockId);
+
+		blockRepository.delete(targetBlock);
+
+		// 삭제 후 남은 Block 개수를 다시 조회
+		boolean hasBlocks = blockRepository.existsByTimeBlockId(planId, timeBlock.getId());
+
+		if (!hasBlocks) {
+			timeBlockRepository.delete(timeBlock);
+		}
+	}
+
 }

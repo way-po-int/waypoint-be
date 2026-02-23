@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -41,6 +44,7 @@ public class BlockOpinion extends ExternalIdEntity {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(nullable = false)
+	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Block block;
 
 	@ManyToOne(fetch = FetchType.LAZY)

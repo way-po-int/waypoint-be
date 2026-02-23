@@ -11,9 +11,6 @@ import waypoint.mvp.plan.domain.Block;
 
 public interface BlockRepository extends JpaRepository<Block, Long> {
 
-	// @Query("SELECT b FROM Block b LEFT JOIN FETCH b.place JOIN FETCH b.addedBy WHERE b.timeBlock.id IN :timeBlockIds AND b.selected = true")
-	// List<Block> findAllByTimeBlockIds(@Param("timeBlockIds") List<Long> timeBlockIds);
-
 	@Query("SELECT b FROM Block b "
 		+ "LEFT JOIN FETCH b.place "
 		+ "JOIN FETCH b.addedBy "
@@ -28,5 +25,8 @@ public interface BlockRepository extends JpaRepository<Block, Long> {
 		+ "LEFT JOIN FETCH b.socialMedia "
 		+ "WHERE b.externalId = :blockId AND pd.plan.id = :planId")
 	Optional<Block> findByExternalId(@Param("planId") Long planId, @Param("blockId") String blockId);
+
+	@Query("SELECT count(b) > 0 FROM Block b WHERE b.timeBlock.id = :timeBlockId AND b.timeBlock.planDay.plan.id = :planId")
+	boolean existsByTimeBlockId(@Param("planId") Long planId, @Param("timeBlockId") Long timeBlockId);
 
 }

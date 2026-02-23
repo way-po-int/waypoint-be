@@ -26,6 +26,7 @@ import waypoint.mvp.collection.infrastructure.persistence.CollectionMemberReposi
 import waypoint.mvp.collection.infrastructure.persistence.CollectionPlaceRepository;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionRepository;
 import waypoint.mvp.global.annotation.ServiceTest;
+import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.place.domain.Place;
 import waypoint.mvp.place.domain.PlaceDetail;
 import waypoint.mvp.place.infrastructure.persistence.PlaceRepository;
@@ -173,7 +174,7 @@ class BlockServiceTest {
 	// -- DB Helpers --
 
 	private List<Block> findBlocksByTimeBlockExternalId(String timeBlockExternalId) {
-		Long timeBlockId = timeBlockRepository.findByPlanId(plan.getId(), timeBlockExternalId)
+		Long timeBlockId = timeBlockRepository.findByExternalId(plan.getId(), timeBlockExternalId)
 			.orElseThrow()
 			.getId();
 		return blockRepository.findAllByTimeBlockIds(plan.getId(), List.of(timeBlockId));
@@ -435,6 +436,199 @@ class BlockServiceTest {
 
 			// 선택된 블록이 두 번째 블록인지 확인
 			assertThat(reselectedResponse.selectedBlock().blockId()).isEqualTo(secondBlockId);
+		}
+	}
+
+	@Nested
+	@DisplayName("TimeBlock 삭제")
+	class DeleteTimeBlock {
+
+		@Test
+		@DisplayName("TimeBlock 삭제 시 연관된 모든 Block들이 함께 삭제된다")
+		void deleteTimeBlock_deletesAllRelatedBlocks() {
+			// given - 후보지 3개가 있는 TimeBlock 생성
+			CollectionPlace cp1 = createCollectionPlace("강남 카페");
+			CollectionPlace cp2 = createCollectionPlace("역삼 카페");
+			CollectionPlace cp3 = createCollectionPlace("선릉 카페");
+
+			BlockResponse createResponse = createBlock(placeBlockRequest(cp1.getExternalId(), "메모1"));
+			String timeBlockId = createResponse.timeBlockId();
+
+			addCandidates(timeBlockId, List.of(cp2.getExternalId(), cp3.getExternalId()));
+
+			// 삭제 전 Block 개수 확인
+			List<Block> blocksBeforeDelete = findBlocksByTimeBlockExternalId(timeBlockId);
+			assertThat(blocksBeforeDelete).hasSize(3);
+
+			// when - TimeBlock 삭제
+			blockService.deleteTimeBlock(plan.getExternalId(), timeBlockId, userPrincipal);
+
+			// then - TimeBlock과 연관된 모든 Block이 삭제됨
+			assertThat(timeBlockRepository.findByExternalId(plan.getId(), timeBlockId)).isEmpty();
+
+			Long timeBlockInternalId = blocksBeforeDelete.get(0).getTimeBlock().getId();
+			List<Block> blocksAfterDelete = blockRepository.findAllByTimeBlockIds(plan.getId(),
+				List.of(timeBlockInternalId));
+			assertThat(blocksAfterDelete).isEmpty();
+		}
+
+		@Test
+		@DisplayName("FREE 타입 TimeBlock 삭제 시 정상 동작한다")
+		void deleteTimeBlock_freeType_success() {
+			// given - FREE 타입 블록 생성
+			BlockResponse createResponse = createBlock(freeBlockRequest("자유 시간"));
+			String timeBlockId = createResponse.timeBlockId();
+
+			// 삭제 전 존재 확인
+			assertThat(timeBlockRepository.findByExternalId(plan.getId(), timeBlockId)).isPresent();
+
+			// when - TimeBlock 삭제
+			blockService.deleteTimeBlock(plan.getExternalId(), timeBlockId, userPrincipal);
+
+			// then - TimeBlock과 Block이 삭제됨
+			assertThat(timeBlockRepository.findByExternalId(plan.getId(), timeBlockId)).isEmpty();
+		}
+
+		@Test
+		@DisplayName("선택된 후보지가 있는 TimeBlock도 삭제 가능하다")
+		void deleteTimeBlock_withSelectedBlock_success() {
+			// given - 후보지 생성 및 확정
+			CollectionPlace cp1 = createCollectionPlace("명동 맛집");
+			CollectionPlace cp2 = createCollectionPlace("종로 맛집");
+
+			BlockResponse createResponse = createBlock(placeBlockRequest(cp1.getExternalId(), null));
+			String timeBlockId = createResponse.timeBlockId();
+
+			BlockResponse pendingResponse = addCandidates(timeBlockId, List.of(cp2.getExternalId()));
+			String blockIdToSelect = pendingResponse.candidates().get(0).blockId();
+			selectCandidate(timeBlockId, blockIdToSelect);
+
+			// when - TimeBlock 삭제
+			blockService.deleteTimeBlock(plan.getExternalId(), timeBlockId, userPrincipal);
+
+			// then - 삭제 성공
+			assertThat(timeBlockRepository.findByExternalId(plan.getId(), timeBlockId)).isEmpty();
+		}
+	}
+
+	@Nested
+	@DisplayName("후보지(Block) 삭제")
+	class DeleteBlock {
+
+		@Test
+		@DisplayName("TimeBlock에 여러 Block이 있을 때 특정 Block만 삭제되고 TimeBlock은 유지된다")
+		void deleteBlock_multipleBlocks_onlyTargetBlockDeleted() {
+			// given - 후보지 3개 생성
+			CollectionPlace cp1 = createCollectionPlace("홍대 카페");
+			CollectionPlace cp2 = createCollectionPlace("신촌 카페");
+			CollectionPlace cp3 = createCollectionPlace("이대 카페");
+
+			BlockResponse createResponse = createBlock(placeBlockRequest(cp1.getExternalId(), null));
+			String timeBlockId = createResponse.timeBlockId();
+
+			BlockResponse candidatesResponse = addCandidates(timeBlockId,
+				List.of(cp2.getExternalId(), cp3.getExternalId()));
+
+			// 삭제 전 Block 개수 확인
+			List<Block> blocksBeforeDelete = findBlocksByTimeBlockExternalId(timeBlockId);
+			assertThat(blocksBeforeDelete).hasSize(3);
+
+			// when - 첫 번째 후보지 삭제
+			String blockIdToDelete = candidatesResponse.candidates().get(0).blockId();
+			blockService.deleteBlock(plan.getExternalId(), timeBlockId, blockIdToDelete, userPrincipal);
+
+			// then - 해당 Block만 삭제되고 TimeBlock은 유지됨
+			assertThat(timeBlockRepository.findByExternalId(plan.getId(), timeBlockId)).isPresent();
+
+			List<Block> blocksAfterDelete = findBlocksByTimeBlockExternalId(timeBlockId);
+			assertThat(blocksAfterDelete).hasSize(2);
+
+			// 삭제된 Block이 목록에 없는지 확인
+			boolean deletedBlockExists = blocksAfterDelete.stream()
+				.anyMatch(block -> block.getExternalId().equals(blockIdToDelete));
+			assertThat(deletedBlockExists).isFalse();
+		}
+
+		@Test
+		@DisplayName("TimeBlock에 Block이 하나만 있을 때 해당 Block 삭제 시 TimeBlock도 함께 삭제된다")
+		void deleteBlock_singleBlock_timeBlockAlsoDeleted() {
+			// given - Block 1개만 있는 TimeBlock 생성
+			CollectionPlace cp = createCollectionPlace("강남역 맛집");
+			BlockResponse createResponse = createBlock(placeBlockRequest(cp.getExternalId(), "점심"));
+			String timeBlockId = createResponse.timeBlockId();
+			String blockId = createResponse.selectedBlock().blockId();
+
+			// 삭제 전 확인
+			assertThat(timeBlockRepository.findByExternalId(plan.getId(), timeBlockId)).isPresent();
+			List<Block> blocksBeforeDelete = findBlocksByTimeBlockExternalId(timeBlockId);
+			assertThat(blocksBeforeDelete).hasSize(1);
+
+			// when - 유일한 Block 삭제
+			blockService.deleteBlock(plan.getExternalId(), timeBlockId, blockId, userPrincipal);
+
+			// then - TimeBlock도 함께 삭제됨
+			assertThat(timeBlockRepository.findByExternalId(plan.getId(), timeBlockId)).isEmpty();
+		}
+
+		@Test
+		@DisplayName("FREE 타입 Block 삭제 시 TimeBlock도 함께 삭제된다")
+		void deleteBlock_freeType_timeBlockAlsoDeleted() {
+			// given - FREE 타입 블록 생성 (항상 1개만 존재)
+			BlockResponse createResponse = createBlock(freeBlockRequest("휴식 시간"));
+			String timeBlockId = createResponse.timeBlockId();
+			String blockId = createResponse.candidates().get(0).blockId();
+
+			// when - Block 삭제
+			blockService.deleteBlock(plan.getExternalId(), timeBlockId, blockId, userPrincipal);
+
+			// then - TimeBlock도 함께 삭제됨
+			assertThat(timeBlockRepository.findByExternalId(plan.getId(), timeBlockId)).isEmpty();
+		}
+
+		@Test
+		@DisplayName("존재하지 않는 Block 삭제 시도 시 예외가 발생한다")
+		void deleteBlock_nonExistentBlock_throwsException() {
+			// given - 정상 Block 생성
+			CollectionPlace cp = createCollectionPlace("서울역 카페");
+			BlockResponse createResponse = createBlock(placeBlockRequest(cp.getExternalId(), null));
+			String timeBlockId = createResponse.timeBlockId();
+
+			String nonExistentBlockId = "non-existent-block-id";
+
+			// when & then - 존재하지 않는 Block 삭제 시도 시 예외 발생
+			assertThatThrownBy(() ->
+				blockService.deleteBlock(plan.getExternalId(), timeBlockId, nonExistentBlockId, userPrincipal)
+			).isInstanceOf(BusinessException.class)
+				.hasMessageContaining(BlockError.BLOCK_NOT_FOUND.getMessage());
+		}
+
+		@Test
+		@DisplayName("선택된 후보지를 삭제할 수 있다")
+		void deleteBlock_selectedBlock_success() {
+			// given - 후보지 2개 생성 및 하나 확정
+			CollectionPlace cp1 = createCollectionPlace("판교 레스토랑");
+			CollectionPlace cp2 = createCollectionPlace("분당 레스토랑");
+
+			BlockResponse createResponse = createBlock(placeBlockRequest(cp1.getExternalId(), null));
+			String timeBlockId = createResponse.timeBlockId();
+
+			BlockResponse pendingResponse = addCandidates(timeBlockId, List.of(cp2.getExternalId()));
+			String selectedBlockId = pendingResponse.candidates().get(0).blockId();
+			selectCandidate(timeBlockId, selectedBlockId);
+
+			// when - 선택된 Block 삭제
+			blockService.deleteBlock(plan.getExternalId(), timeBlockId, selectedBlockId, userPrincipal);
+
+			// then - 삭제 성공, TimeBlock은 유지됨 (Block이 1개 남음)
+			assertThat(timeBlockRepository.findByExternalId(plan.getId(), timeBlockId)).isPresent();
+
+			List<Block> remainingBlocks = findBlocksByTimeBlockExternalId(timeBlockId);
+			assertThat(remainingBlocks).hasSize(1);
+
+			// 삭제된 Block이 목록에 없는지 확인
+			boolean deletedBlockExists = remainingBlocks.stream()
+				.anyMatch(block -> block.getExternalId().equals(selectedBlockId));
+			assertThat(deletedBlockExists).isFalse();
 		}
 	}
 }

@@ -113,7 +113,7 @@ public class BlockQueryService {
 	}
 
 	public TimeBlock getTimeBlock(Long planId, String timeBlockId) {
-		return timeBlockRepository.findByPlanId(planId, timeBlockId)
+		return timeBlockRepository.findByExternalId(planId, timeBlockId)
 			.orElseThrow(() -> new BusinessException(TimeBlockError.TIME_BLOCK_NOT_FOUND));
 	}
 
