@@ -289,12 +289,11 @@ public class BlockService {
 		Block targetBlock = blockQueryService.getBlock(planId, blockId);
 
 		blockRepository.delete(targetBlock);
-		blockRepository.flush();
 
 		// 삭제 후 남은 Block 개수를 다시 조회
-		long remainingBlockCount = blockRepository.countByTimeBlockId(planId, timeBlock.getId());
+		boolean hasBlocks = blockRepository.existsByTimeBlockId(planId, timeBlock.getId());
 
-		if (remainingBlockCount == 0) {
+		if (!hasBlocks) {
 			timeBlockRepository.delete(timeBlock);
 		}
 	}
