@@ -15,11 +15,15 @@ import waypoint.mvp.collection.domain.CollectionPlace;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.place.application.PlaceService;
+import waypoint.mvp.place.application.dto.ManualPlaceInfo;
+import waypoint.mvp.place.domain.ManualPlace;
 import waypoint.mvp.place.domain.Place;
+import waypoint.mvp.place.infrastructure.persistence.ManualPlaceRepository;
 import waypoint.mvp.plan.application.dto.BlockCreateCommand;
 import waypoint.mvp.plan.application.dto.BlockSliceResult;
 import waypoint.mvp.plan.application.dto.request.BlockCreateByPlaceRequest;
 import waypoint.mvp.plan.application.dto.request.BlockCreateRequest;
+import waypoint.mvp.plan.application.dto.request.BlockManualCreateRequest;
 import waypoint.mvp.plan.application.dto.request.BlockUpdateRequest;
 import waypoint.mvp.plan.application.dto.request.CandidateBlockCreateRequest;
 import waypoint.mvp.plan.application.dto.request.CandidateBlockSelectRequest;
@@ -53,6 +57,7 @@ public class BlockService {
 	private final PlanCollectionService planCollectionService;
 	private final CollectionPlaceQueryService collectionPlaceQueryService;
 	private final PlaceService placeService;
+	private final ManualPlaceRepository manualPlaceRepository;
 
 	@Transactional
 	public BlockResponse createBlock(String planExternalId, BlockCreateRequest request, UserPrincipal user) {
@@ -61,6 +66,11 @@ public class BlockService {
 
 	@Transactional
 	public BlockResponse createBlock(String planExternalId, BlockCreateByPlaceRequest request, UserPrincipal user) {
+		return createBlock(planExternalId, request.toCommand(), user);
+	}
+
+	@Transactional
+	public BlockResponse createBlock(String planExternalId, BlockManualCreateRequest request, UserPrincipal user) {
 		return createBlock(planExternalId, request.toCommand(), user);
 	}
 
@@ -148,7 +158,7 @@ public class BlockService {
 
 			case PLACE -> createBlockFromPlace(timeBlock, command, addedBy);
 
-			case MANUAL -> throw new IllegalStateException("MANUAL은 아직 사용하지 못 합니다.");
+			case MANUAL -> createManualBlock(timeBlock, command, addedBy);
 		};
 
 	}
@@ -175,6 +185,24 @@ public class BlockService {
 
 	private Block createFreeBlock(BlockCreateCommand command, TimeBlock timeBlock, PlanMember addedBy) {
 		return blockRepository.save(Block.createFree(timeBlock, command.memo(), addedBy));
+	}
+
+	private Block createManualBlock(TimeBlock timeBlock, BlockCreateCommand command, PlanMember addedBy) {
+		// TODO: Media URL 분석 로직 필요할지 의논
+
+		ManualPlaceInfo placeInfo = command.placeInfo();
+
+		ManualPlace manualPlace = ManualPlace.create(
+			placeInfo.name(),
+			placeInfo.address(),
+			placeInfo.socialMediaUrl()
+		);
+
+		ManualPlace savedManualPlace = manualPlaceRepository.save(manualPlace);
+
+		return blockRepository.save(
+			Block.createManual(savedManualPlace, timeBlock, command.memo(), addedBy)
+		);
 	}
 
 	private PlanDay findPlanDay(Long planId, int day) {
