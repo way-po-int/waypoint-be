@@ -5,8 +5,14 @@ import java.util.List;
 public record PickPassResponse(
 	PickPassGroup picked,
 	PickPassGroup passed,
-	String myPreference
+	MyPreferenceStatus myPreference
 ) {
+
+	public enum MyPreferenceStatus {
+		PICK,
+		PASS,
+		NOTHING;
+	}
 
 	public static PickPassResponse of(
 		List<CollectionMemberResponse> pickedMembers,
@@ -14,13 +20,14 @@ public record PickPassResponse(
 		String collectionMemberId
 	) {
 
-		boolean isPicked = pickedMembers.stream()
+		boolean isPicked = collectionMemberId != null && pickedMembers.stream()
 			.anyMatch(m -> m.collectionMemberId().equals(collectionMemberId));
 
-		boolean isPassed = !isPicked && passedMembers.stream()
+		boolean isPassed = collectionMemberId != null && !isPicked && passedMembers.stream()
 			.anyMatch(m -> m.collectionMemberId().equals(collectionMemberId));
 
-		String myPreference = isPicked ? "PICKED" : (isPassed ? "PASSED" : "");
+		MyPreferenceStatus myPreference =
+			isPicked ? MyPreferenceStatus.PICK : (isPassed ? MyPreferenceStatus.PASS : MyPreferenceStatus.NOTHING);
 
 		return new PickPassResponse(
 			PickPassGroup.of(pickedMembers),
