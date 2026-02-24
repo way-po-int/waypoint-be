@@ -233,15 +233,35 @@ public class BlockService {
 		return blockQueryService.toBlockDetailResponse(block, plan, user.getId());
 	}
 
+	@Transactional
 	public BlockResponse updateCandidateSelection(String planExternalId, String timeBlockId,
 		UpdateCandidateBlockSelectRequest request, UserPrincipal user) {
-		CandidateBlockSelectRequest privateRequest = new CandidateBlockSelectRequest(request.blockId());
 
-		if (request.fixed() == null || request.fixed()) {
-			return fixCandidate(planExternalId, timeBlockId, privateRequest, user);
+		Plan plan = getPlanAuthor(planExternalId, user);
+		Long planId = plan.getId();
+
+		Block block = blockQueryService.getBlock(planId, request.blockId());
+		TimeBlock timeBlock = blockQueryService.getTimeBlock(planId, timeBlockId);
+		List<Block> candidateBlocks = validateAndGetBlocks(planId, block, timeBlock);
+
+		// unfix로 변경, BlockStatus: PENDING
+		if (Boolean.FALSE.equals(request.fixed())) {
+			if (!block.isSelected()) {
+				throw new BusinessException(BlockError.NOT_SELECTED);
+			}
+
+			block.unselect();
+			return blockQueryService.toBlockResponse(timeBlock, candidateBlocks, user.getId());
+
+		} else { // fix 유지 BlockStatus: FIXED
+			if (candidateBlocks.size() < 2) {
+				throw new BusinessException(BlockError.CANDIDATE_COUNT_INSUFFICIENT);
+			}
+			block.select();
+
+			return blockQueryService.toBlockResponse(timeBlock, candidateBlocks, user.getId());
 		}
 
-		return unfixCandidate(planExternalId, timeBlockId, privateRequest, user);
 	}
 
 	@Transactional
