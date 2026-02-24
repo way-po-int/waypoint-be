@@ -13,6 +13,14 @@ import waypoint.mvp.plan.domain.Expense;
 
 public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
+	@Query("""
+		SELECT e FROM Expense e
+		LEFT JOIN FETCH e.block b
+		LEFT JOIN fetch b.place p
+		WHERE e.externalId = :externalId
+		""")
+	Optional<Expense> findByExternalId(@Param("externalId") String externalId);
+
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@Query("""
 		SELECT e FROM Expense e

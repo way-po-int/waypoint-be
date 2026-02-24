@@ -1,5 +1,7 @@
 package waypoint.mvp.plan.infrastructure.persistence;
 
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -7,6 +9,8 @@ import org.springframework.data.repository.query.Param;
 import waypoint.mvp.plan.domain.ExpenseItem;
 
 public interface ExpenseItemRepository extends JpaRepository<ExpenseItem, Long> {
+
+	List<ExpenseItem> findAllByExpenseId(Long expenseId);
 
 	@Query("""
 		SELECT COALESCE(SUM(ei.cost), 0)
