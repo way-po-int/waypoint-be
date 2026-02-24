@@ -76,7 +76,7 @@ public class ExpenseService {
 			.toList();
 		expenseItemRepository.saveAll(items);
 
-		return ExpenseGroupResponse.ofAdditional(ExpenseResponse.of(expense, items));
+		return ExpenseGroupResponse.ofAdditional(expense, items);
 	}
 
 	@Transactional
