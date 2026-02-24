@@ -7,6 +7,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import waypoint.mvp.auth.infrastructure.persistence.RefreshTokenRepository;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.user.application.dto.SocialUserProfile;
@@ -25,6 +26,7 @@ public class UserService implements UserFinder {
 
 	private final UserRepository userRepository;
 	private final UserProfileImageService userProfileImageService;
+	private final RefreshTokenRepository refreshTokenRepository;
 
 	@Transactional
 	public User loadSocialUser(SocialUserProfile profile) {
@@ -80,6 +82,22 @@ public class UserService implements UserFinder {
 				}
 			}
 		});
+	}
+
+	@Transactional
+	public void acceptTerms(UserPrincipal user) {
+		User me = findById(user.id());
+		me.acceptTerms();
+	}
+
+	@Transactional
+	public void deleteMe(UserPrincipal user) {
+		User me = findById(user.id());
+
+		refreshTokenRepository.deleteByUserId(user.id());
+		userRepository.delete(me);
+
+		log.info("회원 탈퇴(DB 삭제) 완료: userId={}", user.id());
 	}
 
 	public UserResponse findMe(UserPrincipal user) {
