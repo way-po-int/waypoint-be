@@ -31,13 +31,15 @@ public class TimeBlockValidate {
 		}
 
 		if (!overlappingBlocks.isEmpty()) {
-			for (TimeBlock existing : overlappingBlocks) {
-				if (existing.getStartTime().equals(startTime) && existing.getEndTime().equals(endTime)) {
+			overlappingBlocks.stream()
+				.filter(existing -> existing.getStartTime().equals(startTime) && existing.getEndTime().equals(endTime))
+				.findFirst()
+				.ifPresent(existing -> {
 					throw new BusinessException(BlockError.TIME_BLOCK_EXACT_DUPLICATE)
 						.addProperty("timeBlockId", existing.getExternalId());
-				}
-			}
+				});
 			throw new BusinessException(BlockError.TIME_BLOCK_OVERLAP);
 		}
+
 	}
 }

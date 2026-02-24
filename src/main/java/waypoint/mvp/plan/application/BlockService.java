@@ -222,9 +222,7 @@ public class BlockService {
 		}
 
 		if (request.startTime() != null && request.endTime() != null) {
-			Long planDayId = (request.day() != null)
-				? findPlanDay(planId, request.day()).getId()
-				: timeBlock.getPlanDay().getId();
+			Long planDayId = timeBlock.getPlanDay().getId();
 			timeBlockValidate.validateTimeOverlap(planDayId, request.startTime(), request.endTime(), timeBlock.getId());
 			timeBlock.updateTime(request.startTime(), request.endTime());
 		}
