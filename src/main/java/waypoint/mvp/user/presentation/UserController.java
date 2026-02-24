@@ -40,12 +40,30 @@ public class UserController {
 	}
 
 	@Authorize(level = AuthLevel.AUTHENTICATED)
+	@PatchMapping("/me/terms")
+	public ResponseEntity<Void> acceptTerms(
+		@AuthenticationPrincipal UserPrincipal user
+	) {
+		userService.acceptTerms(user);
+		return ResponseEntity.noContent().build();
+	}
+
+	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@PutMapping("/me")
 	public ResponseEntity<UserResponse> updateNickname(
 		@AuthenticationPrincipal UserPrincipal user,
 		@RequestBody @Valid UserUpdateRequest request
 	) {
 		return ResponseEntity.ok(userService.updateNickname(user, request.nickname()));
+	}
+
+	@Authorize(level = AuthLevel.AUTHENTICATED)
+	@DeleteMapping("/me")
+	public ResponseEntity<Void> deleteMe(
+		@AuthenticationPrincipal UserPrincipal user
+	) {
+		userService.deleteMe(user);
+		return ResponseEntity.noContent().build();
 	}
 
 	@Authorize(level = AuthLevel.AUTHENTICATED)
