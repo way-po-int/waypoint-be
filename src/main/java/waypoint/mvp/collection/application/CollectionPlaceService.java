@@ -70,11 +70,10 @@ public class CollectionPlaceService {
 			updateCollectionThumbnail(collection, place);
 		}
 
-		CollectionMember member = getActiveMember(collection.getId(), principal.getId());
 		return CollectionPlaceResponse.of(
 			saved,
 			collectionPlaceQueryService.toPlaceResponse(saved),
-			collectionPlaceQueryService.getPickPass(saved.getId(), member.getExternalId())
+			collectionPlaceQueryService.getPickPass(saved.getId(), me.getExternalId())
 		);
 	}
 
