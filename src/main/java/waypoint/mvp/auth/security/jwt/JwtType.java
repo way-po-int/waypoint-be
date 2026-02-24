@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum JwtType {
 	ACCESS("at"),
+	ONBOARDING_ACCESS("oat"),
 	REFRESH("rt");
 
 	private final String value;
