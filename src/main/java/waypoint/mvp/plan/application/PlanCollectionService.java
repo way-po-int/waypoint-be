@@ -120,9 +120,10 @@ public class PlanCollectionService {
 		planAuthorizer.verifyMember(user, plan.getId());
 
 		PlanCollection planCollection = getPlanCollection(planId, collectionId);
+		PlanMember planMember = planMemberService.findMemberByUserId(plan.getId(), user.getId());
 
 		return collectionPlaceQueryService.getPlacesByCollectionId(
-			planCollection.getCollection().getId(), null, sortType, pageable
+			planCollection.getCollection().getId(), null, sortType, pageable, planMember.getExternalId()
 		);
 	}
 
@@ -136,9 +137,10 @@ public class PlanCollectionService {
 		planAuthorizer.verifyMember(user, plan.getId());
 
 		getPlanCollection(planId, collectionId);
+		PlanMember planMember = planMemberService.findMemberByUserId(plan.getId(), user.getId());
 
 		return collectionPlaceQueryService.getPlaceDetail(
-			collectionId, collectionPlaceId
+			collectionId, collectionPlaceId, planMember.getExternalId()
 		);
 	}
 

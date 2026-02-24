@@ -121,15 +121,23 @@ public class PlaceExtractionJobService {
 
 		collectionPlaceRepository.saveAll(newCollectionPlaces);
 
-		int totalSize = request.placeIds().size();
+		// Pick/Pass 정보 조회 (새로 추가된 장소는 아직 preference가 없으므로 빈 리스트)
+		CollectionMember member = collectionMemberService.findMemberByUserId(collection.getId(), user.getId());
 		List<CollectionPlaceResponse> addedPlaces = newCollectionPlaces.stream()
-			.map(collectionPlace -> CollectionPlaceResponse.of(
-				collectionPlace,
-				collectionPlaceQueryService.toPlaceResponse(collectionPlace),
-				PickPassResponse.of(List.of(), List.of())
-			))
+			.map(collectionPlace -> {
+				PickPassResponse pickPass = collectionPlaceQueryService.getPickPass(
+					collectionPlace.getId(), 
+					member.getExternalId()
+				);
+				return CollectionPlaceResponse.of(
+					collectionPlace,
+					collectionPlaceQueryService.toPlaceResponse(collectionPlace),
+					pickPass
+				);
+			})
 			.toList();
 
+		int totalSize = request.placeIds().size();
 		return AddExtractedPlacesResponse.of(totalSize, addedPlaces);
 	}
 
