@@ -22,6 +22,7 @@ import waypoint.mvp.auth.security.jwt.TokenInfo;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.auth.util.HashUtils;
 import waypoint.mvp.global.annotation.ServiceTest;
+import waypoint.mvp.user.infrastructure.persistence.UserRepository;
 
 @ServiceTest
 class AuthServiceTest {
@@ -35,11 +36,23 @@ class AuthServiceTest {
 	@Autowired
 	private RefreshTokenRepository refreshTokenRepository;
 
+	@Autowired
+	private UserRepository userRepository;
+
 	@Test
 	@DisplayName("토큰 재발급에 성공한다.")
 	void reissue_success() {
 		// given
-		Long userId = 1L;
+		var savedUser = userRepository.save(
+			waypoint.mvp.user.domain.User.create(
+				waypoint.mvp.user.domain.SocialAccount.create(waypoint.mvp.user.domain.Provider.GOOGLE,
+					"provider-id-1"),
+				"테스터",
+				"",
+				"test@test.com"
+			)
+		);
+		Long userId = savedUser.getId();
 		UserPrincipal userInfo = new UserPrincipal(userId);
 		TokenInfo oldRefreshToken = jwtTokenProvider.generateRefreshToken(userInfo);
 
