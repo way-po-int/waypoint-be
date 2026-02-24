@@ -1,5 +1,7 @@
 package waypoint.mvp.user.domain;
 
+import java.time.Instant;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
@@ -38,6 +40,8 @@ public class User extends ExternalIdEntity {
 
 	@Column(nullable = false)
 	private String email;
+	
+	private Instant termsAcceptedAt;
 
 	@Builder(access = AccessLevel.PRIVATE)
 	private User(SocialAccount socialAccount, String nickname, String picture, String email) {
@@ -54,6 +58,16 @@ public class User extends ExternalIdEntity {
 			.picture(picture)
 			.email(email)
 			.build();
+	}
+
+	public boolean isTermsAccepted() {
+		return termsAcceptedAt != null;
+	}
+
+	public void acceptTerms() {
+		if (termsAcceptedAt == null) {
+			termsAcceptedAt = Instant.now();
+		}
 	}
 
 	public void changeNickname(String nickname) {
