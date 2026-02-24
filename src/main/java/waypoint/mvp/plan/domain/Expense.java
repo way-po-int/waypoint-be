@@ -85,6 +85,10 @@ public class Expense extends ExternalIdEntity {
 		};
 	}
 
+	public void updateTimeBlock(TimeBlock timeBlock) {
+		this.timeBlock = timeBlock;
+	}
+
 	public void updateRank(Long rank) {
 		this.rank = rank;
 	}

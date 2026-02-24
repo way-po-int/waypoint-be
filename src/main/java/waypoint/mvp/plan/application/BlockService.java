@@ -210,6 +210,9 @@ public class BlockService {
 		Block block = blockQueryService.getBlock(planId, blockId);
 		TimeBlock timeBlock = block.getTimeBlock();
 
+		PlanDay prevPlanDay = timeBlock.getPlanDay();
+		LocalTime prevStartTime = timeBlock.getStartTime();
+
 		if (request.day() != null) {
 			PlanDay newPlanDay = findPlanDay(planId, request.day());
 			timeBlock.updatePlanDay(newPlanDay);
@@ -222,6 +225,9 @@ public class BlockService {
 		if (request.memo() != null) {
 			block.updateMemo(request.memo());
 		}
+
+		TimeBlock prevTimeBlock = timeBlockRepository.findPrevTimeBlock(prevPlanDay, prevStartTime);
+		expenseService.relocateExpenses(timeBlock.getId(), prevTimeBlock);
 
 		return blockQueryService.toBlockDetailResponse(block, plan, user.getId());
 	}
@@ -280,7 +286,7 @@ public class BlockService {
 
 		TimeBlock timeBlock = blockQueryService.getTimeBlock(planId, timeBlockId);
 
-		timeBlockRepository.delete(timeBlock);
+		deleteTimeBlockWithRelocate(timeBlock);
 	}
 
 	@Transactional
@@ -297,8 +303,16 @@ public class BlockService {
 		boolean hasBlocks = blockRepository.existsByTimeBlockId(planId, timeBlock.getId());
 
 		if (!hasBlocks) {
-			timeBlockRepository.delete(timeBlock);
+			deleteTimeBlockWithRelocate(timeBlock);
 		}
 	}
 
+	private void deleteTimeBlockWithRelocate(TimeBlock timeBlock) {
+		TimeBlock prevTimeBlock = timeBlockRepository.findPrevTimeBlock(
+			timeBlock.getPlanDay(),
+			timeBlock.getStartTime()
+		);
+		expenseService.relocateExpenses(timeBlock.getId(), prevTimeBlock);
+		timeBlockRepository.delete(timeBlock);
+	}
 }

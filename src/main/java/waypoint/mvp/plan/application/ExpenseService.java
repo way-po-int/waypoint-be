@@ -15,6 +15,7 @@ import waypoint.mvp.plan.domain.Block;
 import waypoint.mvp.plan.domain.Budget;
 import waypoint.mvp.plan.domain.Expense;
 import waypoint.mvp.plan.domain.ExpenseItem;
+import waypoint.mvp.plan.domain.TimeBlock;
 import waypoint.mvp.plan.infrastructure.persistence.ExpenseItemRepository;
 import waypoint.mvp.plan.infrastructure.persistence.ExpenseRepository;
 
@@ -68,5 +69,10 @@ public class ExpenseService {
 		expenseItemRepository.saveAll(items);
 
 		return ExpenseGroupResponse.ofAdditional(ExpenseResponse.of(expense, items));
+	}
+
+	@Transactional
+	public void relocateExpenses(Long timeBlockId, TimeBlock prevTimeBlock) {
+		expenseRankService.relocate(timeBlockId, prevTimeBlock);
 	}
 }

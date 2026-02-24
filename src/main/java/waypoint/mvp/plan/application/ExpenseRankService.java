@@ -19,6 +19,7 @@ public class ExpenseRankService {
 
 	private final ExpenseRepository expenseRepository;
 
+	@Transactional
 	public Long generateRank(Expense prevExpense) {
 		TimeBlock timeBlock = prevExpense.getTimeBlock();
 
@@ -39,7 +40,24 @@ public class ExpenseRankService {
 		return generateBetweenRanks(prevExpense.getRank(), nextRank);
 	}
 
-	public void rebalance(Long timeBlockId) {
+	@Transactional
+	public void relocate(Long timeBlockId, TimeBlock prevTimeBlock) {
+		Long prevTimeBlockId = prevTimeBlock == null ? null : prevTimeBlock.getId();
+		if (timeBlockId.equals(prevTimeBlockId)) {
+			return;
+		}
+
+		List<Expense> expenses = expenseRepository.findByTimeBlockId(timeBlockId);
+
+		long lastRank = expenseRepository.findLastRank(prevTimeBlockId);
+		for (Expense expense : expenses) {
+			lastRank += RANK_INCREMENT;
+			expense.updateTimeBlock(prevTimeBlock);
+			expense.updateRank(lastRank);
+		}
+	}
+
+	private void rebalance(Long timeBlockId) {
 		List<Expense> expenses = expenseRepository.findByTimeBlockId(timeBlockId);
 
 		long rank = RANK_INCREMENT;

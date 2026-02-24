@@ -26,6 +26,13 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 	@Query("SELECT MIN(e.rank) FROM Expense e WHERE e.timeBlock.id = :timeBlockId AND e.rank > :prevRank")
 	Long findNextRank(@Param("timeBlockId") Long timeBlockId, @Param("prevRank") Long prevRank);
 
+	@Query("""
+		SELECT COALESCE(MAX(e.rank), 0) FROM Expense e
+		WHERE (:timeBlockId IS NULL AND e.timeBlock IS NULL)
+		OR (:timeBlockId IS NOT NULL AND e.timeBlock.id = :timeBlockId)
+		""")
+	Long findLastRank(@Param("timeBlockId") Long timeBlockId);
+
 	@Query("SELECT e FROM Expense e WHERE e.timeBlock.id = :timeBlockId ORDER BY e.rank ASC")
 	List<Expense> findByTimeBlockId(Long timeBlockId);
 }
