@@ -36,6 +36,7 @@ import waypoint.mvp.plan.application.dto.request.CandidateBlockSelectRequest;
 import waypoint.mvp.plan.application.dto.response.BlockResponse;
 import waypoint.mvp.plan.domain.Block;
 import waypoint.mvp.plan.domain.BlockStatus;
+import waypoint.mvp.plan.domain.Budget;
 import waypoint.mvp.plan.domain.Plan;
 import waypoint.mvp.plan.domain.PlanCollection;
 import waypoint.mvp.plan.domain.PlanDay;
@@ -44,6 +45,7 @@ import waypoint.mvp.plan.domain.PlanRole;
 import waypoint.mvp.plan.domain.TimeBlockType;
 import waypoint.mvp.plan.error.BlockError;
 import waypoint.mvp.plan.infrastructure.persistence.BlockRepository;
+import waypoint.mvp.plan.infrastructure.persistence.BudgetRepository;
 import waypoint.mvp.plan.infrastructure.persistence.PlanCollectionRepository;
 import waypoint.mvp.plan.infrastructure.persistence.PlanDayRepository;
 import waypoint.mvp.plan.infrastructure.persistence.PlanMemberRepository;
@@ -93,6 +95,9 @@ class BlockServiceTest {
 	@Autowired
 	private TimeBlockRepository timeBlockRepository;
 
+	@Autowired
+	private BudgetRepository budgetRepository;
+
 	private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory(new PrecisionModel(), 4326);
 	private static final LocalTime DEFAULT_START = LocalTime.of(10, 0);
 	private static final LocalTime DEFAULT_END = LocalTime.of(12, 0);
@@ -113,6 +118,7 @@ class BlockServiceTest {
 		plan = planRepository.save(Plan.create("Test Plan", LocalDate.of(2025, 3, 1), LocalDate.of(2025, 3, 5)));
 		planMember = planMemberRepository.save(PlanMember.create(plan, user, PlanRole.OWNER));
 		planDay = planDayRepository.save(PlanDay.create(plan, DEFAULT_DAY));
+		budgetRepository.save(Budget.create(plan));
 	}
 
 	// -- Fixture Helpers --
