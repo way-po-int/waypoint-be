@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
+import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
 import waypoint.mvp.global.error.exception.BusinessException;
@@ -82,6 +83,16 @@ public class ExpenseService {
 	@Transactional
 	public void relocateExpenses(Long timeBlockId, Long planDayId, TimeBlock prevTimeBlock) {
 		expenseRankService.relocate(timeBlockId, planDayId, prevTimeBlock);
+	}
+
+	public List<ExpenseGroupResponse> findExpenses(
+		String planExternalId,
+		int day,
+		AuthPrincipal user
+	) {
+		Budget budget = budgetQueryService.getBudget(planExternalId);
+		planAuthorizer.verifyAccess(user, budget.getPlan().getId());
+		return expenseQueryService.findExpenses(budget, day);
 	}
 
 	@Transactional
