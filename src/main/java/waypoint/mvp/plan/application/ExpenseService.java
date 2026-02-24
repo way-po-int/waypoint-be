@@ -106,6 +106,25 @@ public class ExpenseService {
 		return ExpenseResponse.of(expense, upsertItems);
 	}
 
+	@Transactional
+	public void deleteExpense(
+		String planExternalId,
+		String expenseExternalId,
+		UserPrincipal user
+	) {
+		Budget budget = budgetQueryService.getBudget(planExternalId);
+		planAuthorizer.verifyMember(user, budget.getPlan().getId());
+
+		Expense expense = expenseQueryService.getExpense(expenseExternalId);
+		if (expense.isAdditionalType()) {
+			// 추가 지출은 지출을 삭제
+			expenseRepository.delete(expense);
+		} else {
+			// 그 외의 타입은 지출 항목만 삭제
+			expenseItemRepository.deleteAllInBatchByExpense(expense);
+		}
+	}
+
 	private void deleteUnrequestedItems(
 		List<ExpenseItem> existingItems,
 		List<ExpenseItemUpdateRequest> requests

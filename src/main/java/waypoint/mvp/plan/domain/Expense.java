@@ -92,6 +92,10 @@ public class Expense extends ExternalIdEntity {
 		};
 	}
 
+	public boolean isAdditionalType() {
+		return this.type == ExpenseType.ADDITIONAL;
+	}
+
 	public void updateTimeBlock(TimeBlock timeBlock) {
 		this.timeBlock = timeBlock;
 	}
