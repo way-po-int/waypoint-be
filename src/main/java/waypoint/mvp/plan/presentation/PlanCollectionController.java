@@ -24,6 +24,7 @@ import waypoint.mvp.collection.domain.PlaceSortType;
 import waypoint.mvp.global.auth.annotations.AuthLevel;
 import waypoint.mvp.global.auth.annotations.Authorize;
 import waypoint.mvp.global.common.SliceResponse;
+import waypoint.mvp.global.common.sort.SortType;
 import waypoint.mvp.plan.application.PlanCollectionService;
 import waypoint.mvp.plan.application.dto.request.CreatePlanCollectionRequest;
 import waypoint.mvp.plan.application.dto.response.PlanCollectionResponse;
@@ -51,9 +52,13 @@ public class PlanCollectionController {
 	@GetMapping
 	public ResponseEntity<List<PlanCollectionResponse>> findConnectedCollections(
 		@PathVariable String planId,
-		@AuthenticationPrincipal UserPrincipal user
+		@AuthenticationPrincipal UserPrincipal user,
+		@RequestParam(defaultValue = "CREATED_AT_DESC") SortType sortType,
+		Pageable pageable
 	) {
-		List<PlanCollectionResponse> response = planCollectionService.findPlanCollectionResponses(planId, user);
+		Pageable sortedPageable = sortType.toPageable(pageable);
+		List<PlanCollectionResponse> response = planCollectionService.findPlanCollectionResponses(planId, user,
+			sortedPageable);
 
 		return ResponseEntity.ok(response);
 	}

@@ -3,6 +3,7 @@ package waypoint.mvp.plan.infrastructure.persistence;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -20,8 +21,8 @@ public interface BlockOpinionRepository extends JpaRepository<BlockOpinion, Long
 
 	@Query("SELECT bo FROM BlockOpinion bo"
 		+ " JOIN FETCH bo.addedBy LEFT JOIN FETCH bo.opinionTagIds"
-		+ " WHERE bo.block.id = :blockId ORDER BY bo.id ASC")
-	List<BlockOpinion> findAllByBlockId(@Param("blockId") Long blockId);
+		+ " WHERE bo.block.id = :blockId")
+	List<BlockOpinion> findAllByBlockId(@Param("blockId") Long blockId, Pageable pageable);
 
 	@Query("SELECT bo FROM BlockOpinion bo"
 		+ " JOIN FETCH bo.addedBy LEFT JOIN FETCH bo.opinionTagIds"

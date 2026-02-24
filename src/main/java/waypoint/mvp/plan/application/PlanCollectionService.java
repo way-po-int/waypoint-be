@@ -103,11 +103,12 @@ public class PlanCollectionService {
 			.orElseThrow(() -> new BusinessException(PlanCollectionError.PLAN_COLLECTION_NOT_FOUND));
 	}
 
-	public List<PlanCollectionResponse> findPlanCollectionResponses(String planId, AuthPrincipal user) {
+	public List<PlanCollectionResponse> findPlanCollectionResponses(String planId, AuthPrincipal user,
+		Pageable pageable) {
 		Plan plan = planService.getPlan(planId);
 		planAuthorizer.verifyAccess(user, plan.getId());
 
-		return planCollectionRepository.findAllByPlanId(planId)
+		return planCollectionRepository.findAllByPlanId(planId, pageable)
 			.stream().map(PlanCollectionResponse::from).toList();
 	}
 
