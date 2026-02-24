@@ -180,6 +180,24 @@ public class CollectionPlaceQueryService {
 		return PickPassResponse.of(picked, passed, collectionMemberId);
 	}
 
+	/**
+	 * 여러 CollectionPlace의 Pick/Pass 상태를 일괄 조회
+	 */
+	public Map<Long, PickPassResponse> getPickPassBatch(List<Long> collectionPlaceIds, String collectionMemberId) {
+		if (collectionPlaceIds.isEmpty()) {
+			return Collections.emptyMap();
+		}
+
+		Map<Long, Map<CollectionPlacePreference.Type, List<CollectionMemberResponse>>> grouped =
+			groupPreferences(collectionPlaceIds);
+
+		return collectionPlaceIds.stream()
+			.collect(java.util.stream.Collectors.toMap(
+				id -> id,
+				id -> toPickPassResponse(grouped, id, collectionMemberId)
+			));
+	}
+
 	// ── private  ──────────────────────────────────────────────────
 
 	private Collection getCollectionById(String collectionId) {

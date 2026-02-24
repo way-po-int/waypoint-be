@@ -121,14 +121,18 @@ public class PlaceExtractionJobService {
 
 		collectionPlaceRepository.saveAll(newCollectionPlaces);
 
-		// Pick/Pass 정보 조회 (새로 추가된 장소는 아직 preference가 없으므로 빈 리스트)
+		// Pick/Pass 정보 일괄 조회 (N+1 문제 방지)
 		CollectionMember member = collectionMemberService.findMemberByUserId(collection.getId(), user.getId());
+		List<Long> collectionPlaceIds = newCollectionPlaces.stream()
+			.map(CollectionPlace::getId)
+			.toList();
+		
+		java.util.Map<Long, PickPassResponse> pickPassMap = 
+			collectionPlaceQueryService.getPickPassBatch(collectionPlaceIds, member.getExternalId());
+		
 		List<CollectionPlaceResponse> addedPlaces = newCollectionPlaces.stream()
 			.map(collectionPlace -> {
-				PickPassResponse pickPass = collectionPlaceQueryService.getPickPass(
-					collectionPlace.getId(), 
-					member.getExternalId()
-				);
+				PickPassResponse pickPass = pickPassMap.get(collectionPlace.getId());
 				return CollectionPlaceResponse.of(
 					collectionPlace,
 					collectionPlaceQueryService.toPlaceResponse(collectionPlace),
