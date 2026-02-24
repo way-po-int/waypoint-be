@@ -51,6 +51,17 @@ public class JwtTokenProvider {
 		return TokenInfo.of(accessToken, expiresAt, accessExpiresIn);
 	}
 
+	public TokenInfo generateOnboardingAccessToken(UserPrincipal userInfo) {
+		Instant expiresAt = Instant.now().plusSeconds(accessExpiresIn);
+		String accessToken = Jwts.builder()
+			.subject(userInfo.id().toString())
+			.claim(TOKEN, JwtType.ONBOARDING_ACCESS.getValue())
+			.expiration(Date.from(expiresAt))
+			.signWith(key)
+			.compact();
+		return TokenInfo.of(accessToken, expiresAt, accessExpiresIn);
+	}
+
 	public TokenInfo generateRefreshToken(UserPrincipal userInfo) {
 		Instant expiresAt = Instant.now().plusSeconds(refreshExpiresIn);
 		String refreshToken = Jwts.builder()
@@ -69,11 +80,27 @@ public class JwtTokenProvider {
 	}
 
 	public JwtCode validateAccessToken(String accessToken) {
-		return validateToken(accessToken, JwtType.ACCESS);
+		JwtCode accessResult = validateToken(accessToken, JwtType.ACCESS);
+		if (accessResult == JwtCode.VALID_TOKEN || accessResult == JwtCode.EXPIRED_TOKEN) {
+			return accessResult;
+		}
+		return validateToken(accessToken, JwtType.ONBOARDING_ACCESS);
 	}
 
 	public JwtCode validateRefreshToken(String refreshToken) {
 		return validateToken(refreshToken, JwtType.REFRESH);
+	}
+
+	public JwtType resolveJwtType(String token) {
+		Claims claims = parseClaims(token);
+		String typeValue = claims.get(TOKEN, String.class);
+
+		for (JwtType type : JwtType.values()) {
+			if (type.getValue().equals(typeValue)) {
+				return type;
+			}
+		}
+		throw new IllegalArgumentException("Unknown jwt type");
 	}
 
 	private JwtCode validateToken(String token, JwtType jwtType) {
