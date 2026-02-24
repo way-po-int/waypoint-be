@@ -31,6 +31,7 @@ import waypoint.mvp.place.domain.Place;
 import waypoint.mvp.place.domain.PlaceDetail;
 import waypoint.mvp.place.infrastructure.persistence.PlaceRepository;
 import waypoint.mvp.plan.application.dto.request.BlockCreateRequest;
+import waypoint.mvp.plan.application.dto.request.BlockUpdateRequest;
 import waypoint.mvp.plan.application.dto.request.CandidateBlockCreateRequest;
 import waypoint.mvp.plan.application.dto.request.CandidateBlockSelectRequest;
 import waypoint.mvp.plan.application.dto.response.BlockResponse;
@@ -479,7 +480,7 @@ class BlockServiceTest {
 	class TimeOverlapValidation {
 
 		@Test
-		@DisplayName("동일한 시간대에 블록 생성 시 TIME_SLOT_EXACT_DUPLICATE 예외 발생")
+		@DisplayName("동일한 시간대에 블록 생성 시 TIME_BLOCK_EXACT_DUPLICATE 예외 발생")
 		void createBlock_exactDuplicateTime_throwsException() {
 			// given - 02:00~03:00 블록 생성
 			CollectionPlace cp1 = createCollectionPlace("강남 카페");
@@ -655,7 +656,7 @@ class BlockServiceTest {
 	class UpdateBlockTimeOverlapValidation {
 
 		@Test
-		@DisplayName("블록 시간 수정 시 다른 블록과 동일한 시간대로 변경하면 TIME_SLOT_EXACT_DUPLICATE 예외 발생")
+		@DisplayName("블록 시간 수정 시 다른 블록과 동일한 시간대로 변경하면 TIME_BLOCK_EXACT_DUPLICATE 예외 발생")
 		void updateBlock_exactDuplicateTime_throwsException() {
 			// given - 두 개의 블록 생성
 			CollectionPlace cp1 = createCollectionPlace("첫 번째 장소");
@@ -744,8 +745,8 @@ class BlockServiceTest {
 
 			// when - 두 번째 블록의 시간을 겹치지 않는 시간대로 수정
 			String blockId = secondBlock.selectedBlock().blockId();
-			waypoint.mvp.plan.application.dto.request.BlockUpdateRequest updateRequest =
-				new waypoint.mvp.plan.application.dto.request.BlockUpdateRequest(
+			BlockUpdateRequest updateRequest =
+				new BlockUpdateRequest(
 					null, LocalTime.of(17, 0), LocalTime.of(19, 0), null);
 
 			// then - 정상 수정
