@@ -9,7 +9,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import waypoint.mvp.plan.domain.PlanDay;
 import waypoint.mvp.plan.domain.TimeBlock;
 
 public interface TimeBlockRepository extends JpaRepository<TimeBlock, Long> {
@@ -22,7 +21,9 @@ public interface TimeBlockRepository extends JpaRepository<TimeBlock, Long> {
 		+ "WHERE tb.externalId = :externalId AND tb.planDay.plan.id = :planId")
 	Optional<TimeBlock> findByExternalId(@Param("planId") Long planId, @Param("externalId") String externalId);
 
-	@Query("SELECT t FROM TimeBlock t WHERE t.planDay = :planDay"
+	@Query("SELECT t FROM TimeBlock t"
+		+ " JOIN FETCH t.planDay"
+		+ " WHERE t.planDay.id = :planDayId"
 		+ " AND t.startTime <= :startTime ORDER BY t.startTime DESC LIMIT 1")
-	TimeBlock findPrevTimeBlock(@Param("planDay") PlanDay planDay, @Param("startTime") LocalTime startTime);
+	TimeBlock findPrevTimeBlock(@Param("planDayId") Long planDayId, @Param("startTime") LocalTime startTime);
 }

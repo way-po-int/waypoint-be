@@ -19,20 +19,41 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 		LEFT JOIN FETCH e.block b
 		LEFT JOIN fetch b.place p
 		LEFT JOIN fetch b.timeBlock t
+		LEFT JOIN fetch t.planDay pd
 		WHERE e.externalId = :externalId
 		""")
 	Optional<Expense> findByExternalIdWithLock(@Param("externalId") String externalId);
 
-	@Query("SELECT MIN(e.rank) FROM Expense e WHERE e.timeBlock.id = :timeBlockId AND e.rank > :prevRank")
-	Long findNextRank(@Param("timeBlockId") Long timeBlockId, @Param("prevRank") Long prevRank);
+	@Query("""
+		SELECT MIN(e.rank) FROM Expense e
+		WHERE (
+		    (:timeBlockId IS NULL AND e.planDay.id = :planDayId AND e.timeBlock IS NULL)
+		    OR (:timeBlockId IS NOT NULL AND e.timeBlock.id = :timeBlockId)
+		)
+		AND e.rank > :prevRank
+		""")
+	Long findNextRank(
+		@Param("timeBlockId") Long timeBlockId,
+		@Param("planDayId") Long planDayId,
+		@Param("prevRank") Long prevRank
+	);
 
 	@Query("""
 		SELECT COALESCE(MAX(e.rank), 0) FROM Expense e
-		WHERE (:timeBlockId IS NULL AND e.timeBlock IS NULL)
-		OR (:timeBlockId IS NOT NULL AND e.timeBlock.id = :timeBlockId)
+		WHERE (
+		    (:timeBlockId IS NULL AND e.planDay.id = :planDayId AND e.timeBlock IS NULL)
+		    OR (:timeBlockId IS NOT NULL AND e.timeBlock.id = :timeBlockId)
+		)
 		""")
-	Long findLastRank(@Param("timeBlockId") Long timeBlockId);
+	Long findLastRank(@Param("timeBlockId") Long timeBlockId, @Param("planDayId") Long planDayId);
 
-	@Query("SELECT e FROM Expense e WHERE e.timeBlock.id = :timeBlockId ORDER BY e.rank ASC")
-	List<Expense> findByTimeBlockId(Long timeBlockId);
+	@Query("""
+		SELECT e FROM Expense e
+		WHERE (
+		    (:timeBlockId IS NULL AND e.planDay.id = :planDayId AND e.timeBlock IS NULL)
+		    OR (:timeBlockId IS NOT NULL AND e.timeBlock.id = :timeBlockId)
+		)
+		ORDER BY e.rank ASC
+		""")
+	List<Expense> findByTimeBlockId(@Param("timeBlockId") Long timeBlockId, @Param("planDayId") Long planDayId);
 }

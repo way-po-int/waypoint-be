@@ -21,9 +21,10 @@ public class ExpenseRankService {
 
 	@Transactional
 	public Long generateRank(Expense prevExpense) {
-		TimeBlock timeBlock = prevExpense.getTimeBlock();
+		Long timeBlockId = prevExpense.getTimeBlock() == null ? null : prevExpense.getTimeBlock().getId();
+		Long planDayId = prevExpense.getPlanDay().getId();
 
-		Long nextRank = expenseRepository.findNextRank(timeBlock.getId(), prevExpense.getRank());
+		Long nextRank = expenseRepository.findNextRank(timeBlockId, planDayId, prevExpense.getRank());
 
 		// 이전 지출이 마지막 지출이라면 맨 뒤에 추가
 		if (nextRank == null) {
@@ -32,7 +33,7 @@ public class ExpenseRankService {
 
 		// 중간에 추가할 수 없다면 재정렬
 		if (nextRank - prevExpense.getRank() <= 1) {
-			rebalance(timeBlock.getId());
+			rebalance(timeBlockId, planDayId);
 			nextRank = prevExpense.getRank() + RANK_INCREMENT;
 		}
 
@@ -41,15 +42,15 @@ public class ExpenseRankService {
 	}
 
 	@Transactional
-	public void relocate(Long timeBlockId, TimeBlock prevTimeBlock) {
+	public void relocate(Long timeBlockId, Long planDayId, TimeBlock prevTimeBlock) {
 		Long prevTimeBlockId = prevTimeBlock == null ? null : prevTimeBlock.getId();
 		if (timeBlockId.equals(prevTimeBlockId)) {
 			return;
 		}
 
-		List<Expense> expenses = expenseRepository.findByTimeBlockId(timeBlockId);
+		List<Expense> expenses = expenseRepository.findByTimeBlockId(timeBlockId, planDayId);
 
-		long lastRank = expenseRepository.findLastRank(prevTimeBlockId);
+		long lastRank = expenseRepository.findLastRank(prevTimeBlockId, planDayId);
 		for (Expense expense : expenses) {
 			lastRank += RANK_INCREMENT;
 			expense.updateTimeBlock(prevTimeBlock);
@@ -57,8 +58,8 @@ public class ExpenseRankService {
 		}
 	}
 
-	private void rebalance(Long timeBlockId) {
-		List<Expense> expenses = expenseRepository.findByTimeBlockId(timeBlockId);
+	private void rebalance(Long timeBlockId, Long planDayId) {
+		List<Expense> expenses = expenseRepository.findByTimeBlockId(timeBlockId, planDayId);
 
 		long rank = RANK_INCREMENT;
 		for (Expense expense : expenses) {

@@ -226,8 +226,8 @@ public class BlockService {
 			block.updateMemo(request.memo());
 		}
 
-		TimeBlock prevTimeBlock = timeBlockRepository.findPrevTimeBlock(prevPlanDay, prevStartTime);
-		expenseService.relocateExpenses(timeBlock.getId(), prevTimeBlock);
+		TimeBlock prevTimeBlock = timeBlockRepository.findPrevTimeBlock(prevPlanDay.getId(), prevStartTime);
+		expenseService.relocateExpenses(timeBlock.getId(), prevPlanDay.getId(), prevTimeBlock);
 
 		return blockQueryService.toBlockDetailResponse(block, plan, user.getId());
 	}
@@ -308,11 +308,12 @@ public class BlockService {
 	}
 
 	private void deleteTimeBlockWithRelocate(TimeBlock timeBlock) {
+		Long planDayId = timeBlock.getPlanDay().getId();
 		TimeBlock prevTimeBlock = timeBlockRepository.findPrevTimeBlock(
-			timeBlock.getPlanDay(),
+			planDayId,
 			timeBlock.getStartTime()
 		);
-		expenseService.relocateExpenses(timeBlock.getId(), prevTimeBlock);
+		expenseService.relocateExpenses(timeBlock.getId(), planDayId, prevTimeBlock);
 		timeBlockRepository.delete(timeBlock);
 	}
 }

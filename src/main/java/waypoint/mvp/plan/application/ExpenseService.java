@@ -60,7 +60,7 @@ public class ExpenseService {
 		Expense prevExpense = expenseQueryService.getExpenseWithLock(request.prevExpenseId());
 		Long rank = expenseRankService.generateRank(prevExpense);
 
-		Expense expense = Expense.createAdditional(budget, prevExpense.getTimeBlock(), rank);
+		Expense expense = Expense.createAdditional(budget, prevExpense.getTimeBlock(), prevExpense.getPlanDay(), rank);
 		expenseRepository.save(expense);
 
 		List<ExpenseItem> items = request.items().stream()
@@ -72,7 +72,7 @@ public class ExpenseService {
 	}
 
 	@Transactional
-	public void relocateExpenses(Long timeBlockId, TimeBlock prevTimeBlock) {
-		expenseRankService.relocate(timeBlockId, prevTimeBlock);
+	public void relocateExpenses(Long timeBlockId, Long planDayId, TimeBlock prevTimeBlock) {
+		expenseRankService.relocate(timeBlockId, planDayId, prevTimeBlock);
 	}
 }
