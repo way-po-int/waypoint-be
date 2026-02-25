@@ -2,6 +2,7 @@ package waypoint.mvp.plan.application;
 
 import java.util.List;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -65,13 +66,14 @@ public class BlockOpinionService {
 	public List<BlockOpinionResponse> findOpinions(
 		String planExternalId,
 		String blockExternalId,
-		AuthPrincipal user
+		AuthPrincipal user,
+		Pageable pageable
 	) {
 		Plan plan = planService.getPlan(planExternalId);
 		planAuthorizer.verifyAccess(user, plan.getId());
 
 		Block block = blockQueryService.getBlock(plan.getId(), blockExternalId);
-		List<BlockOpinion> opinions = blockOpinionRepository.findAllByBlockId(block.getId());
+		List<BlockOpinion> opinions = blockOpinionRepository.findAllByBlockId(block.getId(), pageable);
 
 		return opinions.stream()
 			.map(BlockOpinionResponse::from)
