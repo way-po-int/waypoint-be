@@ -63,12 +63,15 @@ public class PlanCollectionController {
 	public ResponseEntity<SliceResponse<CollectionPlaceResponse>> findPlanCollectionPlaces(
 		@PathVariable String planId,
 		@PathVariable String collectionId,
+		@RequestParam(required = false) String addedByMemberId,
 		@RequestParam(defaultValue = "LATEST") PlaceSortType sortType,
 		Pageable pageable,
 		@AuthenticationPrincipal UserPrincipal user
 	) {
 		SliceResponse<CollectionPlaceResponse> response =
-			planCollectionService.findPlanCollectionPlaces(planId, collectionId, sortType, pageable, user);
+			planCollectionService.findPlanCollectionPlaces(
+				planId, collectionId, addedByMemberId, sortType, pageable, user
+			);
 
 		return ResponseEntity.ok(response);
 	}
