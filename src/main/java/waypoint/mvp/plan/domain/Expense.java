@@ -46,26 +46,32 @@ public class Expense extends ExternalIdEntity {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn
-	@OnDelete(action = OnDeleteAction.CASCADE)
 	private TimeBlock timeBlock;
 
-	@Column
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	private PlanDay planDay;
+
+	@Column(nullable = false)
 	private Long rank;
 
 	@Builder(access = AccessLevel.PRIVATE)
-	private Expense(Budget budget, ExpenseType type, Block block, TimeBlock timeBlock, Long rank) {
+	private Expense(Budget budget, ExpenseType type, Block block, TimeBlock timeBlock, PlanDay planDay, Long rank) {
 		this.budget = budget;
 		this.block = block;
 		this.timeBlock = timeBlock;
+		this.planDay = planDay;
 		this.type = type;
 		this.rank = rank;
 	}
 
-	public static Expense createAdditional(Budget budget, TimeBlock timeBlock, Long rank) {
+	public static Expense createAdditional(Budget budget, TimeBlock timeBlock, PlanDay planDay, Long rank) {
 		return builder()
 			.budget(budget)
 			.type(ExpenseType.ADDITIONAL)
 			.timeBlock(timeBlock)
+			.planDay(planDay)
 			.rank(rank)
 			.build();
 	}
@@ -75,7 +81,19 @@ public class Expense extends ExternalIdEntity {
 			.budget(budget)
 			.type(ExpenseType.BLOCK)
 			.block(block)
+			.rank(0L)
 			.build();
+	}
+
+	public TimeBlock getTimeBlock() {
+		return switch (this.type) {
+			case ADDITIONAL -> this.timeBlock;
+			case BLOCK -> this.block.getTimeBlock();
+		};
+	}
+
+	public void updateTimeBlock(TimeBlock timeBlock) {
+		this.timeBlock = timeBlock;
 	}
 
 	public void updateRank(Long rank) {

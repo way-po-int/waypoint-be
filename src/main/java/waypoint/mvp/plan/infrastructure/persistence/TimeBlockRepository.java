@@ -1,5 +1,6 @@
 package waypoint.mvp.plan.infrastructure.persistence;
 
+import java.time.LocalTime;
 import java.util.Optional;
 
 import org.springframework.data.domain.Pageable;
@@ -19,4 +20,10 @@ public interface TimeBlockRepository extends JpaRepository<TimeBlock, Long> {
 		+ "JOIN FETCH tb.planDay "
 		+ "WHERE tb.externalId = :externalId AND tb.planDay.plan.id = :planId")
 	Optional<TimeBlock> findByExternalId(@Param("planId") Long planId, @Param("externalId") String externalId);
+
+	@Query("SELECT t FROM TimeBlock t"
+		+ " JOIN FETCH t.planDay"
+		+ " WHERE t.planDay.id = :planDayId"
+		+ " AND t.startTime <= :startTime ORDER BY t.startTime DESC LIMIT 1")
+	TimeBlock findPrevTimeBlock(@Param("planDayId") Long planDayId, @Param("startTime") LocalTime startTime);
 }
