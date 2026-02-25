@@ -27,7 +27,6 @@ import waypoint.mvp.plan.application.dto.request.BlockCreateRequest;
 import waypoint.mvp.plan.application.dto.request.BlockUpdateRequest;
 import waypoint.mvp.plan.application.dto.request.CandidateBlockCreateRequest;
 import waypoint.mvp.plan.application.dto.request.CandidateBlockSelectRequest;
-import waypoint.mvp.plan.application.dto.request.UpdateCandidateBlockSelectRequest;
 import waypoint.mvp.plan.application.dto.response.BlockDetailResponse;
 import waypoint.mvp.plan.application.dto.response.BlockListResponse;
 import waypoint.mvp.plan.application.dto.response.BlockResponse;
@@ -116,36 +115,11 @@ public class BlockController {
 	public ResponseEntity<BlockResponse> updateCandidateSelection(
 		@PathVariable String planId,
 		@PathVariable String timeBlockId,
-		@RequestBody @Valid UpdateCandidateBlockSelectRequest request,
-		@AuthenticationPrincipal UserPrincipal user
-	) {
-		// TODO 나중에 통합되기에 fix & unfix 2개 API 삭제 예정
-		BlockResponse response = blockService.updateCandidateSelection(planId, timeBlockId, request, user);
-
-		return ResponseEntity.ok(response);
-	}
-
-	@Authorize(level = AuthLevel.AUTHENTICATED)
-	@PatchMapping("/{timeBlockId}/fix")
-	public ResponseEntity<BlockResponse> fixCandidateBlock(
-		@PathVariable String planId,
-		@PathVariable String timeBlockId,
 		@RequestBody @Valid CandidateBlockSelectRequest request,
 		@AuthenticationPrincipal UserPrincipal user
 	) {
-		BlockResponse response = blockService.fixCandidate(planId, timeBlockId, request, user);
-		return ResponseEntity.ok(response);
-	}
+		BlockResponse response = blockService.updateCandidateSelection(planId, timeBlockId, request, true, user);
 
-	@Authorize(level = AuthLevel.AUTHENTICATED)
-	@PatchMapping("/{timeBlockId}/unfix")
-	public ResponseEntity<BlockResponse> unfixCandidateBlock(
-		@PathVariable String planId,
-		@PathVariable String timeBlockId,
-		@RequestBody @Valid CandidateBlockSelectRequest request,
-		@AuthenticationPrincipal UserPrincipal user
-	) {
-		BlockResponse response = blockService.unfixCandidate(planId, timeBlockId, request, user);
 		return ResponseEntity.ok(response);
 	}
 

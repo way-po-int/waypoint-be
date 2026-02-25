@@ -23,7 +23,6 @@ import waypoint.mvp.plan.application.dto.request.BlockCreateRequest;
 import waypoint.mvp.plan.application.dto.request.BlockUpdateRequest;
 import waypoint.mvp.plan.application.dto.request.CandidateBlockCreateRequest;
 import waypoint.mvp.plan.application.dto.request.CandidateBlockSelectRequest;
-import waypoint.mvp.plan.application.dto.request.UpdateCandidateBlockSelectRequest;
 import waypoint.mvp.plan.application.dto.response.BlockDetailResponse;
 import waypoint.mvp.plan.application.dto.response.BlockListResponse;
 import waypoint.mvp.plan.application.dto.response.BlockResponse;
@@ -235,7 +234,7 @@ public class BlockService {
 
 	@Transactional
 	public BlockResponse updateCandidateSelection(String planExternalId, String timeBlockId,
-		UpdateCandidateBlockSelectRequest request, UserPrincipal user) {
+		CandidateBlockSelectRequest request, boolean fixed, UserPrincipal user) {
 
 		Plan plan = getPlanAuthor(planExternalId, user);
 		Long planId = plan.getId();
@@ -245,7 +244,7 @@ public class BlockService {
 		List<Block> candidateBlocks = validateAndGetBlocks(planId, block, timeBlock);
 
 		// unfix로 변경, BlockStatus: PENDING
-		if (Boolean.FALSE.equals(request.fixed())) {
+		if (Boolean.FALSE.equals(fixed)) {
 			if (!block.isSelected()) {
 				throw new BusinessException(BlockError.NOT_SELECTED);
 			}
@@ -262,46 +261,6 @@ public class BlockService {
 			return blockQueryService.toBlockResponse(timeBlock, candidateBlocks, user.getId());
 		}
 
-	}
-
-	@Transactional
-	public BlockResponse fixCandidate(String planExternalId, String timeBlockId, CandidateBlockSelectRequest request,
-		UserPrincipal user) {
-		Plan plan = getPlanAuthor(planExternalId, user);
-		Long planId = plan.getId();
-
-		Block block = blockQueryService.getBlock(planId, request.blockId());
-		TimeBlock timeBlock = blockQueryService.getTimeBlock(planId, timeBlockId);
-		List<Block> blocks = validateAndGetBlocks(planId, block, timeBlock);
-
-		boolean hasSelected = blocks.stream().anyMatch(Block::isSelected);
-		if (hasSelected) {
-			throw new BusinessException(BlockError.ALREADY_SELECTED);
-		}
-
-		block.select();
-
-		return blockQueryService.toBlockResponse(timeBlock, blocks, user.getId());
-	}
-
-	@Transactional
-	public BlockResponse unfixCandidate(String planExternalId, String timeBlockId,
-		CandidateBlockSelectRequest request,
-		UserPrincipal user) {
-		Plan plan = getPlanAuthor(planExternalId, user);
-		Long planId = plan.getId();
-
-		Block block = blockQueryService.getBlock(planId, request.blockId());
-		TimeBlock timeBlock = blockQueryService.getTimeBlock(planId, timeBlockId);
-		List<Block> candidateBlocks = validateAndGetBlocks(planId, block, timeBlock);
-
-		if (!block.isSelected()) {
-			throw new BusinessException(BlockError.NOT_SELECTED);
-		}
-
-		block.unselect();
-
-		return blockQueryService.toBlockResponse(timeBlock, candidateBlocks, user.getId());
 	}
 
 	private List<Block> validateAndGetBlocks(Long planId, Block block, TimeBlock timeBlock) {
