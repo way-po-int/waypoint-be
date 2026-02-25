@@ -256,6 +256,11 @@ public class BlockService {
 			if (candidateBlocks.size() < 2) {
 				throw new BusinessException(BlockError.CANDIDATE_COUNT_INSUFFICIENT);
 			}
+
+			candidateBlocks.stream()
+				.filter(Block::isSelected)
+				.forEach(Block::unselect);
+
 			block.select();
 
 			return blockQueryService.toBlockResponse(timeBlock, candidateBlocks, user.getId());
