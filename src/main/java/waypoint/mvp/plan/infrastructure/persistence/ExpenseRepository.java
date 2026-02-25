@@ -17,9 +17,12 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 		SELECT e FROM Expense e
 		LEFT JOIN FETCH e.block b
 		LEFT JOIN fetch b.place p
-		WHERE e.externalId = :externalId
+		WHERE e.budget.id = :budgetId AND e.externalId = :externalId
 		""")
-	Optional<Expense> findByExternalId(@Param("externalId") String externalId);
+	Optional<Expense> findByBudgetIdAndExternalId(
+		@Param("budgetId") Long budgetId,
+		@Param("externalId") String externalId
+	);
 
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@Query("""
@@ -28,9 +31,12 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 		LEFT JOIN fetch b.place p
 		LEFT JOIN fetch b.timeBlock t
 		LEFT JOIN fetch t.planDay pd
-		WHERE e.externalId = :externalId
+		WHERE e.budget.id = :budgetId AND e.externalId = :externalId
 		""")
-	Optional<Expense> findByExternalIdWithLock(@Param("externalId") String externalId);
+	Optional<Expense> findByExternalIdWithLock(
+		@Param("budgetId") Long budgetId,
+		@Param("externalId") String externalId
+	);
 
 	@Query("""
 		SELECT MIN(e.rank) FROM Expense e

@@ -71,7 +71,7 @@ public class ExpenseService {
 		Budget budget = budgetQueryService.getBudget(planExternalId);
 		planAuthorizer.verifyMember(user, budget.getPlan().getId());
 
-		Expense prevExpense = expenseQueryService.getExpenseWithLock(request.prevExpenseId());
+		Expense prevExpense = expenseQueryService.getExpenseWithLock(budget.getId(), request.prevExpenseId());
 		Long rank = expenseRankService.generateRank(prevExpense);
 
 		Expense expense = Expense.createAdditional(budget, prevExpense.getTimeBlock(), prevExpense.getPlanDay(), rank);
@@ -110,7 +110,7 @@ public class ExpenseService {
 		Budget budget = budgetQueryService.getBudget(planExternalId);
 		planAuthorizer.verifyMember(user, budget.getPlan().getId());
 
-		Expense expense = expenseQueryService.getExpense(expenseExternalId);
+		Expense expense = expenseQueryService.getExpense(budget.getId(), expenseExternalId);
 		List<ExpenseItem> existingItems = expenseQueryService.getExpenseItems(expense.getId());
 
 		// 요청에 없는 지출 항목 삭제
@@ -137,7 +137,7 @@ public class ExpenseService {
 		Budget budget = budgetQueryService.getBudget(planExternalId);
 		planAuthorizer.verifyMember(user, budget.getPlan().getId());
 
-		Expense expense = expenseQueryService.getExpense(expenseExternalId);
+		Expense expense = expenseQueryService.getExpense(budget.getId(), expenseExternalId);
 		if (expense.isAdditionalType()) {
 			// 추가 지출은 지출을 삭제
 			expenseRepository.delete(expense);

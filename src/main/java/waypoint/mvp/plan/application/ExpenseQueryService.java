@@ -35,13 +35,13 @@ public class ExpenseQueryService {
 	private final ExpenseItemRepository expenseItemRepository;
 	private final PlanDayRepository planDayRepository;
 
-	public Expense getExpense(String externalId) {
-		return expenseRepository.findByExternalId(externalId)
+	public Expense getExpense(Long budgetId, String externalId) {
+		return expenseRepository.findByBudgetIdAndExternalId(budgetId, externalId)
 			.orElseThrow(() -> new BusinessException(ExpenseError.EXPENSE_NOT_FOUND));
 	}
 
-	public Expense getExpenseWithLock(String externalId) {
-		return expenseRepository.findByExternalIdWithLock(externalId)
+	public Expense getExpenseWithLock(Long budgetId, String externalId) {
+		return expenseRepository.findByExternalIdWithLock(budgetId, externalId)
 			.orElseThrow(() -> new BusinessException(ExpenseError.EXPENSE_NOT_FOUND));
 	}
 
