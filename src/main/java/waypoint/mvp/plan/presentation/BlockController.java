@@ -30,6 +30,7 @@ import waypoint.mvp.plan.application.dto.request.CandidateBlockSelectRequest;
 import waypoint.mvp.plan.application.dto.response.BlockDetailResponse;
 import waypoint.mvp.plan.application.dto.response.BlockListResponse;
 import waypoint.mvp.plan.application.dto.response.BlockResponse;
+import waypoint.mvp.plan.application.dto.response.CandidateGroupResponse;
 
 @RestController
 @RequiredArgsConstructor
@@ -95,6 +96,17 @@ public class BlockController {
 		@AuthenticationPrincipal AuthPrincipal user
 	) {
 		BlockDetailResponse response = blockService.findBlockDetail(planId, blockId, user);
+		return ResponseEntity.ok(response);
+	}
+
+	@Authorize(level = AuthLevel.GUEST_OR_MEMBER)
+	@GetMapping("/{timeBlockId}/candidates")
+	public ResponseEntity<CandidateGroupResponse> getCandidates(
+		@PathVariable String planId,
+		@PathVariable String timeBlockId,
+		@AuthenticationPrincipal AuthPrincipal user
+	) {
+		CandidateGroupResponse response = blockService.findCandidates(planId, timeBlockId, user);
 		return ResponseEntity.ok(response);
 	}
 

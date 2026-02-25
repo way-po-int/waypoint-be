@@ -22,7 +22,11 @@ import waypoint.mvp.plan.application.dto.response.BlockDetailResponse;
 import waypoint.mvp.plan.application.dto.response.BlockOpinionResponse;
 import waypoint.mvp.plan.application.dto.response.BlockResponse;
 import waypoint.mvp.plan.application.dto.response.CandidateBlockResponse;
+import waypoint.mvp.plan.application.dto.response.CandidateExpenseResponse;
+import waypoint.mvp.plan.application.dto.response.CandidateGroupResponse;
+import waypoint.mvp.plan.application.dto.response.ExpenseItemResponse;
 import waypoint.mvp.plan.domain.Block;
+import waypoint.mvp.plan.domain.ExpenseItem;
 import waypoint.mvp.plan.domain.Plan;
 import waypoint.mvp.plan.domain.PlanDay;
 import waypoint.mvp.plan.domain.TimeBlock;
@@ -45,6 +49,7 @@ public class BlockQueryService {
 	private final PlanDayRepository planDayRepository;
 	private final BlockOpinionQueryService blockOpinionQueryService;
 	private final CollectionPlaceQueryService collectionPlaceQueryService;
+	private final ExpenseQueryService expenseQueryService;
 
 	public BlockSliceResult findBlocks(String planExternalId, int day, AuthPrincipal user,
 		Pageable pageable) {
@@ -82,6 +87,29 @@ public class BlockQueryService {
 		Block block = getBlock(planId, blockId);
 
 		return toBlockDetailResponse(block, plan, user.getId());
+	}
+
+	public CandidateGroupResponse findCandidates(
+		String planExternalId,
+		String timeBlockExternalId,
+		AuthPrincipal user
+	) {
+		Plan plan = getPlanWithAccess(planExternalId, user);
+		TimeBlock timeBlock = getTimeBlock(plan.getId(), timeBlockExternalId);
+
+		List<Block> blocks = getBlocksByTimeBlock(plan.getId(), timeBlock);
+		List<Long> blockIds = blocks.stream().map(Block::getId).toList();
+
+		BlockOpinionDto blockOpinionDto = blockOpinionQueryService.findByBlockIds(blockIds);
+
+		List<ExpenseItem> expenseItems = expenseQueryService.getExpenseItemsByBlockIds(blockIds);
+		Map<String, List<ExpenseItem>> expenseItemMap = expenseItems.stream()
+			.collect(Collectors.groupingBy(item -> item.getExpense().getBlock().getExternalId()));
+
+		List<CandidateExpenseResponse> responses = toCandidateExpenseResponses(
+			timeBlock, blocks, blockOpinionDto, user.getId(), expenseItemMap);
+
+		return CandidateGroupResponse.of(timeBlock, responses);
 	}
 
 	public BlockDetailResponse toBlockDetailResponse(Block block, Plan plan, Long userId) {
@@ -149,6 +177,31 @@ public class BlockQueryService {
 		return timeBlocks.stream()
 			.map(timeBlock -> toBlockResponse(
 				timeBlock, blocksByTimeBlockId.getOrDefault(timeBlock.getId(), List.of()), blockOpinionDto, userId))
+			.toList();
+	}
+
+	private List<CandidateExpenseResponse> toCandidateExpenseResponses(
+		TimeBlock timeBlock,
+		List<Block> blocks,
+		BlockOpinionDto blockOpinionDto,
+		Long userId,
+		Map<String, List<ExpenseItem>> expenseItemMap
+	) {
+		BlockAssembly assembly = BlockAssembly.of(
+			timeBlock,
+			blocks,
+			blockOpinionDto,
+			this::toPlaceResponse,
+			userId
+		);
+		return assembly.candidates().stream()
+			.map(candidate -> CandidateExpenseResponse.of(
+				candidate,
+				expenseItemMap.getOrDefault(candidate.blockId(), List.of())
+					.stream()
+					.map(ExpenseItemResponse::from)
+					.toList()
+			))
 			.toList();
 	}
 }
