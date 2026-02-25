@@ -26,6 +26,7 @@ import waypoint.mvp.plan.application.dto.request.CandidateBlockSelectRequest;
 import waypoint.mvp.plan.application.dto.response.BlockDetailResponse;
 import waypoint.mvp.plan.application.dto.response.BlockListResponse;
 import waypoint.mvp.plan.application.dto.response.BlockResponse;
+import waypoint.mvp.plan.application.validate.TimeBlockValidate;
 import waypoint.mvp.plan.application.dto.response.CandidateGroupResponse;
 import waypoint.mvp.plan.domain.Block;
 import waypoint.mvp.plan.domain.Plan;
@@ -54,6 +55,7 @@ public class BlockService {
 	private final PlanCollectionService planCollectionService;
 	private final CollectionPlaceQueryService collectionPlaceQueryService;
 	private final PlaceService placeService;
+	private final TimeBlockValidate timeBlockValidate;
 	private final ExpenseService expenseService;
 
 	@Transactional
@@ -71,6 +73,7 @@ public class BlockService {
 		Long planId = plan.getId();
 
 		PlanDay planDay = findPlanDay(planId, command.day());
+		timeBlockValidate.validateTimeOverlap(planDay.getId(), command.startTime(), command.endTime(), null);
 		TimeBlock timeBlock = saveTimeBlock(planDay, command.startTime(), command.endTime(), command.blockType());
 		PlanMember addedBy = planMemberService.findMemberByUserId(planId, user.getId());
 
@@ -228,6 +231,8 @@ public class BlockService {
 		}
 
 		if (request.startTime() != null && request.endTime() != null) {
+			Long planDayId = timeBlock.getPlanDay().getId();
+			timeBlockValidate.validateTimeOverlap(planDayId, request.startTime(), request.endTime(), timeBlock.getId());
 			timeBlock.updateTime(request.startTime(), request.endTime());
 		}
 

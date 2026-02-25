@@ -31,6 +31,7 @@ import waypoint.mvp.place.domain.Place;
 import waypoint.mvp.place.domain.PlaceDetail;
 import waypoint.mvp.place.infrastructure.persistence.PlaceRepository;
 import waypoint.mvp.plan.application.dto.request.BlockCreateRequest;
+import waypoint.mvp.plan.application.dto.request.BlockUpdateRequest;
 import waypoint.mvp.plan.application.dto.request.CandidateBlockCreateRequest;
 import waypoint.mvp.plan.application.dto.request.CandidateBlockSelectRequest;
 import waypoint.mvp.plan.application.dto.response.BlockResponse;
@@ -147,8 +148,19 @@ class BlockServiceTest {
 			memo);
 	}
 
+	private BlockCreateRequest placeBlockRequest(String collectionPlaceId, String memo, LocalTime start,
+		LocalTime end) {
+		return new BlockCreateRequest(
+			collectionPlaceId, TimeBlockType.PLACE, DEFAULT_DAY, start, end, memo);
+	}
+
 	private BlockCreateRequest freeBlockRequest(String memo) {
 		return new BlockCreateRequest(null, TimeBlockType.FREE, DEFAULT_DAY, DEFAULT_START, DEFAULT_END, memo);
+	}
+
+	private BlockCreateRequest freeBlockRequest(String memo, LocalTime start, LocalTime end) {
+		return new BlockCreateRequest(
+			null, TimeBlockType.FREE, DEFAULT_DAY, start, end, memo);
 	}
 
 	// -- Service Call Helpers -----------
@@ -460,6 +472,285 @@ class BlockServiceTest {
 
 			// then - 삭제 성공
 			assertThat(timeBlockRepository.findByExternalId(plan.getId(), timeBlockId)).isEmpty();
+		}
+	}
+
+	@Nested
+	@DisplayName("시간 중복 검증")
+	class TimeOverlapValidation {
+
+		@Test
+		@DisplayName("동일한 시간대에 블록 생성 시 TIME_BLOCK_EXACT_DUPLICATE 예외 발생")
+		void createBlock_exactDuplicateTime_throwsException() {
+			// given - 02:00~03:00 블록 생성
+			CollectionPlace cp1 = createCollectionPlace("강남 카페");
+			LocalTime start = LocalTime.of(2, 0);
+			LocalTime end = LocalTime.of(3, 0);
+			BlockResponse firstBlock = createBlock(placeBlockRequest(cp1.getExternalId(), "첫 번째", start, end));
+
+			// when & then - 동일한 시간대(02:00~03:00)에 블록 생성 시도
+			CollectionPlace cp2 = createCollectionPlace("역삼 카페");
+			assertThatThrownBy(() ->
+				createBlock(placeBlockRequest(cp2.getExternalId(), "두 번째", start, end))
+			)
+				.isInstanceOf(BusinessException.class)
+				.hasMessageContaining(BlockError.TIME_BLOCK_EXACT_DUPLICATE.getMessage())
+				.satisfies(ex -> {
+					BusinessException businessEx = (BusinessException)ex;
+					assertThat(businessEx.getBody().getProperties())
+						.containsKey("timeBlockId")
+						.containsEntry("timeBlockId", firstBlock.timeBlockId());
+				});
+		}
+
+		@Test
+		@DisplayName("겹치는 시간대에 블록 생성 시 TIME_SLOT_OVERLAP 예외 발생 - 시작 시간이 겹침")
+		void createBlock_overlappingTime_startTimeOverlaps_throwsException() {
+			// given - 02:00~03:00 블록 생성
+			CollectionPlace cp1 = createCollectionPlace("홍대 레스토랑");
+			LocalTime existingStart = LocalTime.of(2, 0);
+			LocalTime existingEnd = LocalTime.of(3, 0);
+			createBlock(placeBlockRequest(cp1.getExternalId(), null, existingStart, existingEnd));
+
+			// when & then - 02:30~04:00 블록 생성 시도 (시작 시간이 기존 블록 범위 내)
+			CollectionPlace cp2 = createCollectionPlace("신촌 레스토랑");
+			LocalTime newStart = LocalTime.of(2, 30);
+			LocalTime newEnd = LocalTime.of(4, 0);
+
+			assertThatThrownBy(() ->
+				createBlock(placeBlockRequest(cp2.getExternalId(), null, newStart, newEnd))
+			)
+				.isInstanceOf(BusinessException.class)
+				.hasMessageContaining(BlockError.TIME_BLOCK_OVERLAP.getMessage());
+		}
+
+		@Test
+		@DisplayName("겹치는 시간대에 블록 생성 시 TIME_SLOT_OVERLAP 예외 발생 - 종료 시간이 겹침")
+		void createBlock_overlappingTime_endTimeOverlaps_throwsException() {
+			// given - 14:00~16:00 블록 생성
+			CollectionPlace cp1 = createCollectionPlace("명동 쇼핑");
+			LocalTime existingStart = LocalTime.of(14, 0);
+			LocalTime existingEnd = LocalTime.of(16, 0);
+			createBlock(placeBlockRequest(cp1.getExternalId(), null, existingStart, existingEnd));
+
+			// when & then - 13:00~15:00 블록 생성 시도 (종료 시간이 기존 블록 범위 내)
+			CollectionPlace cp2 = createCollectionPlace("종로 쇼핑");
+			LocalTime newStart = LocalTime.of(13, 0);
+			LocalTime newEnd = LocalTime.of(15, 0);
+
+			assertThatThrownBy(() ->
+				createBlock(placeBlockRequest(cp2.getExternalId(), null, newStart, newEnd))
+			)
+				.isInstanceOf(BusinessException.class)
+				.hasMessageContaining(BlockError.TIME_BLOCK_OVERLAP.getMessage());
+		}
+
+		@Test
+		@DisplayName("겹치는 시간대에 블록 생성 시 TIME_SLOT_OVERLAP 예외 발생 - 완전히 포함")
+		void createBlock_overlappingTime_completelyContained_throwsException() {
+			// given - 10:00~18:00 블록 생성
+			CollectionPlace cp1 = createCollectionPlace("판교 카페");
+			LocalTime existingStart = LocalTime.of(10, 0);
+			LocalTime existingEnd = LocalTime.of(18, 0);
+			createBlock(placeBlockRequest(cp1.getExternalId(), null, existingStart, existingEnd));
+
+			// when & then - 12:00~14:00 블록 생성 시도 (완전히 기존 블록 내부)
+			CollectionPlace cp2 = createCollectionPlace("분당 카페");
+			LocalTime newStart = LocalTime.of(12, 0);
+			LocalTime newEnd = LocalTime.of(14, 0);
+
+			assertThatThrownBy(() ->
+				createBlock(placeBlockRequest(cp2.getExternalId(), null, newStart, newEnd))
+			)
+				.isInstanceOf(BusinessException.class)
+				.hasMessageContaining(BlockError.TIME_BLOCK_OVERLAP.getMessage());
+		}
+
+		@Test
+		@DisplayName("겹치는 시간대에 블록 생성 시 TIME_SLOT_OVERLAP 예외 발생 - 완전히 포함하는 경우")
+		void createBlock_overlappingTime_completelyContains_throwsException() {
+			// given - 12:00~14:00 블록 생성
+			CollectionPlace cp1 = createCollectionPlace("강남역 맛집");
+			LocalTime existingStart = LocalTime.of(12, 0);
+			LocalTime existingEnd = LocalTime.of(14, 0);
+			createBlock(placeBlockRequest(cp1.getExternalId(), null, existingStart, existingEnd));
+
+			// when & then - 10:00~18:00 블록 생성 시도 (기존 블록을 완전히 포함)
+			CollectionPlace cp2 = createCollectionPlace("역삼역 맛집");
+			LocalTime newStart = LocalTime.of(10, 0);
+			LocalTime newEnd = LocalTime.of(18, 0);
+
+			assertThatThrownBy(() ->
+				createBlock(placeBlockRequest(cp2.getExternalId(), null, newStart, newEnd))
+			)
+				.isInstanceOf(BusinessException.class)
+				.hasMessageContaining(BlockError.TIME_BLOCK_OVERLAP.getMessage());
+		}
+
+		@Test
+		@DisplayName("겹치지 않는 시간대에 블록 생성 시 정상 동작")
+		void createBlock_noOverlap_success() {
+			// given - 10:00~12:00 블록 생성
+			CollectionPlace cp1 = createCollectionPlace("아침 카페");
+			LocalTime firstStart = LocalTime.of(10, 0);
+			LocalTime firstEnd = LocalTime.of(12, 0);
+			createBlock(placeBlockRequest(cp1.getExternalId(), null, firstStart, firstEnd));
+
+			// when - 12:00~14:00 블록 생성 (시작 시간이 이전 블록의 종료 시간과 동일)
+			CollectionPlace cp2 = createCollectionPlace("점심 레스토랑");
+			LocalTime secondStart = LocalTime.of(12, 0);
+			LocalTime secondEnd = LocalTime.of(14, 0);
+			BlockResponse response = createBlock(placeBlockRequest(cp2.getExternalId(), null, secondStart, secondEnd));
+
+			// then - 정상 생성
+			assertThatBlock(response)
+				.hasStatus(BlockStatus.DIRECT)
+				.hasStartTime(secondStart)
+				.hasEndTime(secondEnd);
+		}
+
+		@Test
+		@DisplayName("FREE 타입 블록도 시간 중복 검증 적용")
+		void createFreeBlock_exactDuplicateTime_throwsException() {
+			// given - 09:00~10:00 FREE 블록 생성
+			LocalTime start = LocalTime.of(9, 0);
+			LocalTime end = LocalTime.of(10, 0);
+			createBlock(freeBlockRequest("아침 산책", start, end));
+
+			// when & then - 동일한 시간대에 FREE 블록 생성 시도
+			assertThatThrownBy(() ->
+				createBlock(freeBlockRequest("아침 운동", start, end))
+			)
+				.isInstanceOf(BusinessException.class)
+				.hasMessageContaining(BlockError.TIME_BLOCK_EXACT_DUPLICATE.getMessage());
+		}
+
+		@Test
+		@DisplayName("다른 날짜(day)의 동일 시간대는 중복으로 간주하지 않음")
+		void createBlock_sameTimeButDifferentDay_success() {
+			// given - Day 1의 10:00~12:00 블록 생성
+			CollectionPlace cp1 = createCollectionPlace("1일차 카페");
+			BlockCreateRequest day1Request = new BlockCreateRequest(
+				cp1.getExternalId(), TimeBlockType.PLACE, 1,
+				LocalTime.of(10, 0), LocalTime.of(12, 0), null);
+			createBlock(day1Request);
+
+			// when - Day 2의 10:00~12:00 블록 생성
+			PlanDay planDay2 = planDayRepository.save(PlanDay.create(plan, 2));
+			CollectionPlace cp2 = createCollectionPlace("2일차 카페");
+			BlockCreateRequest day2Request = new BlockCreateRequest(
+				cp2.getExternalId(), TimeBlockType.PLACE, 2,
+				LocalTime.of(10, 0), LocalTime.of(12, 0), null);
+
+			// then - 정상 생성 (다른 날짜이므로 중복 아님)
+			BlockResponse response = createBlock(day2Request);
+			assertThatBlock(response)
+				.hasStatus(BlockStatus.DIRECT)
+				.hasStartTime(LocalTime.of(10, 0))
+				.hasEndTime(LocalTime.of(12, 0));
+		}
+	}
+
+	@Nested
+	@DisplayName("블록 수정 시 시간 중복 검증")
+	class UpdateBlockTimeOverlapValidation {
+
+		@Test
+		@DisplayName("블록 시간 수정 시 다른 블록과 동일한 시간대로 변경하면 TIME_BLOCK_EXACT_DUPLICATE 예외 발생")
+		void updateBlock_exactDuplicateTime_throwsException() {
+			// given - 두 개의 블록 생성
+			CollectionPlace cp1 = createCollectionPlace("첫 번째 장소");
+			CollectionPlace cp2 = createCollectionPlace("두 번째 장소");
+
+			LocalTime firstStart = LocalTime.of(10, 0);
+			LocalTime firstEnd = LocalTime.of(12, 0);
+			createBlock(placeBlockRequest(cp1.getExternalId(), null, firstStart, firstEnd));
+
+			LocalTime secondStart = LocalTime.of(14, 0);
+			LocalTime secondEnd = LocalTime.of(16, 0);
+			BlockResponse secondBlock = createBlock(
+				placeBlockRequest(cp2.getExternalId(), null, secondStart, secondEnd));
+
+			// when & then - 두 번째 블록의 시간을 첫 번째 블록과 동일하게 수정 시도
+			String blockId = secondBlock.selectedBlock().blockId();
+			waypoint.mvp.plan.application.dto.request.BlockUpdateRequest updateRequest =
+				new waypoint.mvp.plan.application.dto.request.BlockUpdateRequest(
+					null, firstStart, firstEnd, null);
+
+			assertThatThrownBy(() ->
+				blockService.updateBlock(plan.getExternalId(), blockId, updateRequest, userPrincipal)
+			)
+				.isInstanceOf(BusinessException.class)
+				.hasMessageContaining(BlockError.TIME_BLOCK_EXACT_DUPLICATE.getMessage());
+		}
+
+		@Test
+		@DisplayName("블록 시간 수정 시 다른 블록과 겹치면 TIME_SLOT_OVERLAP 예외 발생")
+		void updateBlock_overlappingTime_throwsException() {
+			// given - 두 개의 블록 생성
+			CollectionPlace cp1 = createCollectionPlace("오전 일정");
+			CollectionPlace cp2 = createCollectionPlace("오후 일정");
+
+			LocalTime firstStart = LocalTime.of(9, 0);
+			LocalTime firstEnd = LocalTime.of(11, 0);
+			createBlock(placeBlockRequest(cp1.getExternalId(), null, firstStart, firstEnd));
+
+			LocalTime secondStart = LocalTime.of(14, 0);
+			LocalTime secondEnd = LocalTime.of(16, 0);
+			BlockResponse secondBlock = createBlock(
+				placeBlockRequest(cp2.getExternalId(), null, secondStart, secondEnd));
+
+			// when & then - 두 번째 블록의 시간을 첫 번째 블록과 겹치도록 수정 시도
+			String blockId = secondBlock.selectedBlock().blockId();
+			waypoint.mvp.plan.application.dto.request.BlockUpdateRequest updateRequest =
+				new waypoint.mvp.plan.application.dto.request.BlockUpdateRequest(
+					null, LocalTime.of(10, 0), LocalTime.of(15, 0), null);
+
+			assertThatThrownBy(() ->
+				blockService.updateBlock(plan.getExternalId(), blockId, updateRequest, userPrincipal)
+			)
+				.isInstanceOf(BusinessException.class)
+				.hasMessageContaining(BlockError.TIME_BLOCK_OVERLAP.getMessage());
+		}
+
+		@Test
+		@DisplayName("블록 시간 수정 시 자기 자신과의 중복은 허용")
+		void updateBlock_sameBlock_success() {
+			// given - 블록 생성
+			CollectionPlace cp = createCollectionPlace("테스트 장소");
+			LocalTime start = LocalTime.of(10, 0);
+			LocalTime end = LocalTime.of(12, 0);
+			BlockResponse createResponse = createBlock(placeBlockRequest(cp.getExternalId(), "메모", start, end));
+
+			// when - 동일한 시간대로 수정 (자기 자신)
+			String blockId = createResponse.selectedBlock().blockId();
+			waypoint.mvp.plan.application.dto.request.BlockUpdateRequest updateRequest =
+				new waypoint.mvp.plan.application.dto.request.BlockUpdateRequest(
+					null, start, end, "수정된 메모");
+
+			// then - 정상 수정 (자기 자신과의 중복은 허용)
+			blockService.updateBlock(plan.getExternalId(), blockId, updateRequest, userPrincipal);
+		}
+
+		@Test
+		@DisplayName("블록 시간 수정 시 겹치지 않는 시간대로 변경하면 정상 동작")
+		void updateBlock_noOverlap_success() {
+			// given - 두 개의 블록 생성
+			CollectionPlace cp1 = createCollectionPlace("첫 번째");
+			CollectionPlace cp2 = createCollectionPlace("두 번째");
+
+			createBlock(placeBlockRequest(cp1.getExternalId(), null, LocalTime.of(10, 0), LocalTime.of(12, 0)));
+			BlockResponse secondBlock = createBlock(
+				placeBlockRequest(cp2.getExternalId(), null, LocalTime.of(14, 0), LocalTime.of(16, 0)));
+
+			// when - 두 번째 블록의 시간을 겹치지 않는 시간대로 수정
+			String blockId = secondBlock.selectedBlock().blockId();
+			BlockUpdateRequest updateRequest =
+				new BlockUpdateRequest(
+					null, LocalTime.of(17, 0), LocalTime.of(19, 0), null);
+
+			// then - 정상 수정
+			blockService.updateBlock(plan.getExternalId(), blockId, updateRequest, userPrincipal);
 		}
 	}
 

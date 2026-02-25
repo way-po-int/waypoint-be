@@ -1,6 +1,8 @@
 package waypoint.mvp.plan.infrastructure.persistence;
 
 import java.time.LocalTime;
+import java.util.List;
+import java.time.LocalTime;
 import java.util.Optional;
 
 import org.springframework.data.domain.Pageable;
@@ -20,6 +22,24 @@ public interface TimeBlockRepository extends JpaRepository<TimeBlock, Long> {
 		+ "JOIN FETCH tb.planDay JOIN FETCH tb.planDay.plan "
 		+ "WHERE tb.externalId = :externalId AND tb.planDay.plan.id = :planId")
 	Optional<TimeBlock> findByExternalId(@Param("planId") Long planId, @Param("externalId") String externalId);
+
+	@Query("SELECT tb FROM TimeBlock tb "
+		+ "WHERE tb.planDay.id = :planDayId "
+		+ "AND ((tb.startTime < :endTime AND tb.endTime > :startTime))")
+	List<TimeBlock> findOverlappingTimeBlocks(
+		@Param("planDayId") Long planDayId,
+		@Param("startTime") LocalTime startTime,
+		@Param("endTime") LocalTime endTime);
+
+	@Query("SELECT tb FROM TimeBlock tb "
+		+ "WHERE tb.planDay.id = :planDayId "
+		+ "AND tb.id != :excludeId "
+		+ "AND ((tb.startTime < :endTime AND tb.endTime > :startTime))")
+	List<TimeBlock> findOverlappingTimeBlocksExcludingId(
+		@Param("planDayId") Long planDayId,
+		@Param("startTime") LocalTime startTime,
+		@Param("endTime") LocalTime endTime,
+		@Param("excludeId") Long excludeId);
 
 	@Query("SELECT t FROM TimeBlock t"
 		+ " JOIN FETCH t.planDay"
