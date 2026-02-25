@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
+import waypoint.mvp.collection.application.CollectionMemberService;
 import waypoint.mvp.collection.application.CollectionPlaceQueryService;
 import waypoint.mvp.collection.application.CollectionService;
 import waypoint.mvp.collection.application.dto.response.CollectionPlaceDetailResponse;
@@ -36,6 +37,7 @@ import waypoint.mvp.plan.infrastructure.persistence.PlanCollectionRepository;
 public class PlanCollectionService {
 	private final CollectionService collectionService;
 	private final CollectionPlaceQueryService collectionPlaceQueryService;
+	private final CollectionMemberService collectionMemberService;
 	private final PlanMemberService planMemberService;
 	private final PlanService planService;
 	private final PlanCollectionRepository planCollectionRepository;
@@ -120,9 +122,10 @@ public class PlanCollectionService {
 		planAuthorizer.verifyMember(user, plan.getId());
 
 		PlanCollection planCollection = getPlanCollection(planId, collectionId);
+		String collectionMemberId = getCollectionMemberId(planCollection.getCollection().getId(), user.getId());
 
 		return collectionPlaceQueryService.getPlacesByCollectionId(
-			planCollection.getCollection().getId(), null, sortType, pageable
+			planCollection.getCollection().getId(), null, sortType, pageable, collectionMemberId
 		);
 	}
 
@@ -135,10 +138,11 @@ public class PlanCollectionService {
 		Plan plan = planService.getPlan(planId);
 		planAuthorizer.verifyMember(user, plan.getId());
 
-		getPlanCollection(planId, collectionId);
+		PlanCollection planCollection = getPlanCollection(planId, collectionId);
+		String collectionMemberId = getCollectionMemberId(planCollection.getCollection().getId(), user.getId());
 
 		return collectionPlaceQueryService.getPlaceDetail(
-			collectionId, collectionPlaceId
+			collectionId, collectionPlaceId, collectionMemberId
 		);
 	}
 
@@ -164,6 +168,11 @@ public class PlanCollectionService {
 		PlanCollection planCollection = getPlanCollection(planId, collectionId);
 
 		planCollectionRepository.delete(planCollection);
+	}
+
+	private String getCollectionMemberId(Long collectionId, Long userId) {
+		return collectionMemberService.findMemberByUserId(collectionId, userId).getExternalId();
+
 	}
 
 }

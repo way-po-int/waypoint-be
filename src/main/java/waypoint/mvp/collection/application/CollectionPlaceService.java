@@ -1,6 +1,5 @@
 package waypoint.mvp.collection.application;
 
-import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Pageable;
@@ -74,7 +73,7 @@ public class CollectionPlaceService {
 		return CollectionPlaceResponse.of(
 			saved,
 			collectionPlaceQueryService.toPlaceResponse(saved),
-			PickPassResponse.of(List.of(), List.of())
+			collectionPlaceQueryService.getPickPass(saved.getId(), me.getExternalId())
 		);
 	}
 
@@ -117,8 +116,9 @@ public class CollectionPlaceService {
 		Collection collection = getCollection(collectionId);
 		collectionAuthorizer.verifyAccess(principal, collection.getId());
 
+		CollectionMember member = getActiveMember(collection.getId(), principal.getId());
 		return collectionPlaceQueryService.getPlacesByCollectionId(collection.getId(), addedByMemberId, sortType,
-			pageable);
+			pageable, member.getExternalId());
 	}
 
 	public CollectionPlaceDetailResponse getPlaceDetail(
@@ -129,7 +129,8 @@ public class CollectionPlaceService {
 		Collection collection = getCollection(collectionId);
 		collectionAuthorizer.verifyAccess(principal, collection.getId());
 
-		return collectionPlaceQueryService.getPlaceDetail(collectionId, collectionPlaceId);
+		CollectionMember member = getActiveMember(collection.getId(), principal.getId());
+		return collectionPlaceQueryService.getPlaceDetail(collectionId, collectionPlaceId, member.getExternalId());
 	}
 
 	@Transactional
@@ -191,7 +192,7 @@ public class CollectionPlaceService {
 			preferenceRepository.save(CollectionPlacePreference.create(place, me, type));
 		}
 
-		return collectionPlaceQueryService.getPickPass(collectionPlacePk);
+		return collectionPlaceQueryService.getPickPass(collectionPlacePk, me.getExternalId());
 	}
 
 	private Collection getCollection(String collectionId) {

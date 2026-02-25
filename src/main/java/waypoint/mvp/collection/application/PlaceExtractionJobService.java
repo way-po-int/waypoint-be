@@ -121,15 +121,27 @@ public class PlaceExtractionJobService {
 
 		collectionPlaceRepository.saveAll(newCollectionPlaces);
 
-		int totalSize = request.placeIds().size();
+		// Pick/Pass 정보 일괄 조회 (N+1 문제 방지)
+		CollectionMember member = collectionMemberService.findMemberByUserId(collection.getId(), user.getId());
+		List<Long> collectionPlaceIds = newCollectionPlaces.stream()
+			.map(CollectionPlace::getId)
+			.toList();
+		
+		java.util.Map<Long, PickPassResponse> pickPassMap = 
+			collectionPlaceQueryService.getPickPassBatch(collectionPlaceIds, member.getExternalId());
+		
 		List<CollectionPlaceResponse> addedPlaces = newCollectionPlaces.stream()
-			.map(collectionPlace -> CollectionPlaceResponse.of(
-				collectionPlace,
-				collectionPlaceQueryService.toPlaceResponse(collectionPlace),
-				PickPassResponse.of(List.of(), List.of())
-			))
+			.map(collectionPlace -> {
+				PickPassResponse pickPass = pickPassMap.get(collectionPlace.getId());
+				return CollectionPlaceResponse.of(
+					collectionPlace,
+					collectionPlaceQueryService.toPlaceResponse(collectionPlace),
+					pickPass
+				);
+			})
 			.toList();
 
+		int totalSize = request.placeIds().size();
 		return AddExtractedPlacesResponse.of(totalSize, addedPlaces);
 	}
 

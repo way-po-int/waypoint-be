@@ -116,7 +116,8 @@ public class CollectionPlaceQueryService {
 		Long collectionId,
 		String addedByMemberId,
 		PlaceSortType sortType,
-		Pageable pageable
+		Pageable pageable,
+		String collectionMemberId
 	) {
 		Pageable sortedPageable = PageRequest.of(
 			pageable.getPageNumber(),
@@ -133,7 +134,7 @@ public class CollectionPlaceQueryService {
 			groupPreferences(collectionPlaceIds);
 
 		List<CollectionPlaceResponse> content = places.stream().map(cp -> {
-			PickPassResponse pickPass = toPickPassResponse(grouped, cp.getId());
+			PickPassResponse pickPass = toPickPassResponse(grouped, cp.getId(), collectionMemberId);
 			return CollectionPlaceResponse.of(cp, toPlaceResponse(cp), pickPass);
 		}).toList();
 
@@ -145,7 +146,8 @@ public class CollectionPlaceQueryService {
 	 */
 	public CollectionPlaceDetailResponse getPlaceDetail(
 		String collectionId,
-		String collectionPlaceId
+		String collectionPlaceId,
+		String collectionMemberId
 	) {
 		Collection collection = getCollectionById(collectionId);
 		CollectionPlace collectionPlace = getCollectionPlace(collection, collectionPlaceId);
@@ -154,14 +156,14 @@ public class CollectionPlaceQueryService {
 			collectionPlace,
 			toPlaceResponse(collectionPlace),
 			toSocialMediaResponse(collectionPlace),
-			getPickPass(collectionPlace.getId())
+			getPickPass(collectionPlace.getId(), collectionMemberId)
 		);
 	}
 
 	/**
 	 * CollectionPlace의 Pick/Pass 현재 상태 조회 (권한 검증 없음)
 	 */
-	public PickPassResponse getPickPass(Long collectionPlaceId) {
+	public PickPassResponse getPickPass(Long collectionPlaceId, String collectionMemberId) {
 		Map<CollectionPlacePreference.Type, List<CollectionMemberResponse>> preferenceByType =
 			preferenceRepository.findAllByPlaceIdIn(List.of(collectionPlaceId))
 				.stream()
@@ -175,7 +177,25 @@ public class CollectionPlaceQueryService {
 		List<CollectionMemberResponse> passed =
 			preferenceByType.getOrDefault(CollectionPlacePreference.Type.PASS, List.of());
 
-		return PickPassResponse.of(picked, passed);
+		return PickPassResponse.of(picked, passed, collectionMemberId);
+	}
+
+	/**
+	 * 여러 CollectionPlace의 Pick/Pass 상태를 일괄 조회
+	 */
+	public Map<Long, PickPassResponse> getPickPassBatch(List<Long> collectionPlaceIds, String collectionMemberId) {
+		if (collectionPlaceIds.isEmpty()) {
+			return Collections.emptyMap();
+		}
+
+		Map<Long, Map<CollectionPlacePreference.Type, List<CollectionMemberResponse>>> grouped =
+			groupPreferences(collectionPlaceIds);
+
+		return collectionPlaceIds.stream()
+			.collect(java.util.stream.Collectors.toMap(
+				id -> id,
+				id -> toPickPassResponse(grouped, id, collectionMemberId)
+			));
 	}
 
 	// ── private  ──────────────────────────────────────────────────
@@ -216,14 +236,16 @@ public class CollectionPlaceQueryService {
 
 	private PickPassResponse toPickPassResponse(
 		Map<Long, Map<CollectionPlacePreference.Type, List<CollectionMemberResponse>>> grouped,
-		Long collectionPlaceId
+		Long collectionPlaceId,
+		String collectionMemberId
 	) {
 		Map<CollectionPlacePreference.Type, List<CollectionMemberResponse>> byType =
 			grouped.getOrDefault(collectionPlaceId, Collections.emptyMap());
 
 		return PickPassResponse.of(
 			byType.getOrDefault(CollectionPlacePreference.Type.PICK, List.of()),
-			byType.getOrDefault(CollectionPlacePreference.Type.PASS, List.of())
+			byType.getOrDefault(CollectionPlacePreference.Type.PASS, List.of()),
+			collectionMemberId
 		);
 	}
 
