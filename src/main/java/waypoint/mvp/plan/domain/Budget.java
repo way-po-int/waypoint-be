@@ -70,7 +70,11 @@ public class Budget extends ExternalIdEntity {
 			? this.totalBudget
 			: totalSpent;
 
-		return Math.round((double)baseAmount / getTravelerCount());
+		Integer count = getTravelerCount();
+		if (count == 0) {
+			return 0L;
+		}
+		return Math.round((double)baseAmount / count);
 	}
 
 	public void update(BudgetType type, Long totalBudget, Integer travelerCount) {
