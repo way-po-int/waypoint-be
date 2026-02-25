@@ -15,7 +15,9 @@ import waypoint.mvp.plan.domain.TimeBlock;
 
 public interface TimeBlockRepository extends JpaRepository<TimeBlock, Long> {
 
-	@Query("SELECT tb FROM TimeBlock tb WHERE tb.planDay.plan.id = :planId AND tb.planDay.day = :day")
+	@Query("SELECT tb FROM TimeBlock tb "
+		+ "WHERE tb.planDay.plan.id = :planId AND tb.planDay.day = :day "
+		+ "ORDER BY tb.startTime ASC, tb.endTime ASC, tb.id ASC")
 	Slice<TimeBlock> findAllByPlanIdAndDay(@Param("planId") Long planId, @Param("day") int day, Pageable pageable);
 
 	@Query("SELECT tb FROM TimeBlock tb "
