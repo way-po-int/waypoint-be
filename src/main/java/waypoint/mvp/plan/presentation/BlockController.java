@@ -111,26 +111,15 @@ public class BlockController {
 	}
 
 	@Authorize(level = AuthLevel.AUTHENTICATED)
-	@PatchMapping("/{timeBlockId}/fix")
-	public ResponseEntity<BlockResponse> fixCandidateBlock(
+	@PatchMapping("/{timeBlockId}/selection")
+	public ResponseEntity<BlockResponse> updateCandidateSelection(
 		@PathVariable String planId,
 		@PathVariable String timeBlockId,
 		@RequestBody @Valid CandidateBlockSelectRequest request,
 		@AuthenticationPrincipal UserPrincipal user
 	) {
-		BlockResponse response = blockService.fixCandidate(planId, timeBlockId, request, user);
-		return ResponseEntity.ok(response);
-	}
+		BlockResponse response = blockService.updateCandidateSelection(planId, timeBlockId, request, true, user);
 
-	@Authorize(level = AuthLevel.AUTHENTICATED)
-	@PatchMapping("/{timeBlockId}/unfix")
-	public ResponseEntity<BlockResponse> unfixCandidateBlock(
-		@PathVariable String planId,
-		@PathVariable String timeBlockId,
-		@RequestBody @Valid CandidateBlockSelectRequest request,
-		@AuthenticationPrincipal UserPrincipal user
-	) {
-		BlockResponse response = blockService.unfixCandidate(planId, timeBlockId, request, user);
 		return ResponseEntity.ok(response);
 	}
 

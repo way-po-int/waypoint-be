@@ -129,8 +129,7 @@ class BlockServiceTest {
 			CollectionMember.create(collection, user, CollectionRole.OWNER));
 
 		Place place = placeRepository.save(
-			Place.create(placeName, "서울시 강남구",
-				GEOMETRY_FACTORY.createPoint(new Coordinate(127.0, 37.5)),
+			Place.create(placeName, "서울시 강남구", GEOMETRY_FACTORY.createPoint(new Coordinate(127.0, 37.5)),
 				PlaceDetail.create("google-place-id-" + System.nanoTime()), 1L));
 
 		CollectionPlace collectionPlace = collectionPlaceRepository.save(
@@ -144,13 +143,12 @@ class BlockServiceTest {
 	// -- Request Builders -----------
 
 	private BlockCreateRequest placeBlockRequest(String collectionPlaceId, String memo) {
-		return new BlockCreateRequest(
-			collectionPlaceId, TimeBlockType.PLACE, DEFAULT_DAY, DEFAULT_START, DEFAULT_END, memo);
+		return new BlockCreateRequest(collectionPlaceId, TimeBlockType.PLACE, DEFAULT_DAY, DEFAULT_START, DEFAULT_END,
+			memo);
 	}
 
 	private BlockCreateRequest freeBlockRequest(String memo) {
-		return new BlockCreateRequest(
-			null, TimeBlockType.FREE, DEFAULT_DAY, DEFAULT_START, DEFAULT_END, memo);
+		return new BlockCreateRequest(null, TimeBlockType.FREE, DEFAULT_DAY, DEFAULT_START, DEFAULT_END, memo);
 	}
 
 	// -- Service Call Helpers -----------
@@ -161,20 +159,19 @@ class BlockServiceTest {
 
 	private BlockResponse addCandidates(String timeBlockExternalId, List<String> collectionPlaceIds) {
 		CandidateBlockCreateRequest request = CandidateBlockCreateRequest.createCollectionPlaceIds(collectionPlaceIds);
-		return blockService.addCandidates(
-			plan.getExternalId(), timeBlockExternalId, request, userPrincipal);
+		return blockService.addCandidates(plan.getExternalId(), timeBlockExternalId, request, userPrincipal);
 	}
 
 	private BlockResponse selectCandidate(String timeBlockExternalId, String blockId) {
 		CandidateBlockSelectRequest request = new CandidateBlockSelectRequest(blockId);
-		return blockService.fixCandidate(
-			plan.getExternalId(), timeBlockExternalId, request, userPrincipal);
+		return blockService.updateCandidateSelection(plan.getExternalId(), timeBlockExternalId, request, true,
+			userPrincipal);
 	}
 
 	private BlockResponse unselectCandidate(String timeBlockExternalId, String blockId) {
 		CandidateBlockSelectRequest request = new CandidateBlockSelectRequest(blockId);
-		return blockService.unfixCandidate(
-			plan.getExternalId(), timeBlockExternalId, request, userPrincipal);
+		return blockService.updateCandidateSelection(plan.getExternalId(), timeBlockExternalId, request, false,
+			userPrincipal);
 	}
 
 	// -- DB Helpers --
@@ -201,8 +198,7 @@ class BlockServiceTest {
 			BlockResponse response = createBlock(request);
 
 			// then
-			assertThatBlock(response)
-				.hasStatus(BlockStatus.DIRECT)
+			assertThatBlock(response).hasStatus(BlockStatus.DIRECT)
 				.hasType(TimeBlockType.PLACE)
 				.hasCandidateCount(1)
 				.hasStartTime(DEFAULT_START)
@@ -211,8 +207,7 @@ class BlockServiceTest {
 				.hasSelectedBlockWithPlaceName("강남 맛집")
 				.hasSelectedBlockAddedBy("tester");
 
-			assertThatCandidate(response.selectedBlock())
-				.isSelected();
+			assertThatCandidate(response.selectedBlock()).isSelected();
 
 			// DB 검증
 			List<Block> blocks = findBlocksByTimeBlockExternalId(response.timeBlockId());
@@ -230,16 +225,14 @@ class BlockServiceTest {
 			BlockResponse response = createBlock(request);
 
 			// then
-			assertThatBlock(response)
-				.hasStatus(BlockStatus.NOTHING)
+			assertThatBlock(response).hasStatus(BlockStatus.NOTHING)
 				.hasType(TimeBlockType.FREE)
 				.hasCandidateCount(1)
 				.hasStartTime(DEFAULT_START)
 				.hasEndTime(DEFAULT_END);
 
 			assertThat(response.candidates()).hasSize(1);
-			assertThatCandidate(response.candidates().get(0))
-				.hasMemo("카페에서 휴식")
+			assertThatCandidate(response.candidates().get(0)).hasMemo("카페에서 휴식")
 				.hasNoPlace()
 				.hasAddedByNickname("tester");
 		}
@@ -260,12 +253,10 @@ class BlockServiceTest {
 			CollectionPlace cp2 = createCollectionPlace("이태원 레스토랑");
 
 			// when
-			BlockResponse response = addCandidates(
-				createResponse.timeBlockId(), List.of(cp2.getExternalId()));
+			BlockResponse response = addCandidates(createResponse.timeBlockId(), List.of(cp2.getExternalId()));
 
 			// then
-			assertThatBlock(response)
-				.hasStatus(BlockStatus.PENDING)
+			assertThatBlock(response).hasStatus(BlockStatus.PENDING)
 				.hasNoSelectedBlock()
 				.hasCandidateCount(2)
 				.allCandidatesUnselected()
@@ -286,12 +277,10 @@ class BlockServiceTest {
 			BlockResponse createResponse = createBlock(placeBlockRequest(cp1.getExternalId(), null));
 
 			CollectionPlace cp2 = createCollectionPlace("종로 서점");
-			BlockResponse pendingResponse = addCandidates(
-				createResponse.timeBlockId(), List.of(cp2.getExternalId()));
+			BlockResponse pendingResponse = addCandidates(createResponse.timeBlockId(), List.of(cp2.getExternalId()));
 
 			// 확정 전 상태 검증
-			assertThatBlock(pendingResponse)
-				.hasStatus(BlockStatus.PENDING)
+			assertThatBlock(pendingResponse).hasStatus(BlockStatus.PENDING)
 				.hasNoSelectedBlock()
 				.allCandidatesUnselected();
 
@@ -300,13 +289,9 @@ class BlockServiceTest {
 			BlockResponse response = selectCandidate(pendingResponse.timeBlockId(), blockIdToSelect);
 
 			// then - 확정 후 상태 검증
-			assertThatBlock(response)
-				.hasStatus(BlockStatus.FIXED)
-				.hasSelectedBlock()
-				.hasCandidateCount(2);
+			assertThatBlock(response).hasStatus(BlockStatus.FIXED).hasSelectedBlock().hasCandidateCount(2);
 
-			assertThatCandidate(response.selectedBlock())
-				.isSelected();
+			assertThatCandidate(response.selectedBlock()).isSelected();
 
 			// DB 검증
 			List<Block> blocks = findBlocksByTimeBlockExternalId(response.timeBlockId());
@@ -314,27 +299,6 @@ class BlockServiceTest {
 			assertThat(selectedCount).isEqualTo(1);
 		}
 
-		@Test
-		@DisplayName("이미 확정된 후보지가 있으면 예외 발생")
-		void selectCandidate_alreadySelected_throwsException() {
-			// given
-			CollectionPlace cp1 = createCollectionPlace("강남역 카페");
-			CollectionPlace cp2 = createCollectionPlace("역삼역 카페");
-
-			BlockResponse createResponse = createBlock(placeBlockRequest(cp1.getExternalId(), null));
-			BlockResponse pendingResponse = addCandidates(
-				createResponse.timeBlockId(), List.of(cp2.getExternalId()));
-
-			// 첫 번째 후보지 확정
-			String firstBlockId = pendingResponse.candidates().get(0).blockId();
-			selectCandidate(pendingResponse.timeBlockId(), firstBlockId);
-
-			// when & then - 두 번째 후보지 확정 시도 시 예외 발생
-			String secondBlockId = pendingResponse.candidates().get(1).blockId();
-			assertThatThrownBy(() ->
-				selectCandidate(pendingResponse.timeBlockId(), secondBlockId)
-			).hasMessageContaining(BlockError.ALREADY_SELECTED.getMessage());
-		}
 	}
 
 	@Nested
@@ -349,28 +313,22 @@ class BlockServiceTest {
 			CollectionPlace cp2 = createCollectionPlace("홍대 맛집");
 
 			BlockResponse createResponse = createBlock(placeBlockRequest(cp1.getExternalId(), null));
-			BlockResponse pendingResponse = addCandidates(
-				createResponse.timeBlockId(), List.of(cp2.getExternalId()));
+			BlockResponse pendingResponse = addCandidates(createResponse.timeBlockId(), List.of(cp2.getExternalId()));
 
 			String blockIdToSelect = pendingResponse.candidates().get(0).blockId();
 			BlockResponse selectedResponse = selectCandidate(pendingResponse.timeBlockId(), blockIdToSelect);
 
 			// 확정 상태 검증
-			assertThatBlock(selectedResponse)
-				.hasStatus(BlockStatus.FIXED)
-				.hasSelectedBlock();
+			assertThatBlock(selectedResponse).hasStatus(BlockStatus.FIXED).hasSelectedBlock();
 
-			assertThatCandidate(selectedResponse.selectedBlock())
-				.isSelected();
+			assertThatCandidate(selectedResponse.selectedBlock()).isSelected();
 
 			// when - 확정 취소
-			BlockResponse response = unselectCandidate(
-				selectedResponse.timeBlockId(),
+			BlockResponse response = unselectCandidate(selectedResponse.timeBlockId(),
 				selectedResponse.selectedBlock().blockId());
 
 			// then - 취소 후 상태 검증
-			assertThatBlock(response)
-				.hasStatus(BlockStatus.PENDING)
+			assertThatBlock(response).hasStatus(BlockStatus.PENDING)
 				.hasNoSelectedBlock()
 				.allCandidatesUnselected()
 				.hasCandidateCount(2);
@@ -389,19 +347,15 @@ class BlockServiceTest {
 			CollectionPlace cp2 = createCollectionPlace("용산역 카페");
 
 			BlockResponse createResponse = createBlock(placeBlockRequest(cp1.getExternalId(), null));
-			BlockResponse pendingResponse = addCandidates(
-				createResponse.timeBlockId(), List.of(cp2.getExternalId()));
+			BlockResponse pendingResponse = addCandidates(createResponse.timeBlockId(), List.of(cp2.getExternalId()));
 
 			// 확정하지 않은 상태
-			assertThatBlock(pendingResponse)
-				.hasStatus(BlockStatus.PENDING)
-				.allCandidatesUnselected();
+			assertThatBlock(pendingResponse).hasStatus(BlockStatus.PENDING).allCandidatesUnselected();
 
 			// when & then - 확정되지 않은 후보지 취소 시도 시 예외 발생
 			String blockId = pendingResponse.candidates().get(0).blockId();
-			assertThatThrownBy(() ->
-				unselectCandidate(pendingResponse.timeBlockId(), blockId)
-			).hasMessageContaining(BlockError.NOT_SELECTED.getMessage());
+			assertThatThrownBy(() -> unselectCandidate(pendingResponse.timeBlockId(), blockId)).hasMessageContaining(
+				BlockError.NOT_SELECTED.getMessage());
 		}
 
 		@Test
@@ -412,33 +366,25 @@ class BlockServiceTest {
 			CollectionPlace cp2 = createCollectionPlace("분당 레스토랑");
 
 			BlockResponse createResponse = createBlock(placeBlockRequest(cp1.getExternalId(), null));
-			BlockResponse pendingResponse = addCandidates(
-				createResponse.timeBlockId(), List.of(cp2.getExternalId()));
+			BlockResponse pendingResponse = addCandidates(createResponse.timeBlockId(), List.of(cp2.getExternalId()));
 
 			String firstBlockId = pendingResponse.candidates().get(0).blockId();
 			BlockResponse selectedResponse = selectCandidate(pendingResponse.timeBlockId(), firstBlockId);
 
 			// 확정 취소
-			BlockResponse unselectedResponse = unselectCandidate(
-				selectedResponse.timeBlockId(),
+			BlockResponse unselectedResponse = unselectCandidate(selectedResponse.timeBlockId(),
 				selectedResponse.selectedBlock().blockId());
 
-			assertThatBlock(unselectedResponse)
-				.hasStatus(BlockStatus.PENDING)
-				.hasNoSelectedBlock();
+			assertThatBlock(unselectedResponse).hasStatus(BlockStatus.PENDING).hasNoSelectedBlock();
 
 			// when - 다른 후보지 확정
 			String secondBlockId = unselectedResponse.candidates().get(1).blockId();
-			BlockResponse reselectedResponse = selectCandidate(
-				unselectedResponse.timeBlockId(), secondBlockId);
+			BlockResponse reselectedResponse = selectCandidate(unselectedResponse.timeBlockId(), secondBlockId);
 
 			// then - 다시 FIXED 상태
-			assertThatBlock(reselectedResponse)
-				.hasStatus(BlockStatus.FIXED)
-				.hasSelectedBlock();
+			assertThatBlock(reselectedResponse).hasStatus(BlockStatus.FIXED).hasSelectedBlock();
 
-			assertThatCandidate(reselectedResponse.selectedBlock())
-				.isSelected();
+			assertThatCandidate(reselectedResponse.selectedBlock()).isSelected();
 
 			// 선택된 블록이 두 번째 블록인지 확인
 			assertThat(reselectedResponse.selectedBlock().blockId()).isEqualTo(secondBlockId);
@@ -602,9 +548,8 @@ class BlockServiceTest {
 			String nonExistentBlockId = "non-existent-block-id";
 
 			// when & then - 존재하지 않는 Block 삭제 시도 시 예외 발생
-			assertThatThrownBy(() ->
-				blockService.deleteBlock(plan.getExternalId(), timeBlockId, nonExistentBlockId, userPrincipal)
-			).isInstanceOf(BusinessException.class)
+			assertThatThrownBy(() -> blockService.deleteBlock(plan.getExternalId(), timeBlockId, nonExistentBlockId,
+				userPrincipal)).isInstanceOf(BusinessException.class)
 				.hasMessageContaining(BlockError.BLOCK_NOT_FOUND.getMessage());
 		}
 

@@ -233,29 +233,9 @@ public class BlockService {
 	}
 
 	@Transactional
-	public BlockResponse fixCandidate(String planExternalId, String timeBlockId, CandidateBlockSelectRequest request,
-		UserPrincipal user) {
-		Plan plan = getPlanAuthor(planExternalId, user);
-		Long planId = plan.getId();
+	public BlockResponse updateCandidateSelection(String planExternalId, String timeBlockId,
+		CandidateBlockSelectRequest request, boolean fixed, UserPrincipal user) {
 
-		Block block = blockQueryService.getBlock(planId, request.blockId());
-		TimeBlock timeBlock = blockQueryService.getTimeBlock(planId, timeBlockId);
-		List<Block> blocks = validateAndGetBlocks(planId, block, timeBlock);
-
-		boolean hasSelected = blocks.stream().anyMatch(Block::isSelected);
-		if (hasSelected) {
-			throw new BusinessException(BlockError.ALREADY_SELECTED);
-		}
-
-		block.select();
-
-		return blockQueryService.toBlockResponse(timeBlock, blocks, user.getId());
-	}
-
-	@Transactional
-	public BlockResponse unfixCandidate(String planExternalId, String timeBlockId,
-		CandidateBlockSelectRequest request,
-		UserPrincipal user) {
 		Plan plan = getPlanAuthor(planExternalId, user);
 		Long planId = plan.getId();
 
@@ -263,13 +243,29 @@ public class BlockService {
 		TimeBlock timeBlock = blockQueryService.getTimeBlock(planId, timeBlockId);
 		List<Block> candidateBlocks = validateAndGetBlocks(planId, block, timeBlock);
 
-		if (!block.isSelected()) {
-			throw new BusinessException(BlockError.NOT_SELECTED);
+		// unfix로 변경, BlockStatus: PENDING
+		if (Boolean.FALSE.equals(fixed)) {
+			if (!block.isSelected()) {
+				throw new BusinessException(BlockError.NOT_SELECTED);
+			}
+
+			block.unselect();
+			return blockQueryService.toBlockResponse(timeBlock, candidateBlocks, user.getId());
+
+		} else { // fix 유지 BlockStatus: FIXED
+			if (candidateBlocks.size() < 2) {
+				throw new BusinessException(BlockError.CANDIDATE_COUNT_INSUFFICIENT);
+			}
+
+			candidateBlocks.stream()
+				.filter(Block::isSelected)
+				.forEach(Block::unselect);
+
+			block.select();
+
+			return blockQueryService.toBlockResponse(timeBlock, candidateBlocks, user.getId());
 		}
 
-		block.unselect();
-
-		return blockQueryService.toBlockResponse(timeBlock, candidateBlocks, user.getId());
 	}
 
 	private List<Block> validateAndGetBlocks(Long planId, Block block, TimeBlock timeBlock) {
