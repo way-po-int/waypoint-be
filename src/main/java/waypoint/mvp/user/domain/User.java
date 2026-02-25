@@ -2,6 +2,8 @@ package waypoint.mvp.user.domain;
 
 import java.time.Instant;
 
+import org.hibernate.annotations.SQLRestriction;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
@@ -14,7 +16,9 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import waypoint.mvp.global.common.ExternalIdEntity;
+import waypoint.mvp.global.common.LogicalDeleteEntity;
+import waypoint.mvp.global.error.exception.BusinessException;
+import waypoint.mvp.user.error.UserError;
 
 @Entity
 @Table(
@@ -23,7 +27,8 @@ import waypoint.mvp.global.common.ExternalIdEntity;
 )
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class User extends ExternalIdEntity {
+@SQLRestriction("deleted_at IS NULL")
+public class User extends LogicalDeleteEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,7 +45,7 @@ public class User extends ExternalIdEntity {
 
 	@Column(nullable = false)
 	private String email;
-	
+
 	private Instant termsAcceptedAt;
 
 	@Builder(access = AccessLevel.PRIVATE)
@@ -65,9 +70,10 @@ public class User extends ExternalIdEntity {
 	}
 
 	public void acceptTerms() {
-		if (termsAcceptedAt == null) {
-			termsAcceptedAt = Instant.now();
+		if (termsAcceptedAt != null) {
+			throw new BusinessException(UserError.TERMS_ALREADY_ACCEPTED);
 		}
+		termsAcceptedAt = Instant.now();
 	}
 
 	public void changeNickname(String nickname) {
@@ -76,5 +82,9 @@ public class User extends ExternalIdEntity {
 
 	public void changePicture(String picture) {
 		this.picture = picture;
+	}
+
+	public void delete() {
+		super.softDelete();
 	}
 }

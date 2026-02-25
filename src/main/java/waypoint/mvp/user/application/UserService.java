@@ -95,9 +95,9 @@ public class UserService implements UserFinder {
 		User me = findById(user.id());
 
 		refreshTokenRepository.deleteByUserId(user.id());
-		userRepository.delete(me);
+		me.delete();
 
-		log.info("회원 탈퇴(DB 삭제) 완료: userId={}", user.id());
+		log.info("회원 탈퇴(soft delete) 완료: userId={}", user.id());
 	}
 
 	public UserResponse findMe(UserPrincipal user) {
