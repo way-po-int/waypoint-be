@@ -13,6 +13,8 @@ import waypoint.mvp.auth.domain.RefreshToken;
 public interface RefreshTokenRepository extends CrudRepository<RefreshToken, Long> {
 	Optional<RefreshToken> findByToken(String token);
 
+	long deleteByUserId(Long userId);
+
 	@Modifying
 	@Query("DELETE FROM RefreshToken rt WHERE rt.expiresAt < :now")
 	long deleteExpiredTokens(@Param("now") Instant now);

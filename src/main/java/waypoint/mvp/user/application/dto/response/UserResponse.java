@@ -9,7 +9,8 @@ public record UserResponse(
 	Provider provider,
 	String nickname,
 	String picture,
-	String email
+	String email,
+	boolean termsAccepted
 ) {
 	public static UserResponse from(User user) {
 		return new UserResponse(
@@ -17,7 +18,8 @@ public record UserResponse(
 			user.getSocialAccount().getProvider(),
 			user.getNickname(),
 			user.getPicture(),
-			MaskingUtils.maskEmail(user.getEmail())
+			MaskingUtils.maskEmail(user.getEmail()),
+			user.isTermsAccepted()
 		);
 	}
 }

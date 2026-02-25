@@ -19,6 +19,8 @@ import waypoint.mvp.auth.security.jwt.JwtTokenProvider;
 import waypoint.mvp.auth.security.jwt.TokenInfo;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.auth.util.HashUtils;
+import waypoint.mvp.user.application.UserFinder;
+import waypoint.mvp.user.domain.User;
 
 @Service
 @Transactional
@@ -28,6 +30,7 @@ public class AuthService {
 
 	private final JwtTokenProvider jwtTokenProvider;
 	private final RefreshTokenRepository refreshTokenRepository;
+	private final UserFinder userFinder;
 
 	@Transactional(noRollbackFor = ExpiredRefreshTokenException.class)
 	public AuthTokens reissue(String refreshToken) {
@@ -48,11 +51,20 @@ public class AuthService {
 		Authentication authentication = jwtTokenProvider.getAuthentication(refreshToken);
 		UserPrincipal userInfo = UserPrincipal.from(authentication.getPrincipal());
 
-		log.info("토큰 재발급 성공: userId={}", userInfo.id());
+		User user = userFinder.findById(userInfo.id());
+
+		log.info("토큰 재발급 성공: userId={}, termsAccepted={}", userInfo.id(), user.isTermsAccepted());
 		return AuthTokens.of(
-			jwtTokenProvider.generateAccessToken(userInfo),
+			generateAccessTokenByUserState(user, userInfo),
 			generateRefreshToken(authentication)
 		);
+	}
+
+	private TokenInfo generateAccessTokenByUserState(User user, UserPrincipal userInfo) {
+		if (user.isTermsAccepted()) {
+			return jwtTokenProvider.generateAccessToken(userInfo);
+		}
+		return jwtTokenProvider.generateOnboardingAccessToken(userInfo);
 	}
 
 	public TokenInfo generateRefreshToken(Authentication authentication) {
