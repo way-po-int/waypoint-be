@@ -26,6 +26,7 @@ import waypoint.mvp.plan.application.dto.request.CandidateBlockSelectRequest;
 import waypoint.mvp.plan.application.dto.response.BlockDetailResponse;
 import waypoint.mvp.plan.application.dto.response.BlockListResponse;
 import waypoint.mvp.plan.application.dto.response.BlockResponse;
+import waypoint.mvp.plan.application.dto.response.CandidateGroupResponse;
 import waypoint.mvp.plan.domain.Block;
 import waypoint.mvp.plan.domain.Plan;
 import waypoint.mvp.plan.domain.PlanDay;
@@ -199,6 +200,14 @@ public class BlockService {
 		Pageable pageable) {
 		BlockSliceResult result = blockQueryService.findBlocks(planExternalId, day, user, pageable);
 		return BlockListResponse.from(result.planDay(), result.plan(), result.slice(), result.contents());
+	}
+
+	public CandidateGroupResponse findCandidates(
+		String planExternalId,
+		String timeBlockExternalId,
+		AuthPrincipal user
+	) {
+		return blockQueryService.findCandidates(planExternalId, timeBlockExternalId, user);
 	}
 
 	@Transactional

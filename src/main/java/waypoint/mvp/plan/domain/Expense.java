@@ -92,6 +92,13 @@ public class Expense extends ExternalIdEntity {
 		};
 	}
 
+	public PlanDay getPlanDay() {
+		return switch (this.type) {
+			case ADDITIONAL -> this.planDay;
+			case BLOCK -> this.block.getTimeBlock().getPlanDay();
+		};
+	}
+
 	public boolean isAdditionalType() {
 		return this.type == ExpenseType.ADDITIONAL;
 	}

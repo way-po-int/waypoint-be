@@ -13,13 +13,13 @@ import waypoint.mvp.plan.domain.ExpenseItem;
 public record ExpenseResponse(
 	String expenseId,
 	BlockInfo block,
-	List<ItemInfo> items
+	List<ExpenseItemResponse> items
 ) {
 	public static ExpenseResponse of(Expense expense, List<ExpenseItem> items, PlaceCategoryResponse category) {
 		return new ExpenseResponse(
 			expense.getExternalId(),
 			BlockInfo.from(expense.getBlock(), category),
-			items != null ? items.stream().map(ItemInfo::from).toList() : List.of()
+			items != null ? items.stream().map(ExpenseItemResponse::from).toList() : List.of()
 		);
 	}
 
@@ -29,12 +29,6 @@ public record ExpenseResponse(
 				return null;
 			}
 			return new BlockInfo(block.getExternalId(), block.getPlace().getName(), category);
-		}
-	}
-
-	record ItemInfo(String itemId, String name, Long cost) {
-		static ItemInfo from(ExpenseItem item) {
-			return new ItemInfo(item.getExternalId(), item.getName(), item.getCost());
 		}
 	}
 }
