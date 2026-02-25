@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -15,6 +16,9 @@ import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
 import waypoint.mvp.global.error.exception.BusinessException;
+import waypoint.mvp.place.application.PlaceCategoryService;
+import waypoint.mvp.place.application.dto.PlaceCategoryResponse;
+import waypoint.mvp.place.domain.Place;
 import waypoint.mvp.plan.application.dto.request.ExpenseCreateRequest;
 import waypoint.mvp.plan.application.dto.request.ExpenseItemUpdateRequest;
 import waypoint.mvp.plan.application.dto.response.ExpenseGroupResponse;
@@ -37,6 +41,7 @@ public class ExpenseService {
 	private final ExpenseQueryService expenseQueryService;
 	private final ExpenseRankService expenseRankService;
 	private final ResourceAuthorizer planAuthorizer;
+	private final PlaceCategoryService placeCategoryService;
 
 	private final ExpenseRepository expenseRepository;
 	private final ExpenseItemRepository expenseItemRepository;
@@ -114,7 +119,13 @@ public class ExpenseService {
 		// 지출 항목 추가 & 수정
 		List<ExpenseItem> upsertItems = upsertItems(expense, existingItems, requests);
 
-		return ExpenseResponse.of(expense, upsertItems);
+		PlaceCategoryResponse category = Optional.ofNullable(expense.getBlock())
+			.map(Block::getPlace)
+			.map(Place::getCategoryId)
+			.map(placeCategoryService::toCategoryResponse)
+			.orElse(null);
+
+		return ExpenseResponse.of(expense, upsertItems, category);
 	}
 
 	@Transactional

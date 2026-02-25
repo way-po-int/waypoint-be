@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.global.error.exception.BusinessException;
+import waypoint.mvp.place.application.PlaceCategoryService;
 import waypoint.mvp.plan.application.dto.response.ExpenseGroupResponse;
 import waypoint.mvp.plan.domain.Budget;
 import waypoint.mvp.plan.domain.Expense;
@@ -29,6 +30,7 @@ import waypoint.mvp.plan.infrastructure.persistence.PlanDayRepository;
 @RequiredArgsConstructor
 public class ExpenseQueryService {
 
+	private final PlaceCategoryService placeCategoryService;
 	private final ExpenseRepository expenseRepository;
 	private final ExpenseItemRepository expenseItemRepository;
 	private final PlanDayRepository planDayRepository;
@@ -112,7 +114,12 @@ public class ExpenseQueryService {
 
 		// 블록 지출을 결과에 추가
 		responses.add(ExpenseGroupResponse.ofBlock(
-			timeBlockId, selectedExpense, candidateExpenses, expenseItemMap));
+			timeBlockId,
+			selectedExpense,
+			candidateExpenses,
+			expenseItemMap,
+			placeCategoryService::toCategoryResponse
+		));
 
 		// 추가 지출을 결과에 추가
 		responses.addAll(toAdditionalResponses(additionalExpenses, expenseItemMap));

@@ -2,9 +2,14 @@ package waypoint.mvp.plan.application.dto.response;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import waypoint.mvp.place.application.dto.PlaceCategoryResponse;
+import waypoint.mvp.place.domain.Place;
+import waypoint.mvp.plan.domain.Block;
 import waypoint.mvp.plan.domain.BlockStatus;
 import waypoint.mvp.plan.domain.Expense;
 import waypoint.mvp.plan.domain.ExpenseItem;
@@ -20,7 +25,7 @@ public record ExpenseGroupResponse(
 	ExpenseResponse selected
 ) {
 	public static ExpenseGroupResponse ofAdditional(Expense expense, List<ExpenseItem> items) {
-		ExpenseResponse selected = ExpenseResponse.of(expense, items);
+		ExpenseResponse selected = ExpenseResponse.of(expense, items, null);
 		return new ExpenseGroupResponse(null, ExpenseType.ADDITIONAL, null, null, null, selected);
 	}
 
@@ -28,13 +33,12 @@ public record ExpenseGroupResponse(
 		String timeBlockId,
 		Expense selected,
 		List<Expense> candidates,
-		Map<Long, List<ExpenseItem>> itemMap
+		Map<Long, List<ExpenseItem>> itemMap,
+		Function<Long, PlaceCategoryResponse> categoryProvider
 	) {
-		ExpenseResponse selectedResponse = selected != null
-			? ExpenseResponse.of(selected, itemMap.getOrDefault(selected.getId(), List.of()))
-			: null;
+		ExpenseResponse selectedResponse = mapToResponse(selected, itemMap, categoryProvider);
 		List<ExpenseResponse> candidateResponses = candidates.stream()
-			.map(e -> ExpenseResponse.of(e, itemMap.getOrDefault(e.getId(), List.of())))
+			.map(e -> mapToResponse(e, itemMap, categoryProvider))
 			.toList();
 
 		return new ExpenseGroupResponse(
@@ -44,6 +48,28 @@ public record ExpenseGroupResponse(
 			candidates.size(),
 			candidateResponses,
 			selectedResponse
+		);
+	}
+
+	private static ExpenseResponse mapToResponse(
+		Expense expense,
+		Map<Long, List<ExpenseItem>> itemMap,
+		Function<Long, PlaceCategoryResponse> categoryProvider
+	) {
+		if (expense == null) {
+			return null;
+		}
+
+		PlaceCategoryResponse category = Optional.ofNullable(expense.getBlock())
+			.map(Block::getPlace)
+			.map(Place::getCategoryId)
+			.map(categoryProvider)
+			.orElse(null);
+
+		return ExpenseResponse.of(
+			expense,
+			itemMap.getOrDefault(expense.getId(), List.of()),
+			category
 		);
 	}
 
