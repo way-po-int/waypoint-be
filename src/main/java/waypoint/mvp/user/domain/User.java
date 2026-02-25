@@ -70,7 +70,7 @@ public class User extends LogicalDeleteEntity {
 	}
 
 	public void acceptTerms() {
-		if (termsAcceptedAt != null) {
+		if (isTermsAccepted()) {
 			throw new BusinessException(UserError.TERMS_ALREADY_ACCEPTED);
 		}
 		termsAcceptedAt = Instant.now();
