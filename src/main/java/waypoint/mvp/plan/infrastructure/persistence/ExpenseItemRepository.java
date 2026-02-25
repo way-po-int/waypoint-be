@@ -14,7 +14,10 @@ public interface ExpenseItemRepository extends JpaRepository<ExpenseItem, Long> 
 
 	List<ExpenseItem> findAllByExpenseId(Long expenseId);
 
-	List<ExpenseItem> findAllByExpenseIdIn(@Param("expenseIds") Collection<Long> expenseIds);
+	List<ExpenseItem> findAllByExpenseIdIn(Collection<Long> expenseIds);
+
+	@Query("SELECT ei FROM ExpenseItem ei JOIN FETCH ei.expense WHERE ei.expense.block.id IN :blockIds")
+	List<ExpenseItem> findAllByExpenseBlockIdIn(Collection<Long> blockIds);
 
 	@Modifying
 	@Query("DELETE FROM ExpenseItem ei WHERE ei.expense.id = :expenseId")

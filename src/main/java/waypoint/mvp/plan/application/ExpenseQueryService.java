@@ -1,6 +1,7 @@
 package waypoint.mvp.plan.application;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -47,6 +48,10 @@ public class ExpenseQueryService {
 
 	public List<ExpenseItem> getExpenseItems(Long expenseId) {
 		return expenseItemRepository.findAllByExpenseId(expenseId);
+	}
+
+	public List<ExpenseItem> getExpenseItemsByBlockIds(Collection<Long> blockIds) {
+		return expenseItemRepository.findAllByExpenseBlockIdIn(blockIds);
 	}
 
 	public List<ExpenseGroupResponse> findExpenses(Budget budget, int day) {
