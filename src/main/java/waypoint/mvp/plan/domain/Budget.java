@@ -1,5 +1,7 @@
 package waypoint.mvp.plan.domain;
 
+import java.util.Objects;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -59,36 +61,45 @@ public class Budget extends ExternalIdEntity {
 			.build();
 	}
 
-	public void updateBudgetType(Long totalBudget, Integer travelerCount) {
-		validateTotalBudget(totalBudget);
-		validateTravelerCount(travelerCount);
-		this.type = BudgetType.BUDGET;
-		this.totalBudget = totalBudget;
-		this.travelerCount = travelerCount;
+	public Integer getTravelerCount() {
+		return Objects.requireNonNullElse(this.travelerCount, plan.getMemberCount());
 	}
 
-	public void updateExpenseType(Integer travelerCount) {
-		validateTravelerCount(travelerCount);
-		this.type = BudgetType.EXPENSE;
-		this.travelerCount = travelerCount;
-	}
+	public Long getCostPerPerson(long totalSpent) {
+		long baseAmount = this.type == BudgetType.BUDGET
+			? this.totalBudget
+			: totalSpent;
 
-	public Long getCostPerPerson() {
-		if (travelerCount == null) {
-			return totalBudget;
+		Integer count = getTravelerCount();
+		if (count == 0) {
+			return 0L;
 		}
-		return Math.round((double)totalBudget / travelerCount);
+		return Math.round((double)baseAmount / count);
 	}
 
-	private void validateTotalBudget(Long totalBudget) {
-		if (totalBudget == null || totalBudget < 0) {
+	public void update(BudgetType type, Long totalBudget, Integer travelerCount) {
+		this.type = type;
+		updateTotalBudget(totalBudget);
+		updateTravelerCount(travelerCount);
+	}
+
+	private void updateTotalBudget(Long totalBudget) {
+		if (totalBudget == null) {
+			return;
+		}
+		if (totalBudget < 0) {
 			throw new BusinessException(BudgetError.INVALID_TOTAL_BUDGET);
 		}
+		this.totalBudget = totalBudget;
 	}
 
-	private void validateTravelerCount(Integer travelerCount) {
-		if (travelerCount != null && travelerCount <= 0) {
+	private void updateTravelerCount(Integer travelerCount) {
+		if (travelerCount == null) {
+			return;
+		}
+		if (travelerCount <= 0) {
 			throw new BusinessException(BudgetError.INVALID_TRAVELER_COUNT);
 		}
+		this.travelerCount = travelerCount;
 	}
 }
