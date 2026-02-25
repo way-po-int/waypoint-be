@@ -4,10 +4,10 @@ import java.util.Collection;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
-import waypoint.mvp.plan.domain.Expense;
 import waypoint.mvp.plan.domain.ExpenseItem;
 
 public interface ExpenseItemRepository extends JpaRepository<ExpenseItem, Long> {
@@ -16,7 +16,9 @@ public interface ExpenseItemRepository extends JpaRepository<ExpenseItem, Long> 
 
 	List<ExpenseItem> findAllByExpenseIdIn(@Param("expenseIds") Collection<Long> expenseIds);
 
-	void deleteAllInBatchByExpense(Expense expense);
+	@Modifying
+	@Query("DELETE FROM ExpenseItem ei WHERE ei.expense.id = :expenseId")
+	void deleteAllByExpenseId(@Param("expenseId") Long expenseId);
 
 	@Query("""
 		SELECT COALESCE(SUM(ei.cost), 0)

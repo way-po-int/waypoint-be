@@ -114,7 +114,11 @@ public class ExpenseService {
 		List<ExpenseItem> existingItems = expenseQueryService.getExpenseItems(expense.getId());
 
 		// 요청에 없는 지출 항목 삭제
-		deleteUnrequestedItems(existingItems, requests);
+		List<ExpenseItem> itemsToDelete = findUnrequestedItems(existingItems, requests);
+		if (!itemsToDelete.isEmpty()) {
+			expenseItemRepository.deleteAllInBatch(itemsToDelete);
+			existingItems.removeAll(itemsToDelete);
+		}
 
 		// 지출 항목 추가 & 수정
 		List<ExpenseItem> upsertItems = upsertItems(expense, existingItems, requests);
@@ -143,11 +147,11 @@ public class ExpenseService {
 			expenseRepository.delete(expense);
 		} else {
 			// 그 외의 타입은 지출 항목만 삭제
-			expenseItemRepository.deleteAllInBatchByExpense(expense);
+			expenseItemRepository.deleteAllByExpenseId(expense.getId());
 		}
 	}
 
-	private void deleteUnrequestedItems(
+	private List<ExpenseItem> findUnrequestedItems(
 		List<ExpenseItem> existingItems,
 		List<ExpenseItemUpdateRequest> requests
 	) {
@@ -156,14 +160,9 @@ public class ExpenseService {
 			.filter(Objects::nonNull)
 			.collect(Collectors.toSet());
 
-		List<ExpenseItem> toDelete = existingItems.stream()
+		return existingItems.stream()
 			.filter(item -> !requestedIds.contains(item.getExternalId()))
 			.toList();
-
-		if (!toDelete.isEmpty()) {
-			expenseItemRepository.deleteAllInBatch(toDelete);
-			existingItems.removeAll(toDelete);
-		}
 	}
 
 	private List<ExpenseItem> upsertItems(

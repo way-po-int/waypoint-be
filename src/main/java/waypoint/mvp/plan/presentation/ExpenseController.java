@@ -69,7 +69,7 @@ public class ExpenseController {
 
 	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@DeleteMapping("/{expenseId}")
-	public ResponseEntity<Void> deleteAdditionalExpense(
+	public ResponseEntity<Void> deleteExpense(
 		@PathVariable String planId,
 		@PathVariable String expenseId,
 		@AuthenticationPrincipal UserPrincipal user
