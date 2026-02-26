@@ -1,5 +1,7 @@
 package waypoint.mvp.plan.application;
 
+import static java.util.stream.IntStream.*;
+
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -10,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.plan.application.dto.PlanDaySyncResult;
 import waypoint.mvp.plan.application.dto.response.PlanUpdateResponse;
+import waypoint.mvp.plan.application.dto.response.PlanUpdateResponse.PlanUpdateType;
 import waypoint.mvp.plan.domain.Plan;
 import waypoint.mvp.plan.domain.PlanDay;
 import waypoint.mvp.plan.infrastructure.persistence.PlanDayRepository;
@@ -24,7 +27,7 @@ public class PlanDayService {
 	@Transactional
 	public void initPlanDays(Plan plan) {
 		int totalDays = calculateTotalDays(plan.getStartDate(), plan.getEndDate());
-		List<PlanDay> planDays = java.util.stream.IntStream.rangeClosed(1, totalDays)
+		List<PlanDay> planDays = rangeClosed(1, totalDays)
 			.mapToObj(day -> PlanDay.create(plan, day))
 			.toList();
 
@@ -42,20 +45,32 @@ public class PlanDayService {
 		int currentDays = planDayRepository.countByPlanId(plan.getId());
 		int targetDays = calculateTotalDays(newStartDate, newEndDate);
 
+		// 1. 일차수 증가 케이스
 		if (targetDays > currentDays) {
+			if (!confirm) {
+				return PlanDaySyncResult.withWarnings(PlanUpdateType.INCREASE, List.of());
+			}
 			expandDays(plan, currentDays, targetDays);
 			return PlanDaySyncResult.success();
 		}
 
+		// 2. 일차수 축소 케이스
 		if (targetDays < currentDays) {
 			return shrinkDays(plan, targetDays, confirm);
+		}
+
+		// 3. 일차수 동일하나 날짜가 변경된 케이스
+		if (!plan.getStartDate().equals(newStartDate) || !plan.getEndDate().equals(newEndDate)) {
+			if (!confirm) {
+				return PlanDaySyncResult.withWarnings(PlanUpdateType.STAY, List.of());
+			}
 		}
 
 		return PlanDaySyncResult.success();
 	}
 
 	private void expandDays(Plan plan, int currentDays, int targetDays) {
-		List<PlanDay> newPlanDays = java.util.stream.IntStream.rangeClosed(currentDays + 1, targetDays)
+		List<PlanDay> newPlanDays = rangeClosed(currentDays + 1, targetDays)
 			.mapToObj(day -> PlanDay.create(plan, day))
 			.toList();
 
@@ -66,11 +81,8 @@ public class PlanDayService {
 		boolean confirm) {
 		List<PlanUpdateResponse.AffectedDay> affectedDays = findAffectedDays(plan.getId(), targetDays);
 
-		boolean hasSchedules = affectedDays.stream()
-			.anyMatch(ad -> ad.scheduleCount() > 0);
-
-		if (hasSchedules && !confirm) {
-			return PlanDaySyncResult.withWarnings(affectedDays);
+		if (!confirm) {
+			return PlanDaySyncResult.withWarnings(PlanUpdateType.DECREASE, affectedDays);
 		}
 
 		deleteExcessDays(plan.getId(), targetDays);
