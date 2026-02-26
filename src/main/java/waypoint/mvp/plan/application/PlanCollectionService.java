@@ -19,9 +19,9 @@ import waypoint.mvp.collection.application.dto.response.CollectionPlaceDetailRes
 import waypoint.mvp.collection.application.dto.response.CollectionPlaceResponse;
 import waypoint.mvp.collection.domain.Collection;
 import waypoint.mvp.collection.domain.CollectionPlace;
-import waypoint.mvp.collection.domain.PlaceSortType;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
 import waypoint.mvp.global.common.SliceResponse;
+import waypoint.mvp.global.common.sort.SortType;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.plan.application.dto.request.CreatePlanCollectionRequest;
 import waypoint.mvp.plan.application.dto.response.PlanCollectionResponse;
@@ -115,7 +115,7 @@ public class PlanCollectionService {
 		String planId,
 		String collectionId,
 		String addedByMemberId,
-		PlaceSortType sortType,
+		SortType sortType,
 		Pageable pageable,
 		AuthPrincipal user
 	) {

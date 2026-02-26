@@ -17,7 +17,6 @@ import waypoint.mvp.collection.domain.Collection;
 import waypoint.mvp.collection.domain.CollectionMember;
 import waypoint.mvp.collection.domain.CollectionPlace;
 import waypoint.mvp.collection.domain.CollectionPlacePreference;
-import waypoint.mvp.collection.domain.PlaceSortType;
 import waypoint.mvp.collection.error.CollectionError;
 import waypoint.mvp.collection.error.CollectionPlaceError;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionPlacePreferenceRepository;
@@ -25,6 +24,7 @@ import waypoint.mvp.collection.infrastructure.persistence.CollectionPlaceReposit
 import waypoint.mvp.collection.infrastructure.persistence.CollectionRepository;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
 import waypoint.mvp.global.common.SliceResponse;
+import waypoint.mvp.global.common.sort.SortType;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.place.application.PlacePhotoService;
 import waypoint.mvp.place.domain.Place;
@@ -109,7 +109,7 @@ public class CollectionPlaceService {
 	public SliceResponse<CollectionPlaceResponse> getPlaces(
 		String collectionId,
 		String addedByMemberId,
-		PlaceSortType sortType,
+		SortType sortType,
 		Pageable pageable,
 		AuthPrincipal principal
 	) {

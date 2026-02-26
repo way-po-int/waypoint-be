@@ -23,7 +23,6 @@ import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.global.auth.annotations.AuthLevel;
 import waypoint.mvp.global.auth.annotations.Authorize;
 import waypoint.mvp.global.common.sort.SortType;
-import waypoint.mvp.global.common.sort.SortablePageRequest;
 import waypoint.mvp.plan.application.BlockOpinionService;
 import waypoint.mvp.plan.application.dto.request.BlockOpinionCreateRequest;
 import waypoint.mvp.plan.application.dto.request.BlockOpinionUpdateRequest;
@@ -59,7 +58,7 @@ public class BlockOpinionController {
 		@RequestParam(defaultValue = "CREATED_AT_DESC") SortType sortType,
 		Pageable pageable
 	) {
-		Pageable sortedPageable = SortablePageRequest.of(pageable, sortType);
+		Pageable sortedPageable = sortType.toPageable(pageable);
 		List<BlockOpinionResponse> responses = blockOpinionService.findOpinions(planId, blockId, user, sortedPageable);
 		return ResponseEntity.ok(responses);
 	}

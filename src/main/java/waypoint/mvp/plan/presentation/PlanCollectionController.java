@@ -20,10 +20,10 @@ import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.collection.application.dto.response.CollectionPlaceDetailResponse;
 import waypoint.mvp.collection.application.dto.response.CollectionPlaceResponse;
-import waypoint.mvp.collection.domain.PlaceSortType;
 import waypoint.mvp.global.auth.annotations.AuthLevel;
 import waypoint.mvp.global.auth.annotations.Authorize;
 import waypoint.mvp.global.common.SliceResponse;
+import waypoint.mvp.global.common.sort.SortType;
 import waypoint.mvp.plan.application.PlanCollectionService;
 import waypoint.mvp.plan.application.dto.request.CreatePlanCollectionRequest;
 import waypoint.mvp.plan.application.dto.response.PlanCollectionResponse;
@@ -64,7 +64,7 @@ public class PlanCollectionController {
 		@PathVariable String planId,
 		@PathVariable String collectionId,
 		@RequestParam(required = false) String addedByMemberId,
-		@RequestParam(defaultValue = "LATEST") PlaceSortType sortType,
+		@RequestParam(defaultValue = "CREATED_AT_DESC") SortType sortType,
 		Pageable pageable,
 		@AuthenticationPrincipal UserPrincipal user
 	) {

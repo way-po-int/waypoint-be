@@ -26,10 +26,10 @@ import waypoint.mvp.collection.application.dto.request.CollectionCreateRequest;
 import waypoint.mvp.collection.application.dto.request.CollectionUpdateRequest;
 import waypoint.mvp.collection.application.dto.response.CollectionMemberGroupResponse;
 import waypoint.mvp.collection.application.dto.response.CollectionResponse;
-import waypoint.mvp.collection.domain.CollectionSortType;
 import waypoint.mvp.global.auth.annotations.AuthLevel;
 import waypoint.mvp.global.auth.annotations.Authorize;
 import waypoint.mvp.global.common.SliceResponse;
+import waypoint.mvp.global.common.sort.SortType;
 import waypoint.mvp.sharelink.application.dto.response.ShareLinkResponse;
 
 @RestController
@@ -55,7 +55,7 @@ public class CollectionController {
 	@GetMapping
 	public ResponseEntity<SliceResponse<CollectionResponse>> findCollections(
 		@AuthenticationPrincipal UserPrincipal user,
-		@RequestParam(defaultValue = "LATEST") CollectionSortType sortType,
+		@RequestParam(defaultValue = "CREATED_AT_DESC") SortType sortType,
 		Pageable pageable
 	) {
 		SliceResponse<CollectionResponse> collections = collectionService.findCollections(user, sortType, pageable);
