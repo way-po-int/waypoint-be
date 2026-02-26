@@ -26,8 +26,8 @@ import waypoint.mvp.plan.application.dto.request.CandidateBlockSelectRequest;
 import waypoint.mvp.plan.application.dto.response.BlockDetailResponse;
 import waypoint.mvp.plan.application.dto.response.BlockListResponse;
 import waypoint.mvp.plan.application.dto.response.BlockResponse;
-import waypoint.mvp.plan.application.validate.TimeBlockValidate;
 import waypoint.mvp.plan.application.dto.response.CandidateGroupResponse;
+import waypoint.mvp.plan.application.validate.TimeBlockValidate;
 import waypoint.mvp.plan.domain.Block;
 import waypoint.mvp.plan.domain.Plan;
 import waypoint.mvp.plan.domain.PlanDay;
@@ -309,10 +309,15 @@ public class BlockService {
 
 		blockRepository.delete(targetBlock);
 
-		// 삭제 후 남은 Block 개수를 다시 조회
-		boolean hasBlocks = blockRepository.existsByTimeBlockId(planId, timeBlock.getId());
+		// 삭제 후 남은 Block 개수를 조회
+		long candidateCount = blockRepository.countByTimeBlockId(planId, timeBlock.getId());
 
-		if (!hasBlocks) {
+		if (candidateCount == 1) { // 후보지 1개라면 select로 변경
+			List<Block> bl = blockQueryService.getBlocksByTimeBlock(planId, timeBlock);
+			bl.getFirst().select();
+		}
+
+		if (candidateCount <= 0) {
 			deleteTimeBlockWithRelocate(timeBlock);
 		}
 	}
