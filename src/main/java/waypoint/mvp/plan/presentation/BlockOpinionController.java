@@ -3,7 +3,6 @@ package waypoint.mvp.plan.presentation;
 import java.net.URI;
 import java.util.List;
 
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -13,7 +12,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
@@ -22,7 +20,6 @@ import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.global.auth.annotations.AuthLevel;
 import waypoint.mvp.global.auth.annotations.Authorize;
-import waypoint.mvp.global.common.sort.SortType;
 import waypoint.mvp.plan.application.BlockOpinionService;
 import waypoint.mvp.plan.application.dto.request.BlockOpinionCreateRequest;
 import waypoint.mvp.plan.application.dto.request.BlockOpinionUpdateRequest;
@@ -54,12 +51,9 @@ public class BlockOpinionController {
 	public ResponseEntity<List<BlockOpinionResponse>> findOpinions(
 		@PathVariable String planId,
 		@PathVariable String blockId,
-		@AuthenticationPrincipal AuthPrincipal user,
-		@RequestParam(defaultValue = "CREATED_AT_DESC") SortType sortType,
-		Pageable pageable
+		@AuthenticationPrincipal AuthPrincipal user
 	) {
-		Pageable sortedPageable = sortType.toPageable(pageable);
-		List<BlockOpinionResponse> responses = blockOpinionService.findOpinions(planId, blockId, user, sortedPageable);
+		List<BlockOpinionResponse> responses = blockOpinionService.findOpinions(planId, blockId, user);
 		return ResponseEntity.ok(responses);
 	}
 
