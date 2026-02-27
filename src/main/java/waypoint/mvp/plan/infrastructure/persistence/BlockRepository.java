@@ -26,7 +26,7 @@ public interface BlockRepository extends JpaRepository<Block, Long> {
 		+ "WHERE b.externalId = :blockId AND pd.plan.id = :planId")
 	Optional<Block> findByExternalId(@Param("planId") Long planId, @Param("blockId") String blockId);
 
-	@Query("SELECT count(b) > 0 FROM Block b WHERE b.timeBlock.id = :timeBlockId AND b.timeBlock.planDay.plan.id = :planId")
-	boolean existsByTimeBlockId(@Param("planId") Long planId, @Param("timeBlockId") Long timeBlockId);
+	@Query("SELECT count(b) FROM Block b WHERE b.timeBlock.id = :timeBlockId AND b.timeBlock.planDay.plan.id = :planId")
+	long countByTimeBlockId(@Param("planId") Long planId, @Param("timeBlockId") Long timeBlockId);
 
 }

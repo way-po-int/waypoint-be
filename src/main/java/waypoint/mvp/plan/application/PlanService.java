@@ -135,9 +135,9 @@ public class PlanService {
 			plan, request.startDate(), request.endDate(), confirm
 		);
 
-		// 1. 경고가 있고, 실제로 영향을 받는 날짜(일정이 있는 날)가 존재할 때만 컨펌 요구
+		// 1. 경고가 있고, 실제로 컨펌이 요구되는 상황일 때 응답
 		if (syncResult.hasWarnings()) {
-			return PlanUpdateResponse.confirmRequired(syncResult.affectedDays());
+			return PlanUpdateResponse.confirmRequired(syncResult.updateType(), syncResult.affectedDays());
 		}
 
 		// 2. 그 외의 모든 경우(경고가 없거나, 컨펌을 이미 했거나)에는 바로 업데이트 진행
