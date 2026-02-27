@@ -8,7 +8,9 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
 
+import waypoint.mvp.auth.security.exception.OAuth2UserWithdrawnException;
 import waypoint.mvp.auth.security.principal.CustomOidcUser;
+import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.user.application.UserService;
 import waypoint.mvp.user.application.dto.SocialUserProfile;
 import waypoint.mvp.user.domain.Provider;
@@ -40,7 +42,11 @@ public class CustomOidcUserService extends OidcUserService {
 			oidcUser.getPicture(),
 			oidcUser.getEmail()
 		);
-		User user = userService.loadSocialUser(profile);
-		return new CustomOidcUser(oidcUser, user);
+		try {
+			User user = userService.loadSocialUser(profile);
+			return new CustomOidcUser(oidcUser, user);
+		} catch (BusinessException e) {
+			throw new OAuth2UserWithdrawnException();
+		}
 	}
 }

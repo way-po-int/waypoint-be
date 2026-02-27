@@ -36,7 +36,7 @@ public class UserService implements UserFinder {
 		return userRepository.findIncludingDeleted(account.getProvider().name(), account.getProviderId())
 			.map(user -> {
 				if (user.isDeleted()) {
-					throw new BusinessException(AuthErrorCode.WITHDRAWN_USER);
+					throw new BusinessException(AuthErrorCode.USER_WITHDRAWN);
 				}
 				return user;
 			})
