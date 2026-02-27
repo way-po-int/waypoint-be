@@ -7,6 +7,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import waypoint.mvp.auth.error.AuthErrorCode;
 import waypoint.mvp.auth.infrastructure.persistence.RefreshTokenRepository;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.global.error.exception.BusinessException;
@@ -31,7 +32,14 @@ public class UserService implements UserFinder {
 	@Transactional
 	public User loadSocialUser(SocialUserProfile profile) {
 		SocialAccount account = profile.socialAccount();
-		return userRepository.findByProviderAndProviderId(account.getProvider(), account.getProviderId())
+
+		return userRepository.findIncludingDeleted(account.getProvider().name(), account.getProviderId())
+			.map(user -> {
+				if (user.isDeleted()) {
+					throw new BusinessException(AuthErrorCode.WITHDRAWN_USER);
+				}
+				return user;
+			})
 			.orElseGet(() -> userRepository.save(User.create(
 				account,
 				profile.nickname(),
