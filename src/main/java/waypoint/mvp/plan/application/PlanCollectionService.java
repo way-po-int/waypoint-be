@@ -19,9 +19,9 @@ import waypoint.mvp.collection.application.dto.response.CollectionPlaceDetailRes
 import waypoint.mvp.collection.application.dto.response.CollectionPlaceResponse;
 import waypoint.mvp.collection.domain.Collection;
 import waypoint.mvp.collection.domain.CollectionPlace;
-import waypoint.mvp.collection.domain.PlaceSortType;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
 import waypoint.mvp.global.common.SliceResponse;
+import waypoint.mvp.global.common.sort.SortType;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.plan.application.dto.request.CreatePlanCollectionRequest;
 import waypoint.mvp.plan.application.dto.response.PlanCollectionResponse;
@@ -114,7 +114,8 @@ public class PlanCollectionService {
 	public SliceResponse<CollectionPlaceResponse> findPlanCollectionPlaces(
 		String planId,
 		String collectionId,
-		PlaceSortType sortType,
+		String addedByMemberId,
+		SortType sortType,
 		Pageable pageable,
 		AuthPrincipal user
 	) {
@@ -124,9 +125,22 @@ public class PlanCollectionService {
 		PlanCollection planCollection = getPlanCollection(planId, collectionId);
 		String collectionMemberId = getCollectionMemberId(planCollection.getCollection().getId(), user.getId());
 
+		String normalizedAddedByMemberId = normalizeAddedByMemberId(addedByMemberId);
+
 		return collectionPlaceQueryService.getPlacesByCollectionId(
-			planCollection.getCollection().getId(), null, sortType, pageable, collectionMemberId
+			planCollection.getCollection().getId(),
+			normalizedAddedByMemberId,
+			sortType,
+			pageable,
+			collectionMemberId
 		);
+	}
+
+	private String normalizeAddedByMemberId(String addedByMemberId) {
+		if (addedByMemberId == null || addedByMemberId.isBlank()) {
+			return null;
+		}
+		return addedByMemberId;
 	}
 
 	public CollectionPlaceDetailResponse findPlanCollectionPlaceDetail(

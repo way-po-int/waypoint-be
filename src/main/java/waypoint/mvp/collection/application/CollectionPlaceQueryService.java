@@ -7,7 +7,6 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
@@ -22,13 +21,13 @@ import waypoint.mvp.collection.application.dto.response.SocialMediaResponse;
 import waypoint.mvp.collection.domain.Collection;
 import waypoint.mvp.collection.domain.CollectionPlace;
 import waypoint.mvp.collection.domain.CollectionPlacePreference;
-import waypoint.mvp.collection.domain.PlaceSortType;
 import waypoint.mvp.collection.error.CollectionError;
 import waypoint.mvp.collection.error.CollectionPlaceError;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionPlacePreferenceRepository;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionPlaceRepository;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionRepository;
 import waypoint.mvp.global.common.SliceResponse;
+import waypoint.mvp.global.common.sort.SortType;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.place.application.PlaceCategoryService;
 import waypoint.mvp.place.application.PlacePhotoService;
@@ -115,15 +114,11 @@ public class CollectionPlaceQueryService {
 	public SliceResponse<CollectionPlaceResponse> getPlacesByCollectionId(
 		Long collectionId,
 		String addedByMemberId,
-		PlaceSortType sortType,
+		SortType sortType,
 		Pageable pageable,
 		String collectionMemberId
 	) {
-		Pageable sortedPageable = PageRequest.of(
-			pageable.getPageNumber(),
-			pageable.getPageSize(),
-			sortType.getSort()
-		);
+		Pageable sortedPageable = sortType.toPageable(pageable);
 
 		Slice<CollectionPlace> result = fetchCollectionPlaces(collectionId, addedByMemberId, sortedPageable);
 

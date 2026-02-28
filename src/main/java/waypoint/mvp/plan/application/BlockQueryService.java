@@ -4,8 +4,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -59,7 +61,8 @@ public class BlockQueryService {
 		PlanDay planDay = planDayRepository.findByPlanIdAndDay(planId, day)
 			.orElseThrow(() -> new BusinessException(PlanError.PLAN_DAY_NOT_FOUND));
 
-		Slice<TimeBlock> timeBlockSlice = timeBlockRepository.findAllByPlanIdAndDay(planId, day, pageable);
+		Pageable fixedOrderPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.unsorted());
+		Slice<TimeBlock> timeBlockSlice = timeBlockRepository.findAllByPlanIdAndDay(planId, day, fixedOrderPageable);
 		List<TimeBlock> timeBlocks = timeBlockSlice.getContent();
 
 		if (timeBlocks.isEmpty()) {

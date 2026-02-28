@@ -22,13 +22,13 @@ import waypoint.mvp.collection.application.dto.response.CollectionResponse;
 import waypoint.mvp.collection.domain.Collection;
 import waypoint.mvp.collection.domain.CollectionMember;
 import waypoint.mvp.collection.domain.CollectionRole;
-import waypoint.mvp.collection.domain.CollectionSortType;
 import waypoint.mvp.collection.domain.event.CollectionCreatedEvent;
 import waypoint.mvp.collection.error.CollectionError;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionPlaceRepository;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionRepository;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
 import waypoint.mvp.global.common.SliceResponse;
+import waypoint.mvp.global.common.sort.SortType;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.sharelink.application.dto.response.ShareLinkResponse;
 import waypoint.mvp.sharelink.domain.ShareLink;
@@ -81,12 +81,13 @@ public class CollectionService {
 
 	public SliceResponse<CollectionResponse> findCollections(
 		UserPrincipal user,
-		CollectionSortType sortType,
+		SortType sortType,
 		Pageable pageable
 	) {
 		Slice<Collection> collectionsSlice = switch (sortType) {
-			case LATEST -> collectionRepository.findAllByUserIdOrderByAddedLatest(user.id(), pageable);
-			case OLDEST -> collectionRepository.findAllByUserIdOrderByAddedOldest(user.id(), pageable);
+			case CREATED_AT_DESC -> collectionRepository.findAllByUserIdOrderByAddedLatest(user.id(), pageable);
+			case CREATED_AT_ASC -> collectionRepository.findAllByUserIdOrderByAddedOldest(user.id(), pageable);
+			default -> throw new BusinessException(CollectionError.INVALID_SORT_TYPE);
 		};
 
 		List<Long> collectionIds = collectionsSlice.getContent().stream()
