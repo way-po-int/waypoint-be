@@ -12,6 +12,7 @@ import waypoint.mvp.plan.domain.event.PlanCreateEvent;
 import waypoint.mvp.plan.error.PlanError;
 import waypoint.mvp.plan.infrastructure.persistence.PlanRepository;
 import waypoint.mvp.user.domain.User;
+import waypoint.mvp.user.domain.event.ProfileUpdateEvent;
 import waypoint.mvp.user.error.UserError;
 import waypoint.mvp.user.infrastructure.persistence.UserRepository;
 
@@ -31,5 +32,10 @@ public class PlanEventListener {
 			.orElseThrow(() -> new BusinessException(UserError.USER_NOT_FOUND));
 
 		planMemberService.createInitialOwner(plan, user);
+	}
+
+	@TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
+	public void handleProfileUpdateEvent(ProfileUpdateEvent event) {
+		planMemberService.updateMemberProfile(event.userId(), event.nickname(), event.picture());
 	}
 }

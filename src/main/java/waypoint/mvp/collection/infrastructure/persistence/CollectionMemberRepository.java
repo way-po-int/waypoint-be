@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -33,4 +34,12 @@ public interface CollectionMemberRepository extends JpaRepository<CollectionMemb
 
 	@Query("SELECT cm FROM CollectionMember cm WHERE cm.collection.id = :collectionId AND cm.deletedAt IS NULL")
 	List<CollectionMember> findActiveAll(@Param("collectionId") Long collectionId);
+
+	@Modifying
+	@Query("UPDATE CollectionMember cm SET cm.nickname = :nickname, cm.picture = :picture WHERE cm.user.id = :userId AND cm.deletedAt IS NULL")
+	void updateProfileByUserId(
+		@Param("userId") Long userId,
+		@Param("nickname") String nickname,
+		@Param("picture") String picture
+	);
 }

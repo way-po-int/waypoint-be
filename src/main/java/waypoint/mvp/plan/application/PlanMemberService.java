@@ -74,6 +74,11 @@ public class PlanMemberService {
 	}
 
 	@Transactional
+	public void updateMemberProfile(Long userId, String nickname, String picture) {
+		planMemberRepository.updateProfileByUserId(userId, nickname, picture);
+	}
+
+	@Transactional
 	public void withdraw(Long planId, UserPrincipal user) {
 		PlanMember member = findMemberByUserId(planId, user.getId());
 		remove(member);
