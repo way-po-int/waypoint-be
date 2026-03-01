@@ -1,5 +1,6 @@
 package waypoint.mvp.user.application;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -18,6 +19,7 @@ import waypoint.mvp.user.application.dto.response.UserResponse;
 import waypoint.mvp.user.domain.SocialAccount;
 import waypoint.mvp.user.domain.User;
 import waypoint.mvp.user.domain.UserWithdrawalReason;
+import waypoint.mvp.user.domain.event.ProfileUpdateEvent;
 import waypoint.mvp.user.error.UserError;
 import waypoint.mvp.user.infrastructure.persistence.UserRepository;
 import waypoint.mvp.user.infrastructure.persistence.UserWithdrawalReasonRepository;
@@ -32,6 +34,7 @@ public class UserService implements UserFinder {
 	private final UserProfileImageService userProfileImageService;
 	private final RefreshTokenRepository refreshTokenRepository;
 	private final UserWithdrawalReasonRepository userWithdrawalReasonRepository;
+	private final ApplicationEventPublisher eventPublisher;
 
 	@Transactional
 	public User loadSocialUser(SocialUserProfile profile) {
@@ -56,6 +59,9 @@ public class UserService implements UserFinder {
 	public UserResponse updateNickname(UserPrincipal user, String nickname) {
 		User me = findById(user.id());
 		me.changeNickname(nickname);
+
+		eventPublisher.publishEvent(ProfileUpdateEvent.from(me));
+
 		return UserResponse.from(me);
 	}
 
@@ -67,6 +73,8 @@ public class UserService implements UserFinder {
 
 		me.changePicture(result.pictureUrl());
 
+		eventPublisher.publishEvent(ProfileUpdateEvent.from(me));
+
 		return PresignedUrlResponse.from(result.presignedUrl());
 	}
 
@@ -76,6 +84,8 @@ public class UserService implements UserFinder {
 
 		String old = me.getPicture();
 		me.changePicture("");
+
+		eventPublisher.publishEvent(ProfileUpdateEvent.from(me));
 
 		if (old == null || old.isBlank()) {
 			return;

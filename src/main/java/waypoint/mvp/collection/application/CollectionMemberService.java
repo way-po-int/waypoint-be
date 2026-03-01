@@ -85,6 +85,11 @@ public class CollectionMemberService {
 	}
 
 	@Transactional
+	public void updateMemberProfile(Long userId, String nickname, String picture) {
+		collectionMemberRepository.updateProfileByUserId(userId, nickname, picture);
+	}
+
+	@Transactional
 	public void withdraw(Long collectionId, UserPrincipal user) {
 		CollectionMember member = findMemberByUserId(collectionId, user.id());
 		remove(member);
