@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.lang.Nullable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.ErrorResponse;
 import org.springframework.web.ErrorResponseException;
 import org.springframework.web.HttpMediaTypeNotAcceptableException;
@@ -53,11 +54,11 @@ public class GlobalExceptionHandler { // ResponseEntityExceptionHandler
 		return problemDetail;
 	}
 
-	// TODO request의 id를 코드로 변경하면 제거 
-	@ExceptionHandler(NumberFormatException.class)
-	public ProblemDetail handleNumberFormatException(NumberFormatException e) {
-		log.warn("handleNumberFormatException: {}", e.getMessage());
-		return getProblemDetail(HttpStatus.BAD_REQUEST, "요청 값의 타입이 올바르지 않습니다. 숫자 형식의 값이 필요합니다.");
+	@ExceptionHandler(AccessDeniedException.class)
+	public ProblemDetail handleAccessDenied(AccessDeniedException e) {
+		ProblemDetail problemDetail = getProblemDetail(HttpStatus.FORBIDDEN, e.getMessage());
+		problemDetail.setProperty("code", HttpStatus.FORBIDDEN.name());
+		return problemDetail;
 	}
 
 	// 지원하지 않는 HTTP 메서드로 요청했을 때 발생하는 예외
