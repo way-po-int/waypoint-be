@@ -1,8 +1,9 @@
 package waypoint.mvp.auth.security.jwt;
 
 import java.time.Instant;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 import javax.crypto.SecretKey;
@@ -10,6 +11,8 @@ import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 
 import io.jsonwebtoken.Claims;
@@ -18,6 +21,7 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import waypoint.mvp.auth.domain.Role;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
 
 @Component
@@ -51,11 +55,11 @@ public class JwtTokenProvider {
 		return TokenInfo.of(accessToken, expiresAt, accessExpiresIn);
 	}
 
-	public TokenInfo generateOnboardingAccessToken(UserPrincipal userInfo) {
+	public TokenInfo generatePreTermsAccessToken(UserPrincipal userInfo) {
 		Instant expiresAt = Instant.now().plusSeconds(accessExpiresIn);
 		String accessToken = Jwts.builder()
 			.subject(userInfo.id().toString())
-			.claim(TOKEN, JwtType.ONBOARDING_ACCESS.getValue())
+			.claim(TOKEN, JwtType.PRE_TERMS_ACCESS.getValue())
 			.expiration(Date.from(expiresAt))
 			.signWith(key)
 			.compact();
@@ -76,41 +80,37 @@ public class JwtTokenProvider {
 
 	public Authentication getAuthentication(String token) {
 		Claims claims = parseClaims(token);
-		return new UsernamePasswordAuthenticationToken(UserPrincipal.from(claims), null, Collections.emptyList());
+
+		Role role = JwtType.from(claims.get(TOKEN, String.class)).getRole();
+		List<GrantedAuthority> authorities = role != null
+			? List.of(new SimpleGrantedAuthority(role.getAuthority()))
+			: List.of();
+
+		return new UsernamePasswordAuthenticationToken(
+			UserPrincipal.from(claims),
+			null,
+			authorities
+		);
 	}
 
 	public JwtCode validateAccessToken(String accessToken) {
-		JwtCode accessResult = validateToken(accessToken, JwtType.ACCESS);
-		if (accessResult == JwtCode.VALID_TOKEN || accessResult == JwtCode.EXPIRED_TOKEN) {
-			return accessResult;
-		}
-		return validateToken(accessToken, JwtType.ONBOARDING_ACCESS);
+		return validateToken(accessToken, JwtType.ACCESS, JwtType.PRE_TERMS_ACCESS);
 	}
 
 	public JwtCode validateRefreshToken(String refreshToken) {
 		return validateToken(refreshToken, JwtType.REFRESH);
 	}
 
-	public JwtType resolveJwtType(String token) {
-		Claims claims = parseClaims(token);
-		String typeValue = claims.get(TOKEN, String.class);
-
-		for (JwtType type : JwtType.values()) {
-			if (type.getValue().equals(typeValue)) {
-				return type;
-			}
-		}
-		throw new IllegalArgumentException("Unknown jwt type");
-	}
-
-	private JwtCode validateToken(String token, JwtType jwtType) {
+	private JwtCode validateToken(String token, JwtType... jwtTypes) {
 		try {
 			Claims claims = Jwts.parser()
 				.verifyWith(key)
 				.build()
 				.parseSignedClaims(token)
 				.getPayload();
-			return jwtType.getValue().equals(claims.get(TOKEN, String.class))
+
+			JwtType jwtType = JwtType.from(claims.get(TOKEN, String.class));
+			return Arrays.asList(jwtTypes).contains(jwtType)
 				? JwtCode.VALID_TOKEN
 				: JwtCode.INVALID_TOKEN;
 		} catch (ExpiredJwtException e) {

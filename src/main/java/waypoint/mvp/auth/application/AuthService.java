@@ -64,7 +64,7 @@ public class AuthService {
 		if (user.isTermsAccepted()) {
 			return jwtTokenProvider.generateAccessToken(userInfo);
 		}
-		return jwtTokenProvider.generateOnboardingAccessToken(userInfo);
+		return jwtTokenProvider.generatePreTermsAccessToken(userInfo);
 	}
 
 	public TokenInfo generateRefreshToken(Authentication authentication) {
