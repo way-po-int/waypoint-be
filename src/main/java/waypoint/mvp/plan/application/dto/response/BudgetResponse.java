@@ -1,7 +1,6 @@
 package waypoint.mvp.plan.application.dto.response;
 
 import waypoint.mvp.plan.domain.Budget;
-import waypoint.mvp.plan.domain.BudgetType;
 
 public record BudgetResponse(
 	String budgetId,
@@ -16,12 +15,28 @@ public record BudgetResponse(
 		Long remainingBudget = budget.getTotalBudget() - totalCost;
 		return new BudgetResponse(
 			budget.getExternalId(),
-			budget.getType(),
+			BudgetType.from(budget),
 			budget.getTotalBudget(),
 			totalCost,
 			remainingBudget,
 			budget.getCostPerPerson(totalCost),
 			budget.getTravelerCount()
 		);
+	}
+
+	enum BudgetType {
+		INITIAL,
+		BUDGET,
+		EXPENSE;
+
+		public static BudgetType from(Budget budget) {
+			if (budget.isInitial()) {
+				return INITIAL;
+			}
+			return switch (budget.getType()) {
+				case BUDGET -> BUDGET;
+				case EXPENSE -> EXPENSE;
+			};
+		}
 	}
 }
