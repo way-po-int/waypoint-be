@@ -63,8 +63,9 @@ public class SecurityConfig {
 					Role.PRE_TERMS.getAuthority(),
 					Role.USER.getAuthority()
 				)
-				.anyRequest().hasAuthority(
-					Role.USER.getAuthority()
+				.anyRequest().hasAnyAuthority(
+					Role.USER.getAuthority(),
+					Role.GUEST.getAuthority()
 				))
 			.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
 			.addFilterBefore(guestAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

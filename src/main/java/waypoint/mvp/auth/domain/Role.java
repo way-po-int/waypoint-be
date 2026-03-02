@@ -8,8 +8,9 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum Role {
+	PRE_TERMS,
 	USER,
-	PRE_TERMS;
+	GUEST;
 
 	public String getAuthority() {
 		return "ROLE_" + this.name();
