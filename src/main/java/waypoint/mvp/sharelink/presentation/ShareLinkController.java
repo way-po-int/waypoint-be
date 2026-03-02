@@ -43,37 +43,46 @@ public class ShareLinkController {
 	@Value("${waypoint.cookie.refresh-token-name}")
 	private String refreshTokenName;
 
+	@Value("${waypoint.frontend.base-url}")
+	private String frontendBaseUrl;
+
 	@GetMapping("/{code}")
 	public ResponseEntity<Void> handleInvitation(
 		@PathVariable String code,
 		@AuthenticationPrincipal AuthPrincipal user,
 		HttpServletRequest request
 	) {
-		AuthPrincipal authenticatedUser = user;
+		try {
+			AuthPrincipal authenticatedUser = user;
 
-		if (authenticatedUser == null) {
-			Optional<Cookie> refreshTokenCookie = cookieUtils.getCookie(request, refreshTokenName);
-			if (refreshTokenCookie.isPresent()) { // refreshToken이 없다면 Guest로 접속
-				String refreshToken = refreshTokenCookie.get().getValue();
-				Authentication authentication = jwtTokenProvider.getAuthentication(refreshToken);
-				authenticatedUser = UserPrincipal.from(authentication.getPrincipal());
+			if (authenticatedUser == null) {
+				Optional<Cookie> refreshTokenCookie = cookieUtils.getCookie(request, refreshTokenName);
+				if (refreshTokenCookie.isPresent()) { // refreshToken이 없다면 Guest로 접속
+					String refreshToken = refreshTokenCookie.get().getValue();
+					Authentication authentication = jwtTokenProvider.getAuthentication(refreshToken);
+					authenticatedUser = UserPrincipal.from(authentication.getPrincipal());
+				}
 			}
-		}
 
-		InvitationResult result = shareLinkService.processInvitationLink(code, authenticatedUser);
+			InvitationResult result = shareLinkService.processInvitationLink(code, authenticatedUser);
 
-		return switch (result) {
-			case InvitationResult.GuestInvitation(var redirectUrl, var shareLinkCode) -> {
-				ResponseCookie cookie = cookieUtils.createCookie(guestCookieName, shareLinkCode,
-					guestCookieMaxAgeSeconds);
-				yield ResponseEntity.status(HttpStatus.FOUND)
-					.header(HttpHeaders.SET_COOKIE, cookie.toString())
+			return switch (result) {
+				case InvitationResult.GuestInvitation(var redirectUrl, var shareLinkCode) -> {
+					ResponseCookie cookie = cookieUtils.createCookie(guestCookieName, shareLinkCode,
+						guestCookieMaxAgeSeconds);
+					yield ResponseEntity.status(HttpStatus.FOUND)
+						.header(HttpHeaders.SET_COOKIE, cookie.toString())
+						.location(URI.create(redirectUrl))
+						.build();
+				}
+				case InvitationResult.UserInvitation(var redirectUrl) -> ResponseEntity.status(HttpStatus.FOUND)
 					.location(URI.create(redirectUrl))
 					.build();
-			}
-			case InvitationResult.UserInvitation(var redirectUrl) -> ResponseEntity.status(HttpStatus.FOUND)
-				.location(URI.create(redirectUrl))
+			};
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.FOUND)
+				.location(URI.create(frontendBaseUrl + "/not-found"))
 				.build();
-		};
+		}
 	}
 }
