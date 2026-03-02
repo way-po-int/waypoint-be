@@ -20,6 +20,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.jwt.JwtTokenProvider;
+import waypoint.mvp.auth.security.jwt.JwtCode;
 import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.global.error.exception.BusinessException;
@@ -63,10 +64,12 @@ public class ShareLinkController {
 
 			if (authenticatedUser == null) {
 				Optional<Cookie> refreshTokenCookie = cookieUtils.getCookie(request, refreshTokenName);
-				if (refreshTokenCookie.isPresent()) { // refreshToken이 없다면 Guest로 접속
+				if (refreshTokenCookie.isPresent()) {
 					String refreshToken = refreshTokenCookie.get().getValue();
-					Authentication authentication = jwtTokenProvider.getAuthentication(refreshToken);
-					authenticatedUser = UserPrincipal.from(authentication.getPrincipal());
+					if (jwtTokenProvider.validateRefreshToken(refreshToken) == JwtCode.VALID_TOKEN) {
+						Authentication authentication = jwtTokenProvider.getAuthentication(refreshToken);
+						authenticatedUser = UserPrincipal.from(authentication.getPrincipal());
+					}
 				}
 			}
 
@@ -86,9 +89,6 @@ public class ShareLinkController {
 					.build();
 			};
 		} catch (BusinessException e) {
-			// return ResponseEntity.status(HttpStatus.FOUND)
-			// 	.location(URI.create(frontendBaseUrl + "/not-found"))
-			// 	.build();
 
 			// 에러 타입에 따라 404 페이지로 리다이렉트
 			ShareLinkError errorCode = extractErrorCode(e);
