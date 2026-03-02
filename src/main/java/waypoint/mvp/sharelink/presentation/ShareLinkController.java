@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import waypoint.mvp.auth.security.jwt.JwtTokenProvider;
 import waypoint.mvp.auth.security.jwt.JwtCode;
 import waypoint.mvp.auth.security.principal.AuthPrincipal;
@@ -31,6 +32,7 @@ import waypoint.mvp.sharelink.error.ShareLinkError;
 
 @RestController
 @RequiredArgsConstructor
+@Slf4j
 @RequestMapping("/invite")
 public class ShareLinkController {
 
@@ -89,13 +91,18 @@ public class ShareLinkController {
 					.build();
 			};
 		} catch (BusinessException e) {
-
+			log.warn("초대 링크 처리 중 비즈니스 예외가 발생했습니다. code: {}, error: {}", code, e.getMessage());
 			// 에러 타입에 따라 404 페이지로 리다이렉트
 			ShareLinkError errorCode = extractErrorCode(e);
 			String errorParam = determineErrorParam(errorCode);
 			String errorRedirectUrl = buildErrorRedirectUrl(errorParam);
 			return ResponseEntity.status(HttpStatus.FOUND)
 				.location(URI.create(errorRedirectUrl))
+				.build();
+		} catch (Exception e) {
+			log.error("초대 링크 처리 중 예상치 못한 시스템 오류가 발생했습니다. code: {}", code, e);
+			return ResponseEntity.status(HttpStatus.FOUND)
+				.location(URI.create(frontendBaseUrl + "/not-found"))
 				.build();
 		}
 	}
