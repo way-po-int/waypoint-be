@@ -16,11 +16,11 @@ public enum JwtType {
 	PRE_TERMS_ACCESS("ptat", Role.PRE_TERMS),
 	REFRESH("rt", null);
 
-	private final String value;
-	private final Role role;
-
 	private static final Map<String, JwtType> TYPE_MAP = Arrays.stream(values())
 		.collect(Collectors.toUnmodifiableMap(JwtType::getValue, Function.identity()));
+
+	private final String value;
+	private final Role role;
 
 	public static JwtType from(String value) {
 		JwtType type = TYPE_MAP.get(value);
