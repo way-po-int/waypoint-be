@@ -104,6 +104,7 @@ waypoint:
     guest-access-token-name: "waypoint_guest"
     guest-access-token-max-age-seconds: 604800 # 7일
     refresh-token-name: "refresh_token"
+    domain: ${COOKIE_DOMAIN:}
 
 aws:
   region: ${AWS_REGION:ap-northeast-2}

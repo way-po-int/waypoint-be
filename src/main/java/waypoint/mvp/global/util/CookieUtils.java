@@ -17,17 +17,20 @@ public class CookieUtils {
 
 	private final boolean secure;
 	private final String sameSite;
+	private final String domain;
 	private final long refreshTokenMaxAge;
 	private final String refreshTokenName;
 
 	public CookieUtils(
 		@Value("${cookie.secure}") boolean secure,
 		@Value("${cookie.same-site}") String sameSite,
+		@Value("${waypoint.cookie.domain:#{null}}") String domain,
 		@Value("${jwt.refresh-expires-in}") long refreshExpiresIn,
 		@Value("${waypoint.cookie.refresh-token-name}") String refreshTokenName
 	) {
 		this.secure = secure;
 		this.sameSite = sameSite;
+		this.domain = domain;
 		this.refreshTokenMaxAge = refreshExpiresIn;
 		this.refreshTokenName = refreshTokenName;
 	}
@@ -41,13 +44,18 @@ public class CookieUtils {
 	}
 
 	public ResponseCookie createCookie(String cookieName, String value, long maxAge) {
-		return ResponseCookie.from(cookieName, value)
+		ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(cookieName, value)
 			.httpOnly(true)
 			.secure(secure)
 			.path(PATH)
 			.maxAge(maxAge)
-			.sameSite(sameSite)
-			.build();
+			.sameSite(sameSite);
+		
+		if (domain != null && !domain.isBlank()) {
+			builder.domain(domain);
+		}
+		
+		return builder.build();
 	}
 
 	public ResponseCookie deleteCookie(String cookieName) {
