@@ -16,7 +16,7 @@ public record BudgetResponse(
 		return new BudgetResponse(
 			budget.getExternalId(),
 			BudgetType.from(budget),
-			budget.getTotalBudget(),
+			budget.isInitial() ? null : budget.getTotalBudget(),
 			totalCost,
 			remainingBudget,
 			budget.getCostPerPerson(totalCost),
