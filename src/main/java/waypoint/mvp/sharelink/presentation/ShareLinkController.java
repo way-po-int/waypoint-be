@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -21,9 +22,11 @@ import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.jwt.JwtTokenProvider;
 import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
+import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.global.util.CookieUtils;
 import waypoint.mvp.sharelink.application.ShareLinkService;
 import waypoint.mvp.sharelink.application.ShareLinkService.InvitationResult;
+import waypoint.mvp.sharelink.error.ShareLinkError;
 
 @RestController
 @RequiredArgsConstructor
@@ -45,6 +48,9 @@ public class ShareLinkController {
 
 	@Value("${waypoint.frontend.base-url}")
 	private String frontendBaseUrl;
+
+	@Value("${waypoint.frontend.error-page-path}")
+	private String errorPagePath;
 
 	@GetMapping("/{code}")
 	public ResponseEntity<Void> handleInvitation(
@@ -79,10 +85,52 @@ public class ShareLinkController {
 					.location(URI.create(redirectUrl))
 					.build();
 			};
-		} catch (Exception e) {
+		} catch (BusinessException e) {
+			// return ResponseEntity.status(HttpStatus.FOUND)
+			// 	.location(URI.create(frontendBaseUrl + "/not-found"))
+			// 	.build();
+
+			// 에러 타입에 따라 404 페이지로 리다이렉트
+			ShareLinkError errorCode = extractErrorCode(e);
+			String errorParam = determineErrorParam(errorCode);
+			String errorRedirectUrl = buildErrorRedirectUrl(errorParam);
 			return ResponseEntity.status(HttpStatus.FOUND)
-				.location(URI.create(frontendBaseUrl + "/not-found"))
+				.location(URI.create(errorRedirectUrl))
 				.build();
 		}
+	}
+
+
+	private ShareLinkError extractErrorCode(BusinessException e) {
+		// ProblemDetail의 properties에서 code를 추출 시도
+		Object codeProperty = e.getBody().getProperties().get("code");
+		if (codeProperty instanceof String) {
+			String errorCode = (String) codeProperty;
+			try {
+				return ShareLinkError.valueOf(errorCode);
+			} catch (IllegalArgumentException ex) {
+				// 유효하지 않은 에러 코드면 기본값 반환
+				return ShareLinkError.INVALID_LINK;
+			}
+		}
+
+		// HTTP 상태 코드로 기본 에러 타입 추정
+		HttpStatusCode statusCode = e.getStatusCode();
+		if (statusCode instanceof HttpStatus httpStatus && httpStatus == HttpStatus.NOT_FOUND) {
+			return ShareLinkError.INVALID_LINK;
+		}
+		return ShareLinkError.INVALID_LINK;
+	}
+
+	private String determineErrorParam(ShareLinkError errorCode) {
+		return switch (errorCode) {
+			case INVALID_INVITE_CODE -> "invalid_invite_code";
+			case INVALID_LINK -> "invalid_link";
+			case EXPIRED_LINK -> "expired_link";
+		};
+	}
+
+	private String buildErrorRedirectUrl(String errorParam) {
+		return frontendBaseUrl + errorPagePath + "?error=" + errorParam;
 	}
 }
