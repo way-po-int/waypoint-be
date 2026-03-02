@@ -49,22 +49,21 @@ public class AuthService {
 		}
 
 		Authentication authentication = jwtTokenProvider.getAuthentication(refreshToken);
-		UserPrincipal userInfo = UserPrincipal.from(authentication.getPrincipal());
+		UserPrincipal principal = UserPrincipal.from(authentication.getPrincipal());
 
-		User user = userFinder.findById(userInfo.id());
-
-		log.info("토큰 재발급 성공: userId={}, termsAccepted={}", userInfo.id(), user.isTermsAccepted());
+		log.info("토큰 재발급 성공: userId={}", principal.id());
 		return AuthTokens.of(
-			generateAccessTokenByUserState(user, userInfo),
+			generateAccessTokenByUserState(principal),
 			generateRefreshToken(authentication)
 		);
 	}
 
-	private TokenInfo generateAccessTokenByUserState(User user, UserPrincipal userInfo) {
+	public TokenInfo generateAccessTokenByUserState(UserPrincipal principal) {
+		User user = userFinder.findById(principal.id());
 		if (user.isTermsAccepted()) {
-			return jwtTokenProvider.generateAccessToken(userInfo);
+			return jwtTokenProvider.generateAccessToken(principal);
 		}
-		return jwtTokenProvider.generatePreTermsAccessToken(userInfo);
+		return jwtTokenProvider.generatePreTermsAccessToken(principal);
 	}
 
 	public TokenInfo generateRefreshToken(Authentication authentication) {
