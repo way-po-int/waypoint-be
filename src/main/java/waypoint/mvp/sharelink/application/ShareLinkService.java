@@ -58,7 +58,7 @@ public class ShareLinkService {
 		ShareLink shareLink = findShareLinkByCode(code);
 
 		if (shareLink.isExpired()) {
-			throw new BusinessException(ShareLinkError.EXPIRED_INVITATION_LINK);
+			throw new BusinessException(ShareLinkError.EXPIRED_LINK);
 		}
 		return shareLink;
 	}
@@ -84,6 +84,6 @@ public class ShareLinkService {
 
 	private ShareLink findShareLinkByCode(String code) {
 		return shareLinkRepository.findByCode(code)
-			.orElseThrow(() -> new BusinessException(ShareLinkError.INVALID_INVITATION_LINK));
+			.orElseThrow(() -> new BusinessException(ShareLinkError.INVALID_LINK));
 	}
 }
