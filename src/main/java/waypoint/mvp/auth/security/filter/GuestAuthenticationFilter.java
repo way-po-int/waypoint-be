@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
@@ -18,6 +19,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import waypoint.mvp.auth.domain.Role;
 import waypoint.mvp.auth.security.principal.GuestPrincipal;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.global.util.CookieUtils;
@@ -28,7 +30,7 @@ import waypoint.mvp.sharelink.application.ShareLinkService;
 public class GuestAuthenticationFilter extends OncePerRequestFilter {
 	private static final AntPathMatcher matcher = new AntPathMatcher();
 	private static final List<String> INCLUDE_PATHS = Arrays.asList(
-		"/invite/**",
+		"/places/**",
 		"/collections/**",
 		"/plan/**"
 	);
@@ -59,10 +61,6 @@ public class GuestAuthenticationFilter extends OncePerRequestFilter {
 			return true;
 		}
 
-		if (!"GET".equalsIgnoreCase(request.getMethod())) {
-			return true;
-		}
-
 		String uri = request.getRequestURI();
 		return INCLUDE_PATHS.stream()
 			.noneMatch(pattern -> matcher.match(pattern, uri));
@@ -78,7 +76,11 @@ public class GuestAuthenticationFilter extends OncePerRequestFilter {
 
 	private void setAuthentication(GuestPrincipal principal) {
 		SecurityContextHolder.getContext().setAuthentication(
-			new UsernamePasswordAuthenticationToken(principal, null, null)
+			new UsernamePasswordAuthenticationToken(
+				principal,
+				null,
+				List.of(new SimpleGrantedAuthority(Role.GUEST.getAuthority()))
+			)
 		);
 	}
 

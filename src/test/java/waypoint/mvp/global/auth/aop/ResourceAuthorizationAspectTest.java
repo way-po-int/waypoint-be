@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -19,6 +18,7 @@ import waypoint.mvp.auth.security.principal.GuestPrincipal;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.global.auth.annotations.AuthLevel;
 import waypoint.mvp.global.auth.annotations.Authorize;
+import waypoint.mvp.global.error.exception.GuestAccessDeniedException;
 import waypoint.mvp.sharelink.domain.ShareLink.ShareLinkType;
 
 @SpringBootTest(classes = {ResourceAuthorizationAspect.class, ResourceAuthorizationAspectTest.TestController.class})
@@ -67,7 +67,7 @@ class ResourceAuthorizationAspectTest {
 
 			// when & then
 			assertThatThrownBy(() -> testController.needsAuthenticated())
-				.isInstanceOf(AccessDeniedException.class);
+				.isInstanceOf(GuestAccessDeniedException.class);
 		}
 
 	}

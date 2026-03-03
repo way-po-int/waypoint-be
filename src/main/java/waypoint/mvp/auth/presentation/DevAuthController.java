@@ -66,7 +66,7 @@ class DevAuthController {
 		TokenInfo refreshToken = authService.generateRefreshToken(authentication);
 		TokenInfo accessToken = user.isTermsAccepted()
 			? jwtTokenProvider.generateAccessToken(userInfo)
-			: jwtTokenProvider.generateOnboardingAccessToken(userInfo);
+			: jwtTokenProvider.generatePreTermsAccessToken(userInfo);
 		ResponseCookie cookie = cookieUtils.createRefreshToken(refreshToken.token());
 		return ResponseEntity.ok()
 			.header(HttpHeaders.SET_COOKIE, cookie.toString())

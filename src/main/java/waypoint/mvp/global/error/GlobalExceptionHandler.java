@@ -37,6 +37,7 @@ import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import waypoint.mvp.auth.security.jwt.JwtCode;
+import waypoint.mvp.global.error.exception.GuestAccessDeniedException;
 
 @RestControllerAdvice
 @RequiredArgsConstructor
@@ -53,11 +54,10 @@ public class GlobalExceptionHandler { // ResponseEntityExceptionHandler
 		return problemDetail;
 	}
 
-	// TODO request의 id를 코드로 변경하면 제거 
-	@ExceptionHandler(NumberFormatException.class)
-	public ProblemDetail handleNumberFormatException(NumberFormatException e) {
-		log.warn("handleNumberFormatException: {}", e.getMessage());
-		return getProblemDetail(HttpStatus.BAD_REQUEST, "요청 값의 타입이 올바르지 않습니다. 숫자 형식의 값이 필요합니다.");
+	// 게스트 권한으로 접근 불가능한 API 요청 시 발생하는 예외
+	@ExceptionHandler(GuestAccessDeniedException.class)
+	public ProblemDetail handleGuestAccessDenied(GuestAccessDeniedException e) {
+		return getProblemDetail(e);
 	}
 
 	// 지원하지 않는 HTTP 메서드로 요청했을 때 발생하는 예외

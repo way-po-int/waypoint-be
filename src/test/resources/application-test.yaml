@@ -6,6 +6,7 @@ spring:
   security:
     oauth2:
       redirect-uri: "redirect-uri"
+      terms-redirect-uri: "terms-redirect-uri"
 
 cors:
   allowed-origins: "http://localhost:3000"

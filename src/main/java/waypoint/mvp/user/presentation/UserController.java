@@ -15,6 +15,9 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
+import waypoint.mvp.auth.application.AuthService;
+import waypoint.mvp.auth.presentation.dto.response.TokenResponse;
+import waypoint.mvp.auth.security.jwt.TokenInfo;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.global.auth.annotations.AuthLevel;
 import waypoint.mvp.global.auth.annotations.Authorize;
@@ -29,6 +32,7 @@ import waypoint.mvp.user.application.dto.response.UserResponse;
 @RequestMapping("/users")
 public class UserController {
 
+	private final AuthService authService;
 	private final UserService userService;
 
 	@Authorize(level = AuthLevel.AUTHENTICATED)
@@ -41,11 +45,13 @@ public class UserController {
 
 	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@PatchMapping("/me/terms")
-	public ResponseEntity<Void> acceptTerms(
+	public ResponseEntity<TokenResponse> acceptTerms(
 		@AuthenticationPrincipal UserPrincipal user
 	) {
 		userService.acceptTerms(user);
-		return ResponseEntity.noContent().build();
+		TokenInfo accessToken = authService.generateAccessTokenByUserState(user);
+		return ResponseEntity.ok()
+			.body(TokenResponse.of(accessToken));
 	}
 
 	@Authorize(level = AuthLevel.AUTHENTICATED)

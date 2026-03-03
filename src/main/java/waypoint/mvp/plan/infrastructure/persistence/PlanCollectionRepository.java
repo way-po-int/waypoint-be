@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -25,7 +26,10 @@ public interface PlanCollectionRepository extends JpaRepository<PlanCollection, 
 		@Param("collectionExternalId") String collectionExternalId
 	);
 
-	@Query("SELECT pc FROM PlanCollection pc JOIN FETCH pc.collection JOIN FETCH pc.member WHERE pc.plan.externalId = :planExternalId")
+	@Query("SELECT pc FROM PlanCollection pc "
+		+ "JOIN FETCH pc.collection c "
+		+ "JOIN FETCH pc.member "
+		+ "WHERE pc.plan.externalId = :planExternalId ")
 	List<PlanCollection> findAllByPlanId(@Param("planExternalId") String planExternalId);
 
 	@Query("SELECT pc.collection.id FROM PlanCollection pc WHERE pc.plan.id = :planId")
@@ -45,4 +49,8 @@ public interface PlanCollectionRepository extends JpaRepository<PlanCollection, 
 		@Param("planExternalId") String planExternalId,
 		@Param("collectionExternalIds") List<String> collectionExternalIds
 	);
+
+	@Modifying(clearAutomatically = true)
+	@Query("DELETE FROM PlanCollection pc WHERE pc.collection.id = :collectionId")
+	void deleteAllByCollectionId(@Param("collectionId") Long collectionId);
 }

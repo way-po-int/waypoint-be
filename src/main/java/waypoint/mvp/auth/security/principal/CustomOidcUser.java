@@ -15,11 +15,13 @@ public class CustomOidcUser extends DefaultOidcUser {
 	private final Long id;
 	private final Provider provider;
 	private final String nickname;
+	private final boolean termsAccepted;
 
 	public CustomOidcUser(OidcUser oidcUser, User user) {
 		super(oidcUser.getAuthorities(), oidcUser.getIdToken(), oidcUser.getUserInfo());
 		this.id = user.getId();
 		this.provider = user.getSocialAccount().getProvider();
 		this.nickname = user.getNickname();
+		this.termsAccepted = user.isTermsAccepted();
 	}
 }
