@@ -82,8 +82,8 @@ public class ShareLink extends BaseTimeEntity {
 	@Getter
 	@RequiredArgsConstructor
 	public enum ShareLinkType {
-		COLLECTION("/collections/"),
-		PLAN("/plans/");
+		COLLECTION("/home/"),
+		PLAN("/projects/");
 
 		private final String path;
 	}
