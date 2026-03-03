@@ -39,7 +39,7 @@ public class Budget extends ExternalIdEntity {
 	@Column(nullable = false)
 	private BudgetType type;
 
-	@Column(nullable = false)
+	@Column
 	private Long totalBudget;
 
 	@Column
@@ -57,8 +57,11 @@ public class Budget extends ExternalIdEntity {
 		return builder()
 			.plan(plan)
 			.type(BudgetType.BUDGET)
-			.totalBudget(0L)
 			.build();
+	}
+
+	public Long getTotalBudget() {
+		return Objects.requireNonNullElse(this.totalBudget, 0L);
 	}
 
 	public Integer getTravelerCount() {
@@ -67,7 +70,7 @@ public class Budget extends ExternalIdEntity {
 
 	public Long getCostPerPerson(long totalSpent) {
 		long baseAmount = this.type == BudgetType.BUDGET
-			? this.totalBudget
+			? getTotalBudget()
 			: totalSpent;
 
 		Integer count = getTravelerCount();
@@ -75,6 +78,10 @@ public class Budget extends ExternalIdEntity {
 			return 0L;
 		}
 		return Math.round((double)baseAmount / count);
+	}
+
+	public boolean isInitial() {
+		return totalBudget == null;
 	}
 
 	public void update(BudgetType type, Long totalBudget, Integer travelerCount) {
