@@ -20,8 +20,8 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import waypoint.mvp.auth.security.jwt.JwtTokenProvider;
 import waypoint.mvp.auth.security.jwt.JwtCode;
+import waypoint.mvp.auth.security.jwt.JwtTokenProvider;
 import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.global.error.exception.BusinessException;
@@ -107,12 +107,11 @@ public class ShareLinkController {
 		}
 	}
 
-
 	private ShareLinkError extractErrorCode(BusinessException e) {
 		// ProblemDetail의 properties에서 code를 추출 시도
 		Object codeProperty = e.getBody().getProperties().get("code");
 		if (codeProperty instanceof String) {
-			String errorCode = (String) codeProperty;
+			String errorCode = (String)codeProperty;
 			try {
 				return ShareLinkError.valueOf(errorCode);
 			} catch (IllegalArgumentException ex) {
@@ -131,7 +130,6 @@ public class ShareLinkController {
 
 	private String determineErrorParam(ShareLinkError errorCode) {
 		return switch (errorCode) {
-			case INVALID_INVITE_CODE -> "invalid_invite_code";
 			case INVALID_LINK -> "invalid_link";
 			case EXPIRED_LINK -> "expired_link";
 		};
