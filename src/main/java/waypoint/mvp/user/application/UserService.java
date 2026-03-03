@@ -12,12 +12,15 @@ import waypoint.mvp.auth.infrastructure.persistence.RefreshTokenRepository;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.user.application.dto.SocialUserProfile;
+import waypoint.mvp.user.application.dto.request.UserWithdrawalRequest;
 import waypoint.mvp.user.application.dto.response.PresignedUrlResponse;
 import waypoint.mvp.user.application.dto.response.UserResponse;
 import waypoint.mvp.user.domain.SocialAccount;
 import waypoint.mvp.user.domain.User;
+import waypoint.mvp.user.domain.UserWithdrawalReason;
 import waypoint.mvp.user.error.UserError;
 import waypoint.mvp.user.infrastructure.persistence.UserRepository;
+import waypoint.mvp.user.infrastructure.persistence.UserWithdrawalReasonRepository;
 
 @Slf4j
 @Service
@@ -28,6 +31,7 @@ public class UserService implements UserFinder {
 	private final UserRepository userRepository;
 	private final UserProfileImageService userProfileImageService;
 	private final RefreshTokenRepository refreshTokenRepository;
+	private final UserWithdrawalReasonRepository userWithdrawalReasonRepository;
 
 	@Transactional
 	public User loadSocialUser(SocialUserProfile profile) {
@@ -99,8 +103,13 @@ public class UserService implements UserFinder {
 	}
 
 	@Transactional
-	public void deleteMe(UserPrincipal user) {
+	public void deleteMe(UserPrincipal user, UserWithdrawalRequest request) {
 		User me = findById(user.id());
+
+		String normalized = request.reason().trim();
+		userWithdrawalReasonRepository.save(
+			UserWithdrawalReason.create(user.id(), normalized)
+		);
 
 		refreshTokenRepository.deleteByUserId(user.id());
 		me.delete();

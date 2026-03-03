@@ -23,6 +23,7 @@ import waypoint.mvp.global.auth.annotations.AuthLevel;
 import waypoint.mvp.global.auth.annotations.Authorize;
 import waypoint.mvp.user.application.UserService;
 import waypoint.mvp.user.application.dto.request.UserUpdateRequest;
+import waypoint.mvp.user.application.dto.request.UserWithdrawalRequest;
 import waypoint.mvp.user.application.dto.response.PresignedUrlResponse;
 import waypoint.mvp.user.application.dto.response.UserResponse;
 
@@ -66,9 +67,10 @@ public class UserController {
 	@Authorize(level = AuthLevel.AUTHENTICATED)
 	@DeleteMapping("/me")
 	public ResponseEntity<Void> deleteMe(
-		@AuthenticationPrincipal UserPrincipal user
+		@AuthenticationPrincipal UserPrincipal user,
+		@RequestBody @Valid UserWithdrawalRequest request
 	) {
-		userService.deleteMe(user);
+		userService.deleteMe(user, request);
 		return ResponseEntity.noContent().build();
 	}
 
