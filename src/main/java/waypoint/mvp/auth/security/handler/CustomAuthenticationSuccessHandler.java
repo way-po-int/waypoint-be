@@ -1,6 +1,5 @@
 package waypoint.mvp.auth.security.handler;
 
-
 import java.io.IOException;
 import java.util.Optional;
 
@@ -37,6 +36,9 @@ public class CustomAuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 	@Value("${spring.security.oauth2.redirect-uri}")
 	private String redirectUri;
 
+	@Value("${spring.security.oauth2.terms-redirect-uri}")
+	private String termsRedirectUri;
+
 	@Value("${waypoint.cookie.guest-access-token-name}")
 	private String guestCookieName;
 
@@ -67,7 +69,8 @@ public class CustomAuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 			response.addHeader(HttpHeaders.SET_COOKIE, cookieUtils.deleteCookie(guestCookieName).toString());
 		}
 
-		String targetUrl = UriComponentsBuilder.fromUriString(redirectUri)
+		String targetUrl = UriComponentsBuilder
+			.fromUriString(oidcUser.isTermsAccepted() ? redirectUri : termsRedirectUri)
 			.build().toUriString();
 
 		getRedirectStrategy().sendRedirect(request, response, targetUrl);

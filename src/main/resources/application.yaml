@@ -48,6 +48,7 @@ spring:
           naver:
             issuer-uri: https://nid.naver.com
       redirect-uri: ${OAUTH2_REDIRECT_URI}
+      terms-redirect-uri: ${OAUTH2_TERMS_REDIRECT_URI}
   ai:
     google:
       genai:

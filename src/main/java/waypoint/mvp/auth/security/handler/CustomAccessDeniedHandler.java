@@ -7,6 +7,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.stereotype.Component;
 
@@ -16,6 +18,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import waypoint.mvp.auth.domain.Role;
 import waypoint.mvp.auth.error.AuthError;
 
 @Component
@@ -32,10 +35,17 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
 		response.setStatus(HttpServletResponse.SC_FORBIDDEN);
 		response.setCharacterEncoding("UTF-8");
 
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		boolean isPreTerms = Role.hasRole(auth, Role.PRE_TERMS);
+		AuthError authError = isPreTerms
+			? AuthError.TERMS_REQUIRED
+			: AuthError.FORBIDDEN;
+
 		ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
 			HttpStatus.FORBIDDEN,
-			AuthError.FORBIDDEN.getMessage()
+			authError.getMessage()
 		);
+		problemDetail.setProperty("code", authError.name());
 		problemDetail.setInstance(URI.create(request.getRequestURI()));
 		objectMapper.writeValue(response.getWriter(), problemDetail);
 	}

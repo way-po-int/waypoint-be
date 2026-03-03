@@ -17,6 +17,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfigurationSource;
 
 import lombok.RequiredArgsConstructor;
+import waypoint.mvp.auth.domain.Role;
 import waypoint.mvp.auth.security.filter.GuestAuthenticationFilter;
 import waypoint.mvp.auth.security.filter.JwtAuthenticationFilter;
 import waypoint.mvp.auth.security.jwt.JwtTokenProvider;
@@ -58,7 +59,14 @@ public class SecurityConfig {
 				.requestMatchers(HttpMethod.GET, "/invite/**").permitAll()
 				.requestMatchers("/dev/**").permitAll()
 				.requestMatchers("/auth/reissue").permitAll()
-				.anyRequest().authenticated())
+				.requestMatchers("/users/me/terms").hasAnyAuthority(
+					Role.PRE_TERMS.getAuthority(),
+					Role.USER.getAuthority()
+				)
+				.anyRequest().hasAnyAuthority(
+					Role.USER.getAuthority(),
+					Role.GUEST.getAuthority()
+				))
 			.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
 			.addFilterBefore(guestAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 			.build();
