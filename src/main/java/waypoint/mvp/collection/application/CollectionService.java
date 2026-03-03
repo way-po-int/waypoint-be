@@ -30,6 +30,7 @@ import waypoint.mvp.global.auth.ResourceAuthorizer;
 import waypoint.mvp.global.common.SliceResponse;
 import waypoint.mvp.global.common.sort.SortType;
 import waypoint.mvp.global.error.exception.BusinessException;
+import waypoint.mvp.plan.infrastructure.persistence.PlanCollectionRepository;
 import waypoint.mvp.sharelink.application.dto.response.ShareLinkResponse;
 import waypoint.mvp.sharelink.domain.ShareLink;
 import waypoint.mvp.sharelink.error.ShareLinkError;
@@ -49,6 +50,7 @@ public class CollectionService {
 	private final UserFinder userFinder;
 	private final ResourceAuthorizer collectionAuthorizer;
 	private final CollectionPlaceRepository collectionPlaceRepository;
+	private final PlanCollectionRepository planCollectionRepository;
 
 	@Value("${waypoint.invitation.expiration-hours}")
 	private long invitationExpirationHours;
@@ -195,6 +197,8 @@ public class CollectionService {
 		Collection collection = getCollection(externalId);
 		Long collectionId = collection.getId();
 		collectionAuthorizer.verifyOwner(user, collectionId);
+
+		planCollectionRepository.deleteAllByCollectionId(collectionId);
 
 		collection.delete();
 	}
