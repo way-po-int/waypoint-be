@@ -102,7 +102,7 @@ public class ShareLinkController {
 		} catch (Exception e) {
 			log.error("초대 링크 처리 중 예상치 못한 시스템 오류가 발생했습니다. code: {}", code, e);
 			return ResponseEntity.status(HttpStatus.FOUND)
-				.location(URI.create(frontendBaseUrl + "/not-found"))
+				.location(URI.create(frontendBaseUrl + errorPagePath))
 				.build();
 		}
 	}
