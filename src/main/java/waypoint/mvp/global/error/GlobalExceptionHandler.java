@@ -11,7 +11,6 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.lang.Nullable;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.ErrorResponse;
 import org.springframework.web.ErrorResponseException;
 import org.springframework.web.HttpMediaTypeNotAcceptableException;
@@ -38,6 +37,7 @@ import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import waypoint.mvp.auth.security.jwt.JwtCode;
+import waypoint.mvp.global.error.exception.GuestAccessDeniedException;
 
 @RestControllerAdvice
 @RequiredArgsConstructor
@@ -54,11 +54,10 @@ public class GlobalExceptionHandler { // ResponseEntityExceptionHandler
 		return problemDetail;
 	}
 
-	@ExceptionHandler(AccessDeniedException.class)
-	public ProblemDetail handleAccessDenied(AccessDeniedException e) {
-		ProblemDetail problemDetail = getProblemDetail(HttpStatus.FORBIDDEN, e.getMessage());
-		problemDetail.setProperty("code", HttpStatus.FORBIDDEN.name());
-		return problemDetail;
+	// 게스트 권한으로 접근 불가능한 API 요청 시 발생하는 예외
+	@ExceptionHandler(GuestAccessDeniedException.class)
+	public ProblemDetail handleGuestAccessDenied(GuestAccessDeniedException e) {
+		return getProblemDetail(e);
 	}
 
 	// 지원하지 않는 HTTP 메서드로 요청했을 때 발생하는 예외

@@ -30,7 +30,7 @@ import waypoint.mvp.sharelink.application.ShareLinkService;
 public class GuestAuthenticationFilter extends OncePerRequestFilter {
 	private static final AntPathMatcher matcher = new AntPathMatcher();
 	private static final List<String> INCLUDE_PATHS = Arrays.asList(
-		"/invite/**",
+		"/places/**",
 		"/collections/**",
 		"/plan/**"
 	);
@@ -58,10 +58,6 @@ public class GuestAuthenticationFilter extends OncePerRequestFilter {
 	@Override
 	protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
 		if (SecurityContextHolder.getContext().getAuthentication() != null) {
-			return true;
-		}
-
-		if (!"GET".equalsIgnoreCase(request.getMethod())) {
 			return true;
 		}
 

@@ -2,7 +2,6 @@ package waypoint.mvp.global.auth.aop;
 
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -11,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.global.auth.annotations.AuthLevel;
 import waypoint.mvp.global.auth.annotations.Authorize;
+import waypoint.mvp.global.error.exception.GuestAccessDeniedException;
 
 @Aspect
 @Component
@@ -23,9 +23,7 @@ public class ResourceAuthorizationAspect {
 
 		// 리소스 ID가 필요 없는 레벨 처리
 		if (authorize.level() == AuthLevel.AUTHENTICATED && user.isGuest()) {
-			{
-				throw new AccessDeniedException("로그인한 사용자만 접근 가능합니다.");
-			}
+			throw new GuestAccessDeniedException();
 		}
 
 	}
