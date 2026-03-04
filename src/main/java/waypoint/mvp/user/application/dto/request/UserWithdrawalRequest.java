@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Size;
 
 public record UserWithdrawalRequest(
 	@NotBlank
-	@Size(max = 500)
+	@Size(max = 2000)
 	String reason
 ) {
 }
