@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -24,7 +25,7 @@ public interface CollectionMemberRepository extends JpaRepository<CollectionMemb
 	Optional<CollectionMember> findActiveByUserId(@Param("collectionId") Long collectionId,
 		@Param("userId") Long userId);
 
-	@Query("SELECT cm FROM CollectionMember cm WHERE cm.collection.id = :collectionId AND cm.user.id = :userId AND cm.deletedAt IS NOT NULL")
+	@Query("SELECT cm FROM CollectionMember cm WHERE cm.collection.id = :collectionId AND cm.user.id = :userId")
 	Optional<CollectionMember> findWithdrawnMember(@Param("collectionId") Long collectionId,
 		@Param("userId") Long userId);
 
@@ -33,4 +34,26 @@ public interface CollectionMemberRepository extends JpaRepository<CollectionMemb
 
 	@Query("SELECT cm FROM CollectionMember cm WHERE cm.collection.id = :collectionId AND cm.deletedAt IS NULL")
 	List<CollectionMember> findActiveAll(@Param("collectionId") Long collectionId);
+
+	@Modifying
+	@Query("UPDATE CollectionMember cm SET cm.nickname = :nickname, cm.picture = :picture WHERE cm.user.id = :userId AND cm.deletedAt IS NULL")
+	void updateProfileByUserId(
+		@Param("userId") Long userId,
+		@Param("nickname") String nickname,
+		@Param("picture") String picture
+	);
+
+	@Query("SELECT cm FROM CollectionMember cm JOIN FETCH cm.collection WHERE cm.user.id = :userId")
+	List<CollectionMember> findAllActiveByUserId(@Param("userId") Long userId);
+
+	@Query("""
+		SELECT cm FROM CollectionMember cm
+		WHERE cm.collection.id = :collectionId AND cm.user.id != :excludeUserId AND cm.deletedAt IS NULL
+		ORDER BY cm.createdAt ASC
+		LIMIT 1
+		""")
+	Optional<CollectionMember> findNextMember(
+		@Param("collectionId") Long collectionId,
+		@Param("excludeUserId") Long excludeUserId
+	);
 }

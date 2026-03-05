@@ -47,6 +47,9 @@ public class PlanMemberService {
 
 		if (withdrawnMemberOpt.isPresent()) {
 			PlanMember rejoinedMember = withdrawnMemberOpt.get();
+			if (!rejoinedMember.isDeleted()) {
+				return;
+			}
 			rejoinedMember.rejoin();
 			rejoinedMember.updateProfile(user.getNickname(), user.getPicture());
 		} else {
@@ -74,6 +77,11 @@ public class PlanMemberService {
 	}
 
 	@Transactional
+	public void updateMemberProfile(Long userId, String nickname, String picture) {
+		planMemberRepository.updateProfileByUserId(userId, nickname, picture);
+	}
+
+	@Transactional
 	public void withdraw(Long planId, UserPrincipal user) {
 		PlanMember member = findMemberByUserId(planId, user.getId());
 		remove(member);
@@ -85,6 +93,30 @@ public class PlanMemberService {
 		planAuthorizer.verifyOwner(user, planId);
 		PlanMember member = findMember(planId, memberId);
 		remove(member);
+	}
+
+	@Transactional
+	public void userDeleted(Long userId) {
+		List<PlanMember> members = planMemberRepository.findAllActiveByUserId(userId);
+
+		for (PlanMember member : members) {
+			member.updateProfile("탈퇴한 유저", "");
+
+			if (member.isDeleted()) {
+				continue;
+			}
+
+			Plan plan = member.getPlan();
+			if (member.isOwner()) {
+				planMemberRepository.findNextMember(plan.getId(), userId)
+					.ifPresent(nextMember -> {
+						member.updateRole(PlanRole.MEMBER);
+						nextMember.updateRole(PlanRole.OWNER);
+					});
+			}
+			member.withdraw();
+			plan.decreaseMemberCount();
+		}
 	}
 
 	private void remove(PlanMember member) {

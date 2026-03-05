@@ -49,6 +49,9 @@ public class CollectionMemberService {
 
 		if (withdrawnMemberOpt.isPresent()) {
 			CollectionMember rejoinedMember = withdrawnMemberOpt.get();
+			if (!rejoinedMember.isDeleted()) {
+				return;
+			}
 			rejoinedMember.rejoin();
 			rejoinedMember.updateProfile(user.getNickname(), user.getPicture());
 		} else {
@@ -85,6 +88,11 @@ public class CollectionMemberService {
 	}
 
 	@Transactional
+	public void updateMemberProfile(Long userId, String nickname, String picture) {
+		collectionMemberRepository.updateProfileByUserId(userId, nickname, picture);
+	}
+
+	@Transactional
 	public void withdraw(Long collectionId, UserPrincipal user) {
 		CollectionMember member = findMemberByUserId(collectionId, user.id());
 		remove(member);
@@ -95,6 +103,30 @@ public class CollectionMemberService {
 		collectionAuthorizer.verifyOwner(user, collectionId);
 		CollectionMember member = findMember(collectionId, memberId);
 		remove(member);
+	}
+
+	@Transactional
+	public void userDeleted(Long userId) {
+		List<CollectionMember> members = collectionMemberRepository.findAllActiveByUserId(userId);
+
+		for (CollectionMember member : members) {
+			member.updateProfile("탈퇴한 유저", "");
+
+			if (member.isDeleted()) {
+				continue;
+			}
+
+			Collection collection = member.getCollection();
+			if (member.isOwner()) {
+				collectionMemberRepository.findNextMember(collection.getId(), userId)
+					.ifPresent(nextMember -> {
+						member.updateRole(CollectionRole.MEMBER);
+						nextMember.updateRole(CollectionRole.OWNER);
+					});
+			}
+			member.withdraw();
+			collection.decreaseMemberCount();
+		}
 	}
 
 	private void remove(CollectionMember member) {

@@ -12,6 +12,8 @@ import waypoint.mvp.collection.error.CollectionError;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionRepository;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.user.domain.User;
+import waypoint.mvp.user.domain.event.ProfileUpdateEvent;
+import waypoint.mvp.user.domain.event.UserDeletedEvent;
 import waypoint.mvp.user.error.UserError;
 import waypoint.mvp.user.infrastructure.persistence.UserRepository;
 
@@ -32,5 +34,15 @@ public class CollectionEventListener {
 			.orElseThrow(() -> new BusinessException(UserError.USER_NOT_FOUND));
 
 		collectionMemberService.createInitialOwner(collection, user);
+	}
+
+	@TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
+	public void handleProfileUpdateEvent(ProfileUpdateEvent event) {
+		collectionMemberService.updateMemberProfile(event.userId(), event.nickname(), event.picture());
+	}
+
+	@TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
+	public void handleUserDeletedEvent(UserDeletedEvent event) {
+		collectionMemberService.userDeleted(event.userId());
 	}
 }
