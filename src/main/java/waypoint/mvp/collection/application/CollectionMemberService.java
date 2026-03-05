@@ -49,6 +49,9 @@ public class CollectionMemberService {
 
 		if (withdrawnMemberOpt.isPresent()) {
 			CollectionMember rejoinedMember = withdrawnMemberOpt.get();
+			if (!rejoinedMember.isDeleted()) {
+				return;
+			}
 			rejoinedMember.rejoin();
 			rejoinedMember.updateProfile(user.getNickname(), user.getPicture());
 		} else {

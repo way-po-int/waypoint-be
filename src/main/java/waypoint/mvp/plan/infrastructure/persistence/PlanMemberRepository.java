@@ -24,7 +24,7 @@ public interface PlanMemberRepository extends JpaRepository<PlanMember, Long> {
 	@Query("SELECT pm FROM PlanMember pm WHERE pm.plan.id = :planId AND pm.user.id = :userId AND pm.deletedAt IS NULL")
 	Optional<PlanMember> findActiveByUserId(@Param("planId") Long planId, @Param("userId") Long userId);
 
-	@Query("SELECT pm FROM PlanMember pm WHERE pm.plan.id = :planId AND pm.user.id = :userId AND pm.deletedAt IS NOT NULL")
+	@Query("SELECT pm FROM PlanMember pm WHERE pm.plan.id = :planId AND pm.user.id = :userId")
 	Optional<PlanMember> findWithdrawnMember(@Param("planId") Long planId, @Param("userId") Long userId);
 
 	@Query("SELECT count(pm) > 0 FROM PlanMember pm WHERE pm.plan.id = :planId AND pm.user.id = :userId AND pm.deletedAt IS NULL")

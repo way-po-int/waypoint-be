@@ -47,6 +47,9 @@ public class PlanMemberService {
 
 		if (withdrawnMemberOpt.isPresent()) {
 			PlanMember rejoinedMember = withdrawnMemberOpt.get();
+			if (!rejoinedMember.isDeleted()) {
+				return;
+			}
 			rejoinedMember.rejoin();
 			rejoinedMember.updateProfile(user.getNickname(), user.getPicture());
 		} else {

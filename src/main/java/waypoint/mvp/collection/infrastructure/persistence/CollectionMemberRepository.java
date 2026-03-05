@@ -25,7 +25,7 @@ public interface CollectionMemberRepository extends JpaRepository<CollectionMemb
 	Optional<CollectionMember> findActiveByUserId(@Param("collectionId") Long collectionId,
 		@Param("userId") Long userId);
 
-	@Query("SELECT cm FROM CollectionMember cm WHERE cm.collection.id = :collectionId AND cm.user.id = :userId AND cm.deletedAt IS NOT NULL")
+	@Query("SELECT cm FROM CollectionMember cm WHERE cm.collection.id = :collectionId AND cm.user.id = :userId")
 	Optional<CollectionMember> findWithdrawnMember(@Param("collectionId") Long collectionId,
 		@Param("userId") Long userId);
 
