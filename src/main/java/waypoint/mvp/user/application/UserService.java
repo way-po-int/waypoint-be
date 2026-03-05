@@ -84,13 +84,13 @@ public class UserService implements UserFinder {
 		User me = findById(user.id());
 
 		String old = me.getPicture();
-		me.changePicture("");
-
-		eventPublisher.publishEvent(ProfileUpdateEvent.from(me));
 
 		if (old == null || old.isBlank()) {
 			return;
 		}
+
+		me.changePicture("");
+		eventPublisher.publishEvent(ProfileUpdateEvent.from(me));
 
 		Long userId = user.id();
 		String externalId = me.getExternalId();
