@@ -27,12 +27,12 @@ public interface CollectionRepository extends JpaRepository<Collection, Long> {
 	int updateThumbnailIfBlank(@Param("id") Long id, @Param("url") String url);
 
 	@Query("SELECT c FROM CollectionMember cm JOIN cm.collection c "
-		+ "WHERE cm.user.id = :userId "
+		+ "WHERE cm.user.id = :userId AND cm.deletedAt IS NULL "
 		+ "ORDER BY cm.createdAt DESC")
 	Slice<Collection> findAllByUserIdOrderByAddedLatest(@Param("userId") Long userId, Pageable pageable);
 
 	@Query("SELECT c FROM CollectionMember cm JOIN cm.collection c "
-		+ "WHERE cm.user.id = :userId "
+		+ "WHERE cm.user.id = :userId AND cm.deletedAt IS NULL "
 		+ "ORDER BY cm.createdAt ASC")
 	Slice<Collection> findAllByUserIdOrderByAddedOldest(@Param("userId") Long userId, Pageable pageable);
 }
