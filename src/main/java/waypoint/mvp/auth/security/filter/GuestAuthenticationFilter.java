@@ -32,7 +32,7 @@ public class GuestAuthenticationFilter extends OncePerRequestFilter {
 	private static final List<String> INCLUDE_PATHS = Arrays.asList(
 		"/places/**",
 		"/collections/**",
-		"/plan/**"
+		"/plans/**"
 	);
 
 	private final ShareLinkService shareLinkService;

@@ -50,22 +50,27 @@ public class CookieUtils {
 			.path(PATH)
 			.maxAge(maxAge)
 			.sameSite(sameSite);
-		
+
 		if (domain != null && !domain.isBlank()) {
 			builder.domain(domain);
 		}
-		
+
 		return builder.build();
 	}
 
 	public ResponseCookie deleteCookie(String cookieName) {
-		return ResponseCookie.from(cookieName, "")
+		ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(cookieName, "")
 			.httpOnly(true)
 			.secure(secure)
 			.path(PATH)
 			.maxAge(0)
-			.sameSite(sameSite)
-			.build();
+			.sameSite(sameSite);
+
+		if (domain != null && !domain.isBlank()) {
+			builder.domain(domain);
+		}
+
+		return builder.build();
 	}
 
 	public Optional<Cookie> getCookie(HttpServletRequest request, String name) {
