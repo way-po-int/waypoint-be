@@ -42,4 +42,18 @@ public interface CollectionMemberRepository extends JpaRepository<CollectionMemb
 		@Param("nickname") String nickname,
 		@Param("picture") String picture
 	);
+
+	@Query("SELECT cm FROM CollectionMember cm JOIN FETCH cm.collection WHERE cm.user.id = :userId")
+	List<CollectionMember> findAllActiveByUserId(@Param("userId") Long userId);
+
+	@Query("""
+		SELECT cm FROM CollectionMember cm
+		WHERE cm.collection.id = :collectionId AND cm.user.id != :excludeUserId AND cm.deletedAt IS NULL
+		ORDER BY cm.createdAt ASC
+		LIMIT 1
+		""")
+	Optional<CollectionMember> findNextMember(
+		@Param("collectionId") Long collectionId,
+		@Param("excludeUserId") Long excludeUserId
+	);
 }

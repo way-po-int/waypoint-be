@@ -20,6 +20,7 @@ import waypoint.mvp.user.domain.SocialAccount;
 import waypoint.mvp.user.domain.User;
 import waypoint.mvp.user.domain.UserWithdrawalReason;
 import waypoint.mvp.user.domain.event.ProfileUpdateEvent;
+import waypoint.mvp.user.domain.event.UserDeletedEvent;
 import waypoint.mvp.user.error.UserError;
 import waypoint.mvp.user.infrastructure.persistence.UserRepository;
 import waypoint.mvp.user.infrastructure.persistence.UserWithdrawalReasonRepository;
@@ -123,6 +124,8 @@ public class UserService implements UserFinder {
 
 		refreshTokenRepository.deleteByUserId(user.id());
 		me.delete();
+
+		eventPublisher.publishEvent(new UserDeletedEvent(me.getId()));
 
 		log.info("회원 탈퇴(soft delete) 완료: userId={}", user.id());
 	}

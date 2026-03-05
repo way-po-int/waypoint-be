@@ -102,6 +102,30 @@ public class CollectionMemberService {
 		remove(member);
 	}
 
+	@Transactional
+	public void userDeleted(Long userId) {
+		List<CollectionMember> members = collectionMemberRepository.findAllActiveByUserId(userId);
+
+		for (CollectionMember member : members) {
+			member.updateProfile("탈퇴한 유저", "");
+
+			if (member.isDeleted()) {
+				continue;
+			}
+
+			Collection collection = member.getCollection();
+			if (member.isOwner()) {
+				collectionMemberRepository.findNextMember(collection.getId(), userId)
+					.ifPresent(nextMember -> {
+						member.updateRole(CollectionRole.MEMBER);
+						nextMember.updateRole(CollectionRole.OWNER);
+					});
+			}
+			member.withdraw();
+			collection.decreaseMemberCount();
+		}
+	}
+
 	private void remove(CollectionMember member) {
 		Collection collection = member.getCollection();
 		if (member.isOwner()) {

@@ -13,6 +13,7 @@ import waypoint.mvp.plan.error.PlanError;
 import waypoint.mvp.plan.infrastructure.persistence.PlanRepository;
 import waypoint.mvp.user.domain.User;
 import waypoint.mvp.user.domain.event.ProfileUpdateEvent;
+import waypoint.mvp.user.domain.event.UserDeletedEvent;
 import waypoint.mvp.user.error.UserError;
 import waypoint.mvp.user.infrastructure.persistence.UserRepository;
 
@@ -37,5 +38,10 @@ public class PlanEventListener {
 	@TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
 	public void handleProfileUpdateEvent(ProfileUpdateEvent event) {
 		planMemberService.updateMemberProfile(event.userId(), event.nickname(), event.picture());
+	}
+
+	@TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
+	public void handleUserDeletedEvent(UserDeletedEvent event) {
+		planMemberService.userDeleted(event.userId());
 	}
 }

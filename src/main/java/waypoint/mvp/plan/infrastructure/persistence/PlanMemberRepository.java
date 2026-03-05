@@ -40,4 +40,18 @@ public interface PlanMemberRepository extends JpaRepository<PlanMember, Long> {
 		@Param("nickname") String nickname,
 		@Param("picture") String picture
 	);
+
+	@Query("SELECT pm FROM PlanMember pm JOIN FETCH pm.plan WHERE pm.user.id = :userId")
+	List<PlanMember> findAllActiveByUserId(@Param("userId") Long userId);
+
+	@Query("""
+		SELECT pm FROM PlanMember pm
+		WHERE pm.plan.id = :planId AND pm.user.id != :excludeUserId AND pm.deletedAt IS NULL
+		ORDER BY pm.createdAt ASC
+		LIMIT 1
+		""")
+	Optional<PlanMember> findNextMember(
+		@Param("planId") Long planId,
+		@Param("excludeUserId") Long excludeUserId
+	);
 }

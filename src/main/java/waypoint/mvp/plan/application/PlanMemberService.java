@@ -92,6 +92,30 @@ public class PlanMemberService {
 		remove(member);
 	}
 
+	@Transactional
+	public void userDeleted(Long userId) {
+		List<PlanMember> members = planMemberRepository.findAllActiveByUserId(userId);
+
+		for (PlanMember member : members) {
+			member.updateProfile("탈퇴한 유저", "");
+
+			if (member.isDeleted()) {
+				continue;
+			}
+
+			Plan plan = member.getPlan();
+			if (member.isOwner()) {
+				planMemberRepository.findNextMember(plan.getId(), userId)
+					.ifPresent(nextMember -> {
+						member.updateRole(PlanRole.MEMBER);
+						nextMember.updateRole(PlanRole.OWNER);
+					});
+			}
+			member.withdraw();
+			plan.decreaseMemberCount();
+		}
+	}
+
 	private void remove(PlanMember member) {
 		Plan plan = member.getPlan();
 		if (member.isOwner()) {
