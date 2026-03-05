@@ -116,9 +116,13 @@ public class CollectionPlaceService {
 		Collection collection = getCollection(collectionId);
 		collectionAuthorizer.verifyAccess(principal, collection.getId());
 
-		CollectionMember member = getActiveMember(collection.getId(), principal.getId());
-		return collectionPlaceQueryService.getPlacesByCollectionId(collection.getId(), addedByMemberId, sortType,
-			pageable, member.getExternalId());
+		return collectionPlaceQueryService.getPlacesByCollectionId(
+			collection.getId(),
+			addedByMemberId,
+			sortType,
+			pageable,
+			resolveMemberExternalId(collection.getId(), principal)
+		);
 	}
 
 	public CollectionPlaceDetailResponse getPlaceDetail(
@@ -129,8 +133,11 @@ public class CollectionPlaceService {
 		Collection collection = getCollection(collectionId);
 		collectionAuthorizer.verifyAccess(principal, collection.getId());
 
-		CollectionMember member = getActiveMember(collection.getId(), principal.getId());
-		return collectionPlaceQueryService.getPlaceDetail(collectionId, collectionPlaceId, member.getExternalId());
+		return collectionPlaceQueryService.getPlaceDetail(
+			collectionId,
+			collectionPlaceId,
+			resolveMemberExternalId(collection.getId(), principal)
+		);
 	}
 
 	@Transactional
@@ -200,4 +207,9 @@ public class CollectionPlaceService {
 			.orElseThrow(() -> new BusinessException(CollectionError.COLLECTION_NOT_FOUND));
 	}
 
+	private String resolveMemberExternalId(Long collectionId, AuthPrincipal principal) {
+		return principal.isGuest()
+			? null
+			: getActiveMember(collectionId, principal.getId()).getExternalId();
+	}
 }
