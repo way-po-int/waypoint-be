@@ -50,7 +50,7 @@ public interface PlanCollectionRepository extends JpaRepository<PlanCollection, 
 		@Param("collectionExternalIds") List<String> collectionExternalIds
 	);
 
-	@Modifying(clearAutomatically = true)
+	@Modifying
 	@Query("DELETE FROM PlanCollection pc WHERE pc.collection.id = :collectionId")
 	void deleteAllByCollectionId(@Param("collectionId") Long collectionId);
 }
