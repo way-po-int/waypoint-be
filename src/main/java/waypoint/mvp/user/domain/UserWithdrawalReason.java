@@ -25,7 +25,7 @@ public class UserWithdrawalReason extends BaseTimeEntity {
 	@Column(nullable = false)
 	private Long userId;
 
-	@Column(nullable = false, length = 500)
+	@Column(nullable = false, length = 2000)
 	private String reason;
 
 	@Builder(access = AccessLevel.PRIVATE)
