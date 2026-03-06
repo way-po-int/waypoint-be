@@ -26,6 +26,7 @@ val awsSdkVersion = "2.41.25"
 val jnanoidVersion = "2.0.0"
 val jjwtVersion = "0.13.0"
 val youtubeVersion = "v3-rev20251217-2.0.0"
+val logbackAppenderVersion = "2.13.3-alpha"
 
 dependencies {
     // --- Core ---
@@ -51,6 +52,13 @@ dependencies {
     runtimeOnly("io.jsonwebtoken:jjwt-impl:$jjwtVersion")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:$jjwtVersion")
     implementation("com.google.apis:google-api-services-youtube:$youtubeVersion")
+
+    // --- Observability ---
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("io.micrometer:micrometer-registry-otlp")
+    implementation("io.micrometer:micrometer-tracing-bridge-otel")
+    implementation("io.opentelemetry:opentelemetry-exporter-otlp")
+    implementation("io.opentelemetry.instrumentation:opentelemetry-logback-appender-1.0:$logbackAppenderVersion")
 
     // --- Development ---
     compileOnly("org.projectlombok:lombok")
