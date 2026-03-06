@@ -1,7 +1,7 @@
 spring:
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
   datasource:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
@@ -10,6 +10,29 @@ spring:
 cookie:
   secure: true
   same-site: None
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  otlp:
+    metrics:
+      export:
+        url: "${OTEL_EXPORTER_OTLP_ENDPOINT}/v1/metrics"
+        headers:
+          Authorization: "${OTEL_EXPORTER_OTLP_AUTH}"
+    tracing:
+      endpoint: "${OTEL_EXPORTER_OTLP_ENDPOINT}/v1/traces"
+      headers:
+        Authorization: "${OTEL_EXPORTER_OTLP_AUTH}"
+    logging:
+      endpoint: "${OTEL_EXPORTER_OTLP_ENDPOINT}/v1/logs"
+      headers:
+        Authorization: "${OTEL_EXPORTER_OTLP_AUTH}"
+  tracing:
+    sampling:
+      probability: ${SAMPLING_PROBABILITY:1.0}
 
 logging:
   level:
