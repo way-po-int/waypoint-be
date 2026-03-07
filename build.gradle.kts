@@ -39,6 +39,8 @@ dependencies {
     // --- Database ---
     runtimeOnly("org.postgresql:postgresql")
     implementation("org.hibernate.orm:hibernate-spatial")
+    implementation("org.flywaydb:flyway-core")
+    implementation("org.flywaydb:flyway-database-postgresql")
 
     // --- AI & AWS ---
     implementation(platform("org.springframework.ai:spring-ai-bom:$springAiVersion"))
