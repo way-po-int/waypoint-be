@@ -6,6 +6,9 @@ spring:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
+    hikari:
+      minimum-idle: 0
+      idle-timeout: 300000 # 5분
 
 cookie:
   secure: true
@@ -32,8 +35,4 @@ management:
         Authorization: "${OTEL_EXPORTER_OTLP_AUTH}"
   tracing:
     sampling:
-      probability: ${SAMPLING_PROBABILITY:1.0}
-
-logging:
-  level:
-    waypoint.mvp: DEBUG
+      probability: ${SAMPLING_PROBABILITY:0.1}
