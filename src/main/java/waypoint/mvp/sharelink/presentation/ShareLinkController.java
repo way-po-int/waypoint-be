@@ -33,7 +33,7 @@ import waypoint.mvp.sharelink.error.ShareLinkError;
 @RestController
 @RequiredArgsConstructor
 @Slf4j
-@RequestMapping("/invite")
+@RequestMapping("/s")
 public class ShareLinkController {
 
 	private final ShareLinkService shareLinkService;
