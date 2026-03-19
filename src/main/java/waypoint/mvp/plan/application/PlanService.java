@@ -123,8 +123,6 @@ public class PlanService {
 		Plan plan = getPlan(externalId);
 		planAuthorizer.verifyAccess(user, plan.getId());
 
-		memberCacheService.getPlanMemberCache(plan.getId());
-
 		return toPlanResponse(plan);
 	}
 

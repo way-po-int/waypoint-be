@@ -178,7 +178,6 @@ public class CollectionService {
 				me = m;
 			}
 		}
-		memberCacheService.getCollectionMemberCache(collectionId);
 
 		return new CollectionMemberGroupResponse(isAuthenticated, me, allResponses);
 	}

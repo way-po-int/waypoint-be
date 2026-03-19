@@ -7,6 +7,7 @@ import java.util.Set;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import waypoint.mvp.collection.domain.CollectionMember;
@@ -18,6 +19,7 @@ import waypoint.mvp.plan.infrastructure.persistence.PlanMemberRepository;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class MemberCacheService {
 
 	private final CollectionMemberRepository collectionMemberRepository;
