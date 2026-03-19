@@ -27,6 +27,7 @@ import waypoint.mvp.collection.error.CollectionError;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionPlaceRepository;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionRepository;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
+import waypoint.mvp.global.auth.application.MemberCacheService;
 import waypoint.mvp.global.common.SliceResponse;
 import waypoint.mvp.global.common.sort.SortType;
 import waypoint.mvp.global.error.exception.BusinessException;
@@ -51,6 +52,7 @@ public class CollectionService {
 	private final ResourceAuthorizer collectionAuthorizer;
 	private final CollectionPlaceRepository collectionPlaceRepository;
 	private final PlanCollectionRepository planCollectionRepository;
+	private final MemberCacheService memberCacheService;
 
 	@Value("${waypoint.invitation.expiration-hours}")
 	private long invitationExpirationHours;
@@ -153,6 +155,7 @@ public class CollectionService {
 
 		currentOwner.updateRole(CollectionRole.MEMBER);
 		newOwner.updateRole(CollectionRole.OWNER);
+		memberCacheService.evictCollectionMembersCache(collectionId);
 	}
 
 	public CollectionMemberGroupResponse findCollectionMemberGroup(String externalId, AuthPrincipal user) {
@@ -175,6 +178,7 @@ public class CollectionService {
 				me = m;
 			}
 		}
+		memberCacheService.getCollectionMemberCache(collectionId);
 
 		return new CollectionMemberGroupResponse(isAuthenticated, me, allResponses);
 	}
@@ -182,14 +186,19 @@ public class CollectionService {
 	@Transactional
 	public void withdrawCollectionMember(String externalId, UserPrincipal user) {
 		Collection collection = getCollection(externalId);
-		collectionMemberService.withdraw(collection.getId(), user);
+		Long collectionId = collection.getId();
+
+		collectionMemberService.withdraw(collectionId, user);
+		memberCacheService.evictCollectionMembersCache(collectionId);
 	}
 
 	@Transactional
 	public void expelCollectionMember(String externalId, String memberExternalId, UserPrincipal user) {
 		Collection collection = getCollection(externalId);
+		Long collectionId = collection.getId();
 
-		collectionMemberService.expel(collection.getId(), memberExternalId, user);
+		collectionMemberService.expel(collectionId, memberExternalId, user);
+		memberCacheService.evictCollectionMembersCache(collectionId);
 	}
 
 	@Transactional
@@ -228,6 +237,7 @@ public class CollectionService {
 		collectionMemberService.addMember(collection, inviteeUser);
 
 		shareLink.increaseUseCount();
+		memberCacheService.evictCollectionMembersCache(collection.getId());
 
 		return collection.getId();
 	}

@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
+import waypoint.mvp.global.auth.application.MemberCacheService;
 import waypoint.mvp.global.common.SliceResponse;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.plan.application.dto.PlanDaySyncResult;
@@ -54,6 +55,7 @@ public class PlanService {
 	private final BudgetService budgetService;
 	private final ResourceAuthorizer planAuthorizer;
 	private final PlanCollectionRepository planCollectionRepository;
+	private final MemberCacheService memberCacheService;
 
 	@Value("${waypoint.invitation.expiration-hours}")
 	private long invitationExpirationHours;
@@ -121,6 +123,8 @@ public class PlanService {
 		Plan plan = getPlan(externalId);
 		planAuthorizer.verifyAccess(user, plan.getId());
 
+		memberCacheService.getPlanMemberCache(plan.getId());
+
 		return toPlanResponse(plan);
 	}
 
@@ -162,6 +166,7 @@ public class PlanService {
 
 		currentOwner.updateRole(PlanRole.MEMBER);
 		newOwner.updateRole(PlanRole.OWNER);
+		memberCacheService.evictPlanMembersCache(planId);
 	}
 
 	@Transactional
@@ -169,6 +174,7 @@ public class PlanService {
 		Plan plan = getPlan(planExternalId);
 
 		planMemberService.withdraw(plan.getId(), user);
+		memberCacheService.evictPlanMembersCache(plan.getId());
 	}
 
 	@Transactional
@@ -176,6 +182,7 @@ public class PlanService {
 		Plan plan = getPlan(planExternalId);
 
 		planMemberService.expel(plan.getId(), memberExternalId, user);
+		memberCacheService.evictPlanMembersCache(plan.getId());
 	}
 
 	@Transactional
@@ -211,6 +218,7 @@ public class PlanService {
 		planMemberService.addMember(plan, inviteeUser);
 
 		shareLink.increaseUseCount();
+		memberCacheService.evictPlanMembersCache(plan.getId());
 
 		return plan.getId();
 	}
