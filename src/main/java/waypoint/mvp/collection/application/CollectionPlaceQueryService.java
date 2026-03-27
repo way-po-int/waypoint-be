@@ -159,20 +159,10 @@ public class CollectionPlaceQueryService {
 	 * CollectionPlace의 Pick/Pass 현재 상태 조회 (권한 검증 없음)
 	 */
 	public PickPassResponse getPickPass(Long collectionPlaceId, String collectionMemberId) {
-		Map<CollectionPlacePreference.Type, List<CollectionMemberResponse>> preferenceByType =
-			preferenceRepository.findAllByPlaceIdIn(List.of(collectionPlaceId))
-				.stream()
-				.collect(groupingBy(
-					CollectionPlacePreference::getType,
-					mapping(p -> CollectionMemberResponse.from(p.getMember()), toList())
-				));
+		List<CollectionPlacePreference> preferences =
+			preferenceRepository.findAllByPlaceIdIn(List.of(collectionPlaceId));
 
-		List<CollectionMemberResponse> picked =
-			preferenceByType.getOrDefault(CollectionPlacePreference.Type.PICK, List.of());
-		List<CollectionMemberResponse> passed =
-			preferenceByType.getOrDefault(CollectionPlacePreference.Type.PASS, List.of());
-
-		return PickPassResponse.of(picked, passed, collectionMemberId);
+		return PickPassResponse.from(preferences, collectionMemberId);
 	}
 
 	/**
