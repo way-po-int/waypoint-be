@@ -1,0 +1,32 @@
+replacers:
+  - search: '/(WAPO-\d+)/g'
+    replace: '[$1](https://way-point.atlassian.net/browse/$1)'
+  - search: '/(TRP-\d+)/g'
+    replace: '[$1](https://trippixel.atlassian.net/browse/$1)'
+
+categories:
+  - title: '새로운 기능'
+    labels:
+      - '✨ feature'
+  - title: '버그 수정'
+    labels:
+      - '🐞 bug'
+      - '🔨 fix'
+  - title: '리팩토링 & 유지보수'
+    labels:
+      - '🔧 refactor'
+      - '⚙️ chore'
+      - '📦 ci'
+      - '📄 docs'
+  - title: '테스트'
+    labels:
+      - '✅ test'
+
+exclude-labels:
+  - '🚧 hold'
+
+change-template: '- $TITLE (#$NUMBER) @$AUTHOR'
+change-title-escapes: '\<*_&'
+
+template: |
+  $CHANGES

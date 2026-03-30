@@ -1,0 +1,42 @@
+name: Release Drafter
+
+on:
+  push:
+    branches:
+      - main
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  update_release_draft:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Calculate next version
+        id: calc
+        run: |
+          TODAY=$(TZ='Asia/Seoul' date +'%Y%m%d')
+          PREFIX="v$TODAY."
+          
+          # 원격 저장소에서 오늘 날짜로 생성된 태그 중 가장 높은 버전을 조회
+          LATEST_TAG=$(git ls-remote --tags origin "refs/tags/${PREFIX}*" | awk -F'/' '{print $3}' | sort -V | tail -n 1)
+          
+          if [ -z "$LATEST_TAG" ]; then
+            # 오늘 배포된 태그가 없으면 무조건 .1 로 시작
+            NEXT_VERSION="${PREFIX}1"
+          else
+            # 배포된 태그가 있으면 맨 뒤의 숫자만 빼서 +1 하기
+            CURRENT_NUM=${LATEST_TAG##*.}
+            NEXT_NUM=$((CURRENT_NUM + 1))
+            NEXT_VERSION="${PREFIX}${NEXT_NUM}"
+          fi
+          
+          echo "next_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+
+      - uses: release-drafter/release-drafter@v7
+        with:
+          name: "${{ steps.calc.outputs.next_version }}"
+          tag: "${{ steps.calc.outputs.next_version }}"
