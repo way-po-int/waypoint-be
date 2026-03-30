@@ -19,38 +19,65 @@ repositories {
 
 val mockitoAgent: Configuration = configurations.create("mockitoAgent")
 
+// --- Version ---
+val mockitoVersion = "5.21.0"
+val springAiVersion = "1.1.2"
+val awsSdkVersion = "2.41.25"
+val jnanoidVersion = "2.0.0"
+val jjwtVersion = "0.13.0"
+val youtubeVersion = "v3-rev20251217-2.0.0"
+val logbackAppenderVersion = "2.13.3-alpha"
+
 dependencies {
+    // --- Core ---
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
-    implementation(platform(libs.spring.ai.bom))
-    implementation("org.springframework.ai:spring-ai-starter-model-google-genai")
+
+    // --- Database ---
+    runtimeOnly("org.postgresql:postgresql")
     implementation("org.hibernate.orm:hibernate-spatial")
-    implementation("com.aventrix.jnanoid:jnanoid:2.0.0")
-    implementation(libs.jjwt.api)
-    implementation(libs.youtube.api)
-    implementation(platform("software.amazon.awssdk:bom:2.41.25"))
+    implementation("org.flywaydb:flyway-core")
+    implementation("org.flywaydb:flyway-database-postgresql")
+
+    // --- AI & AWS ---
+    implementation(platform("org.springframework.ai:spring-ai-bom:$springAiVersion"))
+    implementation("org.springframework.ai:spring-ai-starter-model-google-genai")
+    implementation(platform("software.amazon.awssdk:bom:$awsSdkVersion"))
     implementation("software.amazon.awssdk:s3")
 
+    // --- Utilities ---
+    implementation("com.aventrix.jnanoid:jnanoid:$jnanoidVersion")
+    implementation("io.jsonwebtoken:jjwt-api:$jjwtVersion")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl:$jjwtVersion")
+    runtimeOnly("io.jsonwebtoken:jjwt-jackson:$jjwtVersion")
+    implementation("com.google.apis:google-api-services-youtube:$youtubeVersion")
+
+    // --- Observability ---
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("io.micrometer:micrometer-registry-otlp")
+    implementation("io.micrometer:micrometer-tracing-bridge-otel")
+    implementation("io.opentelemetry:opentelemetry-exporter-otlp")
+    implementation("io.opentelemetry.instrumentation:opentelemetry-logback-appender-1.0:$logbackAppenderVersion")
+
+    // --- Development ---
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
     developmentOnly("org.springframework.boot:spring-boot-docker-compose")
-    runtimeOnly("org.postgresql:postgresql")
-    runtimeOnly(libs.jjwt.impl)
-    runtimeOnly(libs.jjwt.jackson)
 
-    testImplementation("org.testcontainers:junit-jupiter")
-    testImplementation("org.testcontainers:postgresql")
-    testImplementation("org.springframework.boot:spring-boot-testcontainers")
+    // --- Testing ---
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")
+    testImplementation("org.springframework.boot:spring-boot-testcontainers")
+    testImplementation("org.testcontainers:junit-jupiter")
+    testImplementation("org.testcontainers:postgresql")
     testCompileOnly("org.projectlombok:lombok")
     testAnnotationProcessor("org.projectlombok:lombok")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
-    mockitoAgent(libs.mockito) { isTransitive = false }
+    mockitoAgent("org.mockito:mockito-core:$mockitoVersion") { isTransitive = false }
 }
 
 tasks.withType<Test> {

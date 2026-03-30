@@ -56,8 +56,9 @@ public class SecurityConfig {
 				.accessDeniedHandler(accessDeniedHandler))
 			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			.authorizeHttpRequests(auth -> auth
-				.requestMatchers(HttpMethod.GET, "/invite/**").permitAll()
+				.requestMatchers(HttpMethod.GET, "/s/**").permitAll()
 				.requestMatchers("/dev/**").permitAll()
+				.requestMatchers("/actuator/health").permitAll()
 				.requestMatchers("/auth/reissue").permitAll()
 				.requestMatchers("/users/me/terms").hasAnyAuthority(
 					Role.PRE_TERMS.getAuthority(),

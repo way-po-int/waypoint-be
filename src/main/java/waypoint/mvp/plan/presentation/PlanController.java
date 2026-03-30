@@ -113,7 +113,7 @@ public class PlanController {
 	}
 
 	@Authorize(level = AuthLevel.AUTHENTICATED)
-	@DeleteMapping("/{planId}/member/me")
+	@DeleteMapping("/{planId}/members/me")
 	public ResponseEntity<Void> withdrawMember(
 		@PathVariable String planId,
 		@AuthenticationPrincipal UserPrincipal user
@@ -124,7 +124,7 @@ public class PlanController {
 	}
 
 	@Authorize(level = AuthLevel.AUTHENTICATED)
-	@DeleteMapping("/{planId}/member/{memberId}")
+	@DeleteMapping("/{planId}/members/{memberId}")
 	public ResponseEntity<Void> expelMember(
 		@PathVariable String planId,
 		@PathVariable String memberId,
