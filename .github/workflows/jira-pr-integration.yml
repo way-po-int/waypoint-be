@@ -5,9 +5,9 @@ on:
     types:
       - opened
 env:
-  JIRA_DOMAIN: "way-point"
-  JIRA_SPACE_KEY: "WAPO"
-  BADGE_COLOR: "2684FF"
+  JIRA_DOMAIN: ${{ vars.JIRA_DOMAIN }}
+  JIRA_SPACE_KEY: ${{ vars.JIRA_SPACE_KEY }}
+  BADGE_COLOR: ${{ vars.BADGE_COLOR }}
 permissions:
   pull-requests: write
 
