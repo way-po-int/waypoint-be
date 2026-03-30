@@ -3,7 +3,7 @@ name: Deploy Prod with ECS
 on:
   push:
     tags:
-      - 'prod-v*'
+      - 'v*'
 permissions:
   id-token: write
   contents: read
