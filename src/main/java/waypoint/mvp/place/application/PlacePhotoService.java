@@ -20,6 +20,24 @@ public class PlacePhotoService {
 	private final GooglePlacesClient googlePlacesClient;
 	private final PlaceService placeService;
 
+	public List<String> getCachedRepresentativePhotoUris(Place place) {
+		if (place == null) {
+			return List.of();
+		}
+
+		PlaceDetail detail = place.getDetail();
+		if (detail == null) {
+			return List.of();
+		}
+
+		String cached = detail.getPhotoUri();
+		if (!StringUtils.hasText(cached)) {
+			return List.of();
+		}
+
+		return List.of(cached);
+	}
+
 	/**
 	 * 대표 1장만 조회한다.
 	 * - photoUri가 캐시되어 있으면 캐시를 반환한다.
