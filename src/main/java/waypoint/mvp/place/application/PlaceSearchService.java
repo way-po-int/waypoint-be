@@ -1,7 +1,10 @@
 package waypoint.mvp.place.application;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
@@ -39,19 +42,19 @@ public class PlaceSearchService {
 			return List.of();
 		}
 
-		List<String> placeIds = googlePlacesClient.searchPlaceIds(q, DEFAULT_PAGE_SIZE);
-		if (placeIds.isEmpty()) {
+		List<String> googlePlaceIds = googlePlacesClient.searchPlaceIds(q, DEFAULT_PAGE_SIZE);
+		if (googlePlaceIds.isEmpty()) {
 			return List.of();
 		}
 
-		return placeIds.stream()
-			.map(this::loadOrCreatePlace)
-			.flatMap(Optional::stream)
+		List<Place> places = loadOrCreatePlaces(googlePlaceIds);
+
+		return places.stream()
 			.map(place -> PlaceResponse.from(
 				place,
 				placeCategoryService.toCategoryResponse(place.getCategoryId()),
-				placePhotoService.resolveRepresentativePhotoUris(place))
-			)
+				placePhotoService.getCachedRepresentativePhotoUris(place)
+			))
 			.toList();
 	}
 
@@ -64,9 +67,30 @@ public class PlaceSearchService {
 			.map(this::mapToPlace);
 	}
 
-	private Optional<Place> loadOrCreatePlace(String googlePlaceId) {
-		return placeService.getPlace(googlePlaceId)
-			.or(() -> fetchPlaceDetails(googlePlaceId).map(placeService::createOrGetPlace));
+	private List<Place> loadOrCreatePlaces(List<String> googlePlaceIds) {
+		Map<String, Place> savedPlaceMap = placeService.getPlacesByGooglePlaceIds(googlePlaceIds).stream()
+			.filter(place -> place.getDetail() != null)
+			.filter(place -> StringUtils.hasText(place.getDetail().getPlaceId()))
+			.collect(Collectors.toMap(
+				place -> place.getDetail().getPlaceId(),
+				Function.identity(),
+				(existing, replacement) -> existing
+			));
+
+		return googlePlaceIds.stream()
+			.map(googlePlaceId -> loadOrCreatePlace(googlePlaceId, savedPlaceMap))
+			.flatMap(Optional::stream)
+			.toList();
+	}
+
+	private Optional<Place> loadOrCreatePlace(String googlePlaceId, Map<String, Place> savedPlaceMap) {
+		Place saved = savedPlaceMap.get(googlePlaceId);
+		if (saved != null) {
+			return Optional.of(saved);
+		}
+
+		return fetchPlaceDetails(googlePlaceId)
+			.map(placeService::createOrGetPlace);
 	}
 
 	private Place mapToPlace(GooglePlaceDetailsDto dto) {

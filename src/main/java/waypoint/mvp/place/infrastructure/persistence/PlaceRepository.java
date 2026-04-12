@@ -14,4 +14,6 @@ public interface PlaceRepository extends JpaRepository<Place, Long> {
 	Optional<Place> findByExternalId(String externalId);
 
 	List<Place> findAllByExternalIdIn(List<String> externalIds);
+
+	List<Place> findAllByDetailPlaceIdIn(List<String> detailPlaceIds);
 }

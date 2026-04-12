@@ -39,6 +39,13 @@ public class PlaceService {
 		return placeRepository.findByDetailPlaceId(googlePlaceId);
 	}
 
+	public List<Place> getPlacesByGooglePlaceIds(List<String> googlePlaceIds) {
+		if (googlePlaceIds == null || googlePlaceIds.isEmpty()) {
+			return List.of();
+		}
+		return placeRepository.findAllByDetailPlaceIdIn(googlePlaceIds);
+	}
+
 	@Transactional
 	public Place createOrGetPlace(Place place) {
 		try {
