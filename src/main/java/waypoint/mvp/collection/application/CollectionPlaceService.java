@@ -1,5 +1,6 @@
 package waypoint.mvp.collection.application;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Pageable;
@@ -184,22 +185,29 @@ public class CollectionPlaceService {
 
 		Long collectionPlacePk = place.getId();
 
-		Optional<CollectionPlacePreference> existingOpt =
-			preferenceRepository.findByPlaceIdAndMemberId(collectionPlacePk, me.getId());
+		List<CollectionPlacePreference> allPreferences =
+			preferenceRepository.findAllByPlaceIdIn(List.of(collectionPlacePk));
 
-		if (existingOpt.isPresent()) {
-			CollectionPlacePreference existing = existingOpt.get();
+		Optional<CollectionPlacePreference> myPreferenceOpt = allPreferences.stream()
+			.filter(pref -> pref.getMember().getId().equals(me.getId()))
+			.findFirst();
 
-			if (existing.getType() == type) {
-				preferenceRepository.delete(existing);
+		if (myPreferenceOpt.isPresent()) {
+			CollectionPlacePreference myPreference = myPreferenceOpt.get();
+			if (myPreference.getType() == type) {
+				preferenceRepository.delete(myPreference);
+				allPreferences.remove(myPreference);
 			} else {
-				existing.changeType(type);
+				myPreference.changeType(type);
 			}
 		} else {
-			preferenceRepository.save(CollectionPlacePreference.create(place, me, type));
+			CollectionPlacePreference newPreference =
+				CollectionPlacePreference.create(place, me, type);
+			preferenceRepository.save(newPreference);
+			allPreferences.add(newPreference);
 		}
 
-		return collectionPlaceQueryService.getPickPass(collectionPlacePk, me.getExternalId());
+		return PickPassResponse.from(allPreferences, me.getExternalId());
 	}
 
 	private Collection getCollection(String collectionId) {

@@ -1,6 +1,14 @@
 package waypoint.mvp.collection.application.dto.response;
 
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toList;
+
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
+
+import waypoint.mvp.collection.domain.CollectionPlacePreference;
 
 public record PickPassResponse(
 	PickPassGroup picked,
@@ -12,6 +20,25 @@ public record PickPassResponse(
 		PICK,
 		PASS,
 		NOTHING;
+	}
+
+	public static PickPassResponse from(
+		List<CollectionPlacePreference> preferences,
+		String currentMemberExternalId
+	) {
+		Map<CollectionPlacePreference.Type, List<CollectionMemberResponse>> grouped = preferences.stream()
+			.collect(groupingBy(
+				CollectionPlacePreference::getType,
+				() -> new EnumMap<>(CollectionPlacePreference.Type.class),
+				mapping(pref -> CollectionMemberResponse.from(pref.getMember()), toList())
+			));
+
+		List<CollectionMemberResponse> pickedMembers =
+			grouped.getOrDefault(CollectionPlacePreference.Type.PICK, List.of());
+		List<CollectionMemberResponse> passedMembers =
+			grouped.getOrDefault(CollectionPlacePreference.Type.PASS, List.of());
+
+		return of(pickedMembers, passedMembers, currentMemberExternalId);
 	}
 
 	public static PickPassResponse of(

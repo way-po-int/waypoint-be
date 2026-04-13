@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.data.domain.Pageable;
+import org.springframework.util.StringUtils;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -159,20 +160,10 @@ public class CollectionPlaceQueryService {
 	 * CollectionPlace의 Pick/Pass 현재 상태 조회 (권한 검증 없음)
 	 */
 	public PickPassResponse getPickPass(Long collectionPlaceId, String collectionMemberId) {
-		Map<CollectionPlacePreference.Type, List<CollectionMemberResponse>> preferenceByType =
-			preferenceRepository.findAllByPlaceIdIn(List.of(collectionPlaceId))
-				.stream()
-				.collect(groupingBy(
-					CollectionPlacePreference::getType,
-					mapping(p -> CollectionMemberResponse.from(p.getMember()), toList())
-				));
+		List<CollectionPlacePreference> preferences =
+			preferenceRepository.findAllByPlaceIdIn(List.of(collectionPlaceId));
 
-		List<CollectionMemberResponse> picked =
-			preferenceByType.getOrDefault(CollectionPlacePreference.Type.PICK, List.of());
-		List<CollectionMemberResponse> passed =
-			preferenceByType.getOrDefault(CollectionPlacePreference.Type.PASS, List.of());
-
-		return PickPassResponse.of(picked, passed, collectionMemberId);
+		return PickPassResponse.from(preferences, collectionMemberId);
 	}
 
 	/**
@@ -203,7 +194,7 @@ public class CollectionPlaceQueryService {
 	private Slice<CollectionPlace> fetchCollectionPlaces(
 		Long collectionId, String addedByMemberId, Pageable pageable
 	) {
-		if (addedByMemberId != null) {
+		if (StringUtils.hasText(addedByMemberId)) {
 			return collectionPlaceRepository.findAllByCollectionIdAndAddedByExternalId(
 				collectionId, addedByMemberId, pageable
 			);
