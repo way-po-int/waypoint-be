@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.data.domain.Pageable;
+import org.springframework.util.StringUtils;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -193,7 +194,7 @@ public class CollectionPlaceQueryService {
 	private Slice<CollectionPlace> fetchCollectionPlaces(
 		Long collectionId, String addedByMemberId, Pageable pageable
 	) {
-		if (addedByMemberId != null) {
+		if (StringUtils.hasText(addedByMemberId)) {
 			return collectionPlaceRepository.findAllByCollectionIdAndAddedByExternalId(
 				collectionId, addedByMemberId, pageable
 			);
