@@ -42,7 +42,6 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql")
     implementation("org.springframework.boot:spring-boot-starter-cache")
     implementation("com.github.ben-manes.caffeine:caffeine")
-    implementation(platform(libs.spring.ai.bom))
     implementation("org.springframework.ai:spring-ai-starter-model-google-genai")
     implementation("org.hibernate.orm:hibernate-spatial")
     implementation("org.flywaydb:flyway-core")
