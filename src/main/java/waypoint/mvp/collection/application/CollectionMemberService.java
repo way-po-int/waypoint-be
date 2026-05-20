@@ -15,7 +15,6 @@ import waypoint.mvp.collection.domain.CollectionRole;
 import waypoint.mvp.collection.error.CollectionError;
 import waypoint.mvp.collection.error.CollectionMemberError;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionMemberRepository;
-import waypoint.mvp.collection.infrastructure.persistence.CollectionRepository;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.user.domain.User;
@@ -26,7 +25,6 @@ import waypoint.mvp.user.domain.User;
 public class CollectionMemberService {
 
 	private final CollectionMemberRepository collectionMemberRepository;
-	private final CollectionRepository collectionRepository;
 	private final ResourceAuthorizer collectionAuthorizer;
 
 	public boolean isSameMember(CollectionMember member, CollectionMember other) {

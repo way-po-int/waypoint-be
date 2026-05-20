@@ -3,9 +3,11 @@ package waypoint.mvp.global.auth;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
+import java.util.function.Function;
 
 import waypoint.mvp.auth.security.principal.AuthPrincipal;
 import waypoint.mvp.auth.security.principal.GuestPrincipal;
+import waypoint.mvp.global.auth.application.dto.MemberCache;
 import waypoint.mvp.global.common.Membership;
 import waypoint.mvp.global.config.AuthorizerConfig;
 import waypoint.mvp.global.config.AuthorizerConfig.AuthorizerErrorCodes;
@@ -25,17 +27,20 @@ public final class ResourceAuthorizer {
 
 	private final BiFunction<Long, Long, Optional<? extends Membership>> membershipFinder;
 	private final BiPredicate<Long, Long> membershipExistsChecker;
+	private final Function<Long, MemberCache> cachedMemberGetter;
 	private final ShareLinkType shareLinkType;
 	private final AuthorizerErrorCodes authorizerErrorCodes;
 
 	public ResourceAuthorizer(
 		BiFunction<Long, Long, Optional<? extends Membership>> membershipFinder,
 		BiPredicate<Long, Long> membershipExistsChecker,
+		Function<Long, MemberCache> cachedMemberGetter,
 		ShareLinkType shareLinkType,
 		AuthorizerErrorCodes authorizerErrorCodes
 	) {
 		this.membershipFinder = membershipFinder;
 		this.membershipExistsChecker = membershipExistsChecker;
+		this.cachedMemberGetter = cachedMemberGetter;
 		this.shareLinkType = shareLinkType;
 		this.authorizerErrorCodes = authorizerErrorCodes;
 	}
@@ -69,6 +74,16 @@ public final class ResourceAuthorizer {
 	}
 
 	private void doVerifyOwner(Long resourceId, Long userId) {
+		// 캐시에서 먼저 확인
+		MemberCache cache = cachedMemberGetter.apply(resourceId);
+		if (cache != null && !cache.isEmpty()) {
+			if (!cache.isOwner(userId)) {
+				throw new BusinessException(authorizerErrorCodes.notOwner());
+			}
+			return;
+		}
+
+		// 캐시 미스 시 DB 조회
 		boolean isOwner = membershipFinder.apply(resourceId, userId)
 			.map(Membership::isOwner)
 			.orElse(false);
@@ -79,6 +94,16 @@ public final class ResourceAuthorizer {
 	}
 
 	private void doVerifyMember(Long resourceId, Long userId) {
+		// 캐시에서 먼저 확인
+		MemberCache cache = cachedMemberGetter.apply(resourceId);
+		if (cache != null && !cache.isEmpty()) {
+			if (!cache.isMember(userId)) {
+				throw new BusinessException(authorizerErrorCodes.notMember());
+			}
+			return;
+		}
+
+		// 캐시 미스 시 DB 조회
 		if (!membershipExistsChecker.test(resourceId, userId)) {
 			throw new BusinessException(authorizerErrorCodes.notMember());
 		}

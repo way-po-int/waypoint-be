@@ -54,6 +54,7 @@ class CollectionAuthorizerTest {
 		collectionAuthorizer = new ResourceAuthorizer(
 			memberRepository::findActiveByUserId,
 			memberRepository::existsActive,
+			resourceId -> null,
 			ShareLinkType.COLLECTION,
 			new AuthorizerErrorCodes(
 				CollectionError.FORBIDDEN_NOT_OWNER,

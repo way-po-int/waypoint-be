@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import waypoint.mvp.collection.error.CollectionError;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionMemberRepository;
 import waypoint.mvp.global.auth.ResourceAuthorizer;
+import waypoint.mvp.global.auth.application.MemberCacheService;
 import waypoint.mvp.global.error.ErrorCode;
 import waypoint.mvp.plan.error.PlanError;
 import waypoint.mvp.plan.infrastructure.persistence.PlanMemberRepository;
@@ -25,10 +26,14 @@ public class AuthorizerConfig {
 	}
 
 	@Bean
-	public ResourceAuthorizer collectionAuthorizer(CollectionMemberRepository repository) {
+	public ResourceAuthorizer collectionAuthorizer(
+		CollectionMemberRepository repository,
+		MemberCacheService cacheService
+	) {
 		return new ResourceAuthorizer(
 			repository::findActiveByUserId,
 			repository::existsActive,
+			cacheService::getCollectionMemberCache,
 			ShareLinkType.COLLECTION,
 			new AuthorizerErrorCodes(
 				CollectionError.FORBIDDEN_NOT_OWNER,
@@ -40,10 +45,14 @@ public class AuthorizerConfig {
 	}
 
 	@Bean
-	public ResourceAuthorizer planAuthorizer(PlanMemberRepository repository) {
+	public ResourceAuthorizer planAuthorizer(
+		PlanMemberRepository repository,
+		MemberCacheService cacheService
+	) {
 		return new ResourceAuthorizer(
 			repository::findActiveByUserId,
 			repository::existsActive,
+			cacheService::getPlanMemberCache,
 			ShareLinkType.PLAN,
 			new AuthorizerErrorCodes(
 				PlanError.FORBIDDEN_NOT_OWNER,
