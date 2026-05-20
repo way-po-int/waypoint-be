@@ -8,6 +8,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 
 import waypoint.mvp.auth.security.principal.UserPrincipal;
 import waypoint.mvp.collection.application.dto.request.CollectionCreateRequest;
@@ -19,6 +21,8 @@ import waypoint.mvp.collection.error.CollectionError;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionMemberRepository;
 import waypoint.mvp.collection.infrastructure.persistence.CollectionRepository;
 import waypoint.mvp.global.annotation.ServiceTest;
+import waypoint.mvp.global.auth.application.MemberCacheService;
+import waypoint.mvp.global.config.CacheConfig;
 import waypoint.mvp.global.error.exception.BusinessException;
 import waypoint.mvp.sharelink.application.dto.response.ShareLinkResponse;
 import waypoint.mvp.sharelink.domain.ShareLink;
@@ -46,10 +50,17 @@ class CollectionServiceTest {
 	@Autowired
 	private ShareLinkRepository shareLinkRepository;
 
+	@Autowired
+	private CacheManager cacheManager;
+
+	@Autowired
+	private MemberCacheService memberCacheService;
+
 	private User baseUser;
 
 	@BeforeEach
 	void setUp() {
+		cacheManager.getCache(CacheConfig.COLLECTION_MEMBERS_CACHE).clear();
 		SocialAccount socialAccount = SocialAccount.create(Provider.GOOGLE, "12345");
 		User user = User.create(socialAccount, "tester", "picture_url", "test@example.com");
 		baseUser = userRepository.save(user);
@@ -173,21 +184,29 @@ class CollectionServiceTest {
 		UserPrincipal owner = new UserPrincipal(baseUser.getId());
 		UserPrincipal member = new UserPrincipal(createUser("member1").getId());
 		Collection collection = createCollectionAndInvitedMember("Test Collection", owner, member);
+		Long collectionId = collection.getId();
+
+		memberCacheService.getCollectionMemberCache(collectionId);
+		Cache cache = cacheManager.getCache(CacheConfig.COLLECTION_MEMBERS_CACHE);
+		assertThat(cache.get(collectionId)).isNotNull();
 
 		// when
 		collectionService.withdrawCollectionMember(collection.getExternalId(), member);
 
 		// then
-		Optional<CollectionMember> withdrawnMember = collectionMemberRepository.findWithdrawnMember(collection.getId(),
+		Optional<CollectionMember> withdrawnMember = collectionMemberRepository.findWithdrawnMember(collectionId,
 			member.getId());
 		assertThat(withdrawnMember).isPresent();
 		assertThat(withdrawnMember.get().getDeletedAt()).isNotNull();
 
-		Collection updatedCollection = collectionRepository.findById(collection.getId()).orElseThrow();
+		Collection updatedCollection = collectionRepository.findById(collectionId).orElseThrow();
 		assertThat(updatedCollection.getMemberCount()).isEqualTo(1);
 
 		// 활성 멤버 조회 시, 탈퇴한 멤버가 조회되지 않는지 추가 검증
-		assertThat(collectionMemberRepository.findActiveByUserId(collection.getId(), member.getId())).isNotPresent();
+		assertThat(collectionMemberRepository.findActiveByUserId(collectionId, member.getId())).isNotPresent();
+		
+		// 캐시 무효화 검증
+		assertThat(cache.get(collectionId)).isNull();
 	}
 
 	@Test
@@ -212,23 +231,31 @@ class CollectionServiceTest {
 		UserPrincipal ownerUser = new UserPrincipal(baseUser.getId());
 		UserPrincipal memberUser = new UserPrincipal(createUser("member1").getId());
 		Collection collection = createCollectionAndInvitedMember("Test Collection", ownerUser, memberUser);
+		Long collectionId = collection.getId();
+
+		memberCacheService.getCollectionMemberCache(collectionId);
+		Cache cache = cacheManager.getCache(CacheConfig.COLLECTION_MEMBERS_CACHE);
+		assertThat(cache.get(collectionId)).isNotNull();
 
 		// when
-		CollectionMember member = findActiveMember(collection.getId(), memberUser.getId());
+		CollectionMember member = findActiveMember(collectionId, memberUser.getId());
 		collectionService.expelCollectionMember(collection.getExternalId(), member.getExternalId(), ownerUser);
 
 		// then
-		Optional<CollectionMember> expelledMember = collectionMemberRepository.findWithdrawnMember(collection.getId(),
+		Optional<CollectionMember> expelledMember = collectionMemberRepository.findWithdrawnMember(collectionId,
 			memberUser.getId());
 		assertThat(expelledMember).isPresent();
 		assertThat(expelledMember.get().getDeletedAt()).isNotNull();
 
-		Collection updatedCollection = collectionRepository.findById(collection.getId()).orElseThrow();
+		Collection updatedCollection = collectionRepository.findById(collectionId).orElseThrow();
 		assertThat(updatedCollection.getMemberCount()).isEqualTo(1);
 
 		// 활성 멤버 조회 시, 추방된 멤버가 조회되지 않는지 추가 검증
 		assertThat(
-			collectionMemberRepository.findActiveByUserId(collection.getId(), memberUser.getId())).isNotPresent();
+			collectionMemberRepository.findActiveByUserId(collectionId, memberUser.getId())).isNotPresent();
+			
+		// 캐시 무효화 검증
+		assertThat(cache.get(collectionId)).isNull();
 	}
 
 	@Test
@@ -239,7 +266,12 @@ class CollectionServiceTest {
 		UserPrincipal member = new UserPrincipal(createUser("member1").getId());
 
 		Collection collection = createCollectionAndInvitedMember("Test Collection", host, member);
+		Long collectionId = collection.getId();
 		collectionService.withdrawCollectionMember(collection.getExternalId(), member); // 멤버 탈퇴
+
+		memberCacheService.getCollectionMemberCache(collectionId);
+		Cache cache = cacheManager.getCache(CacheConfig.COLLECTION_MEMBERS_CACHE);
+		assertThat(cache.get(collectionId)).isNotNull();
 
 		// when 재초대
 		ShareLink shareLink = shareLinkRepository
@@ -248,11 +280,14 @@ class CollectionServiceTest {
 		collectionService.addMemberFromShareLink(shareLink, member.getId());
 
 		// then
-		CollectionMember restoredMember = findActiveMember(collection.getId(), member.getId());
+		CollectionMember restoredMember = findActiveMember(collectionId, member.getId());
 		assertThat(restoredMember.getDeletedAt()).isNull();
 
-		Collection updatedCollection = collectionRepository.findById(collection.getId()).orElseThrow();
+		Collection updatedCollection = collectionRepository.findById(collectionId).orElseThrow();
 		assertThat(updatedCollection.getMemberCount()).isEqualTo(2);
+
+		// 캐시 무효화 검증
+		assertThat(cache.get(collectionId)).isNull();
 	}
 
 	private Collection createCollectionAndInvitedMember(String title, UserPrincipal owner, UserPrincipal member) {
@@ -274,17 +309,25 @@ class CollectionServiceTest {
 		User newOwnerUser = createUser("newOwner");
 		UserPrincipal newOwner = new UserPrincipal(newOwnerUser.getId());
 		Collection collection = createCollectionAndInvitedMember("Test Collection", owner, newOwner);
-		CollectionMember newOwnerMember = findActiveMember(collection.getId(), newOwner.getId());
+		Long collectionId = collection.getId();
+		CollectionMember newOwnerMember = findActiveMember(collectionId, newOwner.getId());
+
+		memberCacheService.getCollectionMemberCache(collectionId);
+		Cache cache = cacheManager.getCache(CacheConfig.COLLECTION_MEMBERS_CACHE);
+		assertThat(cache.get(collectionId)).isNotNull();
 
 		// when
 		collectionService.changeOwner(collection.getExternalId(), newOwnerMember.getExternalId(), owner);
 
 		// then
-		CollectionMember formerOwnerMember = findActiveMember(collection.getId(), owner.getId());
-		CollectionMember currentOwnerMember = findActiveMember(collection.getId(), newOwner.getId());
+		CollectionMember formerOwnerMember = findActiveMember(collectionId, owner.getId());
+		CollectionMember currentOwnerMember = findActiveMember(collectionId, newOwner.getId());
 
 		assertThat(formerOwnerMember.getRole()).isEqualTo(CollectionRole.MEMBER);
 		assertThat(currentOwnerMember.getRole()).isEqualTo(CollectionRole.OWNER);
+
+		// 캐시 무효화 검증
+		assertThat(cache.get(collectionId)).isNull();
 	}
 
 	@Test
